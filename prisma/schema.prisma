@@ -1,0 +1,119 @@
+// The schema.prisma defines the way our data is modeled. The exact function of this file is to provide the instructions to the
+// 'prisma migrate' command, which will automatically convert all the information in here to SQL and build our database in the way
+// we define it here. This means we only need to work with the prisma 'model', instead of raw SQL in postgres. We can completely
+// abstract the database out of this app, and only work with prisma as the Object Relational Mapper.
+// DON'T ever modify the 'datasource' or 'generator' tags. If you want to update the tables in the database, change the models.
+// Any time you change the schema.prisma, you must MIGRATE those changes over to postgres. This requires the following chain of commands:
+// (also note that postgres must be running in its docker container for this to work, otherwise the database won't accept any connections)
+// If the database is not running in the docker container, use:
+// -docker-compose -f docker-compose.db.yml up -d OR npm run docker:db
+
+// COMMAND CHAIN:
+// -npx prisma migrate dev _OR_ npm run migrate:dev (applies the new schema to postgres, modifies table schema and generates a migration folder)
+// -OPTIONAL: npx prisma migrate deploy (deploys the changes to the PRODUCTION database, not the local/testing database)
+// -npx prisma generate _OR_ npm run prisma:generate (regenerates the prisma client, allowing our ORM to work with the updated postgres migration)
+
+// OPTIONAL: npm run seed (seeds the database, not sure what this does yet, but I know it can be used to clear all the data in there)(DONT run this if
+// you don't know what you're doing)
+
+// IMPORTING DATA INTO THE DATABASE: As of 8/23/2021 I don't know how to do this the 'correct way', so this is my workaround:
+// Requirements:
+// 1) docker container running skidmore-catalog postgres db (must have access to CLI, the terminal interface)
+// If the docker container starts in the # directory, navigate into the skidmore-catalog database using:
+// psql -d skidmore-catalog -U {username} -W
+// enter pass
+// 2) pgadmin4, if you want to easily check the changes that were made (must be hooked up to said skidmore-catalog)
+// Open the docker container running the skidmore-catalog postgres database. Use the command:
+// WARNING: Before you do this, make sure that the csv has the same exact schema as the table does. The column names don't matter, but if they are
+// in a different order than each other make sure you define the correct order in the copy command
+// BELOW: Copy a csv file into skidmore-catalog postgres db:
+// \copy {name of table copying into}({col1_name, col2_name}) from {local file location.csv} delimiter ',' csv header;
+// EXAMPLE:
+// \copy universe."Tully_Group"(ne
+// st, num_members, pcg_name, sg_lon, sg_lat, log_lk,
+//  v_mod, dist_mod, sig_v, r2t, sigmap, mass, cf) fr
+// om C:\Users\Alex\Tully_groups_full.csv delimiter '
+// ,' csv header;
+
+// EXECUTE this ^ command inside of the CLI tool on pgadmin4
+// NOTE: Dont forget .csv at the end of the file location like I did many times
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  // previewFeatures = []
+}
+
+generator dbml {
+  provider = "prisma-dbml-generator"
+}
+
+//from the template
+model User {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  email     String   @unique
+  password  String
+  firstname String?
+  lastname  String?
+  posts     Post[]
+  role      Role
+}
+
+//from the template
+model Post {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  published Boolean
+  title     String
+  content   String?
+  author    User?    @relation(fields: [authorId], references: [id])
+  authorId  String?
+}
+
+//defined from the tully_group CSV file, from the tully catalog
+model Tully_Group {
+  nest        Int    @id @unique
+  num_members Int
+  pcg_name    String @unique //pcg name of the most massive galaxy in the group 
+  sg_lon      Float
+  sg_lat      Float
+  log_lk      Float
+  v_mod       Float
+  dist_mod    Float
+  sig_v       Float
+  r2t         Float
+  sigmap      Float
+  mass        String
+  cf          Float
+}
+
+model SDSS_OpticalProperties {
+  AGC            Int    @id @unique
+  sdssPhotFlag   Int
+  sdss_objid     String
+  RA             Float
+  DEC            Float
+  Vhelio         Int
+  Dist           Float
+  sigDist        Float
+  extinction_g   Float?
+  extinction_i   Float?
+  expAB_r        Float?
+  expAB_r_err    Float?
+  cModelMag_i    Float?
+  cModelMagErr_i Float?
+
+}
+
+//no idea what this does
+enum Role {
+  ADMIN
+  USER
+}

@@ -1,0 +1,66 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table User {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  email String [unique, not null]
+  password String [not null]
+  firstname String
+  lastname String
+  posts Post [not null]
+  role Role [not null]
+}
+
+Table Post {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  published Boolean [not null]
+  title String [not null]
+  content String
+  author User
+  authorId String
+}
+
+Table Tully_Group {
+  nest Int [pk, unique]
+  num_members Int [not null]
+  pcg_name String [unique, not null]
+  sg_lon Float [not null]
+  sg_lat Float [not null]
+  log_lk Float [not null]
+  v_mod Float [not null]
+  dist_mod Float [not null]
+  sig_v Float [not null]
+  r2t Float [not null]
+  sigmap Float [not null]
+  mass String [not null]
+  cf Float [not null]
+}
+
+Table SDSS_OpticalProperties {
+  AGC Int [pk, unique]
+  sdssPhotFlag Int [not null]
+  sdss_objid String [not null]
+  RA Float [not null]
+  DEC Float [not null]
+  Vhelio Int [not null]
+  Dist Float [not null]
+  sigDist Float [not null]
+  extinction_g Float
+  extinction_i Float
+  expAB_r Float
+  expAB_r_err Float
+  cModelMag_i Float
+  cModelMagErr_i Float
+}
+
+Enum Role {
+  ADMIN
+  USER
+}
+
+Ref: Post.authorId > User.id

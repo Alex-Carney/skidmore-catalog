@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "SDSS_OpticalProperties" ALTER COLUMN "extinction_g" DROP NOT NULL,
+ALTER COLUMN "extinction_i" DROP NOT NULL,
+ALTER COLUMN "expAB_r" DROP NOT NULL,
+ALTER COLUMN "expAB_r_err" DROP NOT NULL,
+ALTER COLUMN "cModelMag_i" DROP NOT NULL,
+ALTER COLUMN "cModelMagErr_i" DROP NOT NULL;

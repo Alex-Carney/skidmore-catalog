@@ -1,0 +1,6 @@
+        ---
+        syntaxHighlight: {
+          activated: false,
+          theme: "agate"
+        },
+        url: "localhost:3000/api/v2"
