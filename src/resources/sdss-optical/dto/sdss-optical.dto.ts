@@ -9,7 +9,7 @@
 
 import { ApiProperty } from '@nestjs/swagger';
 
-export enum ThresholdOptions {
+export enum ThresholdOptions2 {
   GreaterThan = 'gt',
   GreaterThanOrEqualTo = 'gte',
   LessThan = 'lt',
@@ -18,114 +18,99 @@ export enum ThresholdOptions {
   NotEqualTo = 'not',
 }
 
-export enum TullyGroupFields {
+export enum SdssOpticalFields {
 
-  nest = 'nest',
-  num_members = 'num_members',
-  pcg_name = 'pcg_name',
-  sg_lon = 'sg_lon',
-  sg_lat = 'sg_lat',
-  log_lk = 'log_lk',
-  v_mod = 'v_mod',
-  dist_mod = 'dist_mod',
-  sig_v = 'sig_v',
-  r2t = 'r2t', 
-  sigmap = 'sigmap',
-  mass = 'mass',
-  cf = 'cf',
+    agc = 'agc',
+    sdss_phot_flag = 'sdss_phot_flag',
+    sdss_objid = 'sdss_objid',
+    ra = 'ra',
+    dec = 'dec',
+    vhelio = 'vhelio',
+    dist = 'dist',
+    sig_dist = 'sig_dist',
+    extinction_g = 'extinction_g',
+    extinction_i = 'extinction_i',
+    exp_ab_r = 'exp_ab_r',
+    exp_ab_r_err = 'exp_ab_r_err',
+    c_model_mag_i = 'c_model_mag_i',
+    c_model_mag_err_i = 'c_model_mag_err_i',
 
-}
 
-
-export enum TullyGroupFields2 {
-
-  nest = 'nest',
-  num_members = 'num_members',
-  pcg_name = 'pcg_name',
-  sg_lon = 'sg_lon',
-  sg_lat = 'sg_lat',
-  log_lk = 'log_lk',
-  v_mod = 'v_mod',
-  dist_mod = 'dist_mod',
-  sig_v = 'sig_v',
-  r2t = 'r2t', 
-  sigmap = 'sigmap',
-  mass = 'mass',
-  cf = 'cf',
 
 }
 
-export class Tully_Group_DTO {
 
-  @ApiProperty()  
-  nest:         number; 
-  @ApiProperty()  
-  num_members:  number; 
-  @ApiProperty()  
-  pcg_name:     string;
-  @ApiProperty()  
-  sg_lon:       string;
-  @ApiProperty()  
-  sg_lat:       number;
-  @ApiProperty()  
-  log_lk:       number;
-  @ApiProperty()
-  v_mod:        number;
-  @ApiProperty()
-  dist_mod:     number;
-  @ApiProperty()
-  sig_v:        number;
-  @ApiProperty()
-  r2t:          number;  
-  @ApiProperty()
-  sigmap:       number;  
-  @ApiProperty()
-  mass:         string; 
-  @ApiProperty()
-  cf:           number;
+export class Sdss_OpticalPropertiesDTO {
+
+    @ApiProperty()
+    agc:            number;
+    @ApiProperty()
+    sdss_phot_flag:   number;
+    @ApiProperty()
+    sdss_objid:     string;
+    @ApiProperty()
+    ra:             number;
+    @ApiProperty()
+    dec:            number;
+    @ApiProperty()
+    vhelio:         number;
+    @ApiProperty()
+    dist:           number;
+    @ApiProperty()
+    sig_dist:        number;
+    @ApiProperty()
+    extinction_g:   number;
+    @ApiProperty()
+    extinction_i:   number;
+    @ApiProperty()
+    exp_ab_r:        number;
+    @ApiProperty()
+    exp_ab_r_err:    number;
+    @ApiProperty()
+    c_model_mag_i:    number;
+    @ApiProperty()
+    c_model_mag_err_i: number;
+
+
 
 }
 
-export class QueryParamDTO {
+export class Sdss_Optical_QueryParamDTO {
   
 
   @ApiProperty({
-    enum: TullyGroupFields,
-    enumName: 'Target Field',
-    isArray: false 
+    enum: SdssOpticalFields,
+    enumName: 'Target Sdss Optical Field',
+    isArray: false,
+     
   })
-  field: TullyGroupFields; //this is the field to apply the filter to 
-
-  // // @IsNumber()
-  // //@IsOptional()
-  // @Type(() => Number)
-  // @Transform(({ value }) => Number(value))
-  // threshold: number; //has to be a string because mass values are far above the maximum int value
+  sdssOpticalField: SdssOpticalFields; //this is the field to apply the filter to 
 
   @ApiProperty({
-    enum: ThresholdOptions,
-    enumName: 'Threshold Options',
-    isArray: false
+    enum: ThresholdOptions2,
+    enumName: 'Target Sdss Optical Threshold',
+    isArray: false,
+    
   })
-  conditional: ThresholdOptions; //can be one of the conditional statments
+  sdssOpticalCondition: ThresholdOptions2; //can be one of the conditional statments
 
   @ApiProperty({
-    enum: TullyGroupFields,
-    enumName: 'Fields to return',
-    isArray: true 
+    enum: SdssOpticalFields,
+    enumName: 'Sdss Optical Fields to Return',
+    isArray: true,
   })
   //include: Prisma.Tully_GroupSelect; 
-  include: TullyGroupFields;
+  sdssOpticalInclude: SdssOpticalFields;
 
 }
 
-export class FieldSelectDTO {
+export class Sdss_Optical_FieldSelectDTO {
   @ApiProperty({
-    enum: TullyGroupFields2,
-    enumName: 'return these fields',
+    enum: SdssOpticalFields,
+    enumName: 'Sdss Optical Fields Sql Return',
     isArray: true 
   })
-  fields: TullyGroupFields2;
+ sdssOpticalFields: SdssOpticalFields;
 }
 
 

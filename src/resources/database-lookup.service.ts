@@ -4,7 +4,7 @@
  * instance of this class with options based on what resource we are implementing (that logic is done in the feature's module file)
  */
 
-import { Injectable, Type } from "@nestjs/common";
+import { ForbiddenException, Injectable, Type } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "src/prisma/prisma.service";
 import { ResourceOptions, SdssOpticalOptions } from "./resource options/resource-options.interface";
@@ -19,9 +19,11 @@ import { ResourceOptions, SdssOpticalOptions } from "./resource options/resource
 export class DatabaseLookupService<Resource extends ResourceOptions> {
     
     private resource: any
+    private resourceTable: string
 
-    constructor(private prisma: PrismaService, resource: any) { 
+    constructor(private prisma: PrismaService, resource: any, resourceTable: string) { 
         this.resource = resource
+        this.resourceTable = resourceTable
     }
 
     async returnSingleById(whereUniqueInput: Resource['WhereUniqueType']): Promise<Resource['ReturnType'] | null> {
@@ -62,9 +64,18 @@ export class DatabaseLookupService<Resource extends ResourceOptions> {
         return this.resource.findMany();
     }
 
-    async customQuery(fields: string, query: string): Promise<Resource['ReturnType'][] | null> {
-        console.log(`SELECT ${fields} FROM universe."${"idk"}" ${query}`)
-        const result = await this.prisma.$queryRaw('SELECT ' + fields + ' FROM universe."Tully_Group" ' + query +';')
+    async customQuery(fields: string, query: string): Promise<Resource['ReturnType'][] | null>  {
+
+        console.log('SELECT ' + fields + 
+        ' FROM ' + this.resourceTable + ' ' + query + ';')
+
+        //an attempt at mitigating SQL injection - on top of controller being locked behind JWT authentication 
+        if(query.includes("User") || query.includes(";") || query.includes("password")) {
+            return
+        }
+
+        const result = await this.prisma.$queryRaw('SELECT ' + fields + 
+        ' FROM ' + this.resourceTable + ' ' + query + ';')
         return result;
     }
 }

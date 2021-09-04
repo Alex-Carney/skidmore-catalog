@@ -26,14 +26,7 @@ export class AppController {
   @Post("/signin")
   @ApiExcludeEndpoint()
   // async login(@Request() req: {email: string, password: string}): Promise<Token> { 
-  async login(@Request() req): Promise<Token> { 
-    console.log(req);
-    
-    console.log(req.body);
-    
-    console.log(req.body.email);
-    console.log(req.body.password);
-    
+  async login(@Request() req: any): Promise<Token> { 
     
     return this.authService.login(req.body.email, req.body.password)
   }

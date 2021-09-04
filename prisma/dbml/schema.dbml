@@ -42,20 +42,20 @@ Table Tully_Group {
 }
 
 Table SDSS_OpticalProperties {
-  AGC Int [pk, unique]
-  sdssPhotFlag Int [not null]
+  agc Int [pk, unique]
+  sdss_phot_flag Int [not null]
   sdss_objid String [not null]
-  RA Float [not null]
-  DEC Float [not null]
-  Vhelio Int [not null]
-  Dist Float [not null]
-  sigDist Float [not null]
+  ra Float [not null]
+  dec Float [not null]
+  vhelio Int [not null]
+  dist Float [not null]
+  sig_dist Float [not null]
   extinction_g Float
   extinction_i Float
-  expAB_r Float
-  expAB_r_err Float
-  cModelMag_i Float
-  cModelMagErr_i Float
+  exp_ab_r Float
+  exp_ab_r_err Float
+  c_model_mag_i Float
+  c_model_mag_err_i Float
 }
 
 Enum Role {

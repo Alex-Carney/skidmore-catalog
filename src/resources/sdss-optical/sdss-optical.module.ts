@@ -10,7 +10,7 @@ import { SdssOpticalController } from './sdss-optical.controller';
 const sdssOpticalLookupFactory = {
   provide: SDSS_OPTICAL_LOOKUP,
   useFactory: (prisma: PrismaService) => {
-    return new DatabaseLookupService<SdssOpticalOptions>(prisma, prisma.sDSS_OpticalProperties)
+    return new DatabaseLookupService<SdssOpticalOptions>(prisma, prisma.sDSS_OpticalProperties, 'universe."SDSS_OpticalProperties"')
   },
   inject: [PrismaService],
 

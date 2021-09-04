@@ -1,13 +1,13 @@
 import { Controller, Get, Inject, Param, ParseFloatPipe, Query, UseGuards } from '@nestjs/common';
 import { Injectable } from '@nestjs/common/interfaces';
-import { ApiTags, ApiOperation, ApiOkResponse, ApiUnauthorizedResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiOkResponse, ApiUnauthorizedResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
 import { DatabaseLookupService } from '../database-lookup.service';
 import { SDSS_OPTICAL_LOOKUP } from '../resource options/resource-constants';
 import { SdssOpticalOptions } from '../resource options/resource-options.interface';
 import { parseAsync } from 'json2csv';
 import { SDSS_OpticalProperties } from '@prisma/client';
-import { QueryParamDTO } from 'src/resolvers/tully-group/dto/tully-group.dto';
+import { Sdss_Optical_FieldSelectDTO, Sdss_Optical_QueryParamDTO } from './dto/sdss-optical.dto';
 
 @Controller('sdss-optical')
 export class SdssOpticalController {
@@ -30,40 +30,58 @@ export class SdssOpticalController {
   //but makes them as TYPES, not CLASSES. SwaggerUI cannot handle types, so we have to rewrite our DTO ourselves in tully-group.dto, and tell
   //swagger to display the information for that instead. 
   @Get()
-  async getAllTullyGroups(): Promise<SDSS_OpticalProperties[]> {
+  async getAllSdssOpticalProperties(): Promise<SDSS_OpticalProperties[]> {
       const payload = await this.db.returnAll();
       return parseAsync(payload)
   }
 
   //----------------------------------------------------------------------------------------------------
 
-      //This is the logic for returning groups based on a certain threshold, defined by the query keyword WHERE
+      //This is the logic for returning optical properties based on a certain threshold, defined by the query keyword WHERE
 
       @ApiTags('SDSS Optical')
-      // @ApiProduces("application/json", "text/csv")
-      @ApiOkResponse({
-          description: 'returns a list of groups from the tully catalog, according to a defined threshold. This threshold \n can be based on greater than, less than, or equal to, and can be applied to any of the fields'
-      })
-      @ApiOperation({summary: "Returns list of groups based on a condition applied to a field. Return fields are optional as well"})
-      // @ApiCreatedResponse({
-      //     type: MyModel
-      // })
-      //@ApiBody({type: Tully_Group_DTO})
-      @ApiQuery({ name: 'conditional', type: QueryParamDTO})
-      @Get('filter/:threshold')
-      async getTullyGroupsByThreshold(@Query() dto: QueryParamDTO, @Param('threshold', new ParseFloatPipe()) threshold: number): Promise<SDSS_OpticalProperties[]> {
-          const whereInput = `{"${dto.field}": { "${dto.conditional}": ${(threshold)} }}`
-          const jsonSearch = {}
-          const includeArray = Array(...dto.include);
-          (includeArray[0].length == 1 ? Array(dto.include) : includeArray).forEach((col) => {jsonSearch[col] = true}) 
-          //Array(...dto.include).forEach((col) => {jsonSearch[col] = true}) //OLD VER
-      
-  
-          const payload = await this.db.returnMultipleByQuery({
-              where: JSON.parse(whereInput),//accept the URI as a string, convert to json for the 'where' input from prisma ORM          
-          }, jsonSearch)
-          return parseAsync(payload)
+      // @UseGuards(JwtAuthGuard)
+      @ApiOperation({summary: "Allows for a custom query"})
+      // @ApiBearerAuth()
+      @ApiOkResponse({description: "yes"})
+      @ApiQuery({name: 'sdssOpticalCondition', type: Sdss_Optical_QueryParamDTO, required: true })
+      @ApiParam({name: 'sdss_opticalThreshold', schema: {type: "number"}, description: "numerical threshold to return by"})
+      @Get('sdss-filter/:sdss_opticalThreshold')
+      async getSdssOpticalPropertiesByQuery(@Query() dto: Sdss_Optical_QueryParamDTO, @Param('sdss_opticalThreshold', new ParseFloatPipe()) threshold: number): Promise<SDSS_OpticalProperties[]> {
+
+        const where = `{"${dto.sdssOpticalField}": { "${dto.sdssOpticalCondition}": ${(threshold)} }}`
+        const search = {}
+        const includeArray = Array(...dto.sdssOpticalInclude);
+        (includeArray[0].length == 1 ? Array(dto.sdssOpticalInclude) : includeArray).forEach((col) => {search[col] = true}) 
+
+        const payload = await this.db.returnMultipleByQuery({
+          where: JSON.parse(where), 
+        }, search)
+
+        return parseAsync(payload)     
+        
       }
+
+      //--------------------------------------------------------------------------------------------------
+
+      
+    @ApiTags('SDSS Optical')
+    @UseGuards(JwtAuthGuard)
+    @ApiOperation({summary: "allows for a custom SQL query"})
+    @ApiBearerAuth()
+    @ApiOkResponse({ description : "yes"})
+    @ApiQuery({name: 'sdssOpticalFields', type: Sdss_Optical_FieldSelectDTO})
+    @ApiParam({name: "sql", schema: {type: "string"} ,description: "Sql code to be placed after SELECT {your fields} FROM SDSS_Optical_Properties ..."})
+    @Get('sdss-custom/:sql')
+    async getTullyGroupsWithSql(@Query() dto: Sdss_Optical_FieldSelectDTO, @Param('sql') sql: string): Promise<SDSS_OpticalProperties[]> {
+        
+        console.log(dto.sdssOpticalFields.toString());
+        console.log(sql);
+        
+        const payload = await this.db.customQuery(dto.sdssOpticalFields.toString(), sql)
+        return parseAsync(payload)
+    }
+    
 
 
 
