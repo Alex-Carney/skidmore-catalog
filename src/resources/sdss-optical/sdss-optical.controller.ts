@@ -11,6 +11,8 @@ import { Sdss_Optical_FieldSelectDTO, Sdss_Optical_QueryParamDTO } from './dto/s
 
 @Controller('sdss-optical')
 export class SdssOpticalController {
+
+  //Since we have a custom provider, we have slightly different Dependency Injection syntax 
   constructor(@Inject(SDSS_OPTICAL_LOOKUP) private readonly db: DatabaseLookupService<SdssOpticalOptions>) {}
 
 

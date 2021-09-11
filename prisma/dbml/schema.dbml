@@ -41,6 +41,109 @@ Table Tully_Group {
   cf Float [not null]
 }
 
+Table Tully_Environment {
+  orig_src_name String [not null]
+  hisrc_name String [not null]
+  agcnr Int [pk, unique]
+  name String
+  radeg_hi Float
+  decdeg_hi Float
+  radeg_oc Float
+  decdeg_oc Float
+  radeg_use Float
+  decdeg_use Float
+  vhelio Int
+  errv Int
+  err_wtot Int
+  err_wstat Int
+  w50 Int
+  w20 Int
+  hiflux Float
+  errflux Float
+  snr Float
+  rms Float
+  dist Float
+  log_msun Float
+  hicode Int
+  phot_code String
+  agc Int
+  objid Float
+  parentid Float
+  spec_objid Float
+  ra Float
+  dec Float
+  model_mag_u Float
+  model_mag_g Float
+  model_mag_r Float
+  model_mag_i Float
+  model_mag_z Float
+  model_mag_err_u Float
+  model_mag_err_g Float
+  model_mag_err_r Float
+  model_mag_err_i Float
+  model_mag_err_z Float
+  c_model_mag_u Float
+  c_model_mag_g Float
+  c_model_mag_r Float
+  c_model_mag_i Float
+  c_model_mag_z Float
+  c_model_mag_err_u Float
+  c_model_mag_err_g Float
+  c_model_mag_err_r Float
+  c_model_mag_err_i Float
+  c_model_mag_err_z Float
+  petro_mag_u Float
+  petro_mag_g Float
+  petro_mag_r Float
+  petro_mag_i Float
+  petro_mag_z Float
+  petro_mag_err_u Float
+  petro_mag_err_g Float
+  petro_mag_err_r Float
+  petro_mag_err_i Float
+  petro_mag_err_z Float
+  petro_rad_u Float
+  petro_rad_g Float
+  petro_rad_r Float
+  petro_rad_i Float
+  petro_rad_z Float
+  petror50_g Float
+  petror50_r Float
+  petror50_i Float
+  petror90_g Float
+  petror90_r Float
+  petror90_i Float
+  extinction_u Float
+  extinction_g Float
+  extinction_r Float
+  extinction_i Float
+  extinction_z Float
+  expab_g Float
+  expab_r Float
+  expab_i Float
+  exp_mag_g Float
+  exp_mag_r Float
+  exp_mag_i Float
+  flags_u Float
+  flags_g Float
+  flags_r Float
+  flags_i Float
+  flags_z Float
+  flags Float
+  lnlexp_r Float
+  lnldev_r Float
+  type Float
+  frac_dev_g Float
+  frac_dev_r Float
+  frac_dev_i Float
+  exp_rad_g Float
+  exp_rad_r Float
+  exp_rad_i Float
+  skydistdeg2 Float
+  skdistarcsec Float
+  ocfromsdssarcseconds Float
+}
+
 Table SDSS_OpticalProperties {
   agc Int [pk, unique]
   sdss_phot_flag Int [not null]
@@ -56,6 +159,30 @@ Table SDSS_OpticalProperties {
   exp_ab_r_err Float
   c_model_mag_i Float
   c_model_mag_err_i Float
+}
+
+Table SDSS_DerivedProperties {
+  agc Int [pk, unique]
+  gamma_g Float
+  gamma_i Float
+  abs_mag_i_corr Float
+  abs_mag_i_corr_err Float
+  gmi_corr Float
+  gmi_corr_err Float
+  log_mstar_taylor Float
+  log_mstar_taylor_err Float
+  log_mstar_mc_gaugh Float
+  log_mstar_mc_gaugh_err Float
+  log_mstargswlc Float
+  log_mstargswlc_err Float
+  logsfr22 Float
+  logsfr22_err Float
+  logsfrnuvir Float
+  logsfrnuvir_err Float
+  logsfrgswlc Float
+  logsfrgswlc_err Float
+  logmh Float
+  logmh_err Float
 }
 
 Enum Role {

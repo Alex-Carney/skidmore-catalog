@@ -9,6 +9,7 @@
 
 import { ApiProperty } from '@nestjs/swagger';
 
+//now defined in resource-globals.ts
 export enum ThresholdOptions2 {
   GreaterThan = 'gt',
   GreaterThanOrEqualTo = 'gte',
@@ -76,7 +77,6 @@ export class Sdss_OpticalPropertiesDTO {
 }
 
 export class Sdss_Optical_QueryParamDTO {
-  
 
   @ApiProperty({
     enum: SdssOpticalFields,

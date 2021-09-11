@@ -3,8 +3,9 @@
  *  Each resource hosted by the API will have its provider options defined here 
  * */
 
-import { Prisma, SDSS_OpticalProperties } from ".prisma/client";
+import { Prisma, SDSS_OpticalProperties, Tully_Environment } from ".prisma/client";
 import { Type } from "@nestjs/common";
+import { SDSS_DerivedProperties } from "@prisma/client";
 
 
 export interface ResourceOptions {
@@ -23,5 +24,21 @@ export interface SdssOpticalOptions {
     OrderByType: Prisma.SDSS_OpticalPropertiesOrderByInput
     SelectType: Prisma.SDSS_OpticalPropertiesSelect
 
+}
+
+export interface SdssDerivedOptions {
+    ReturnType: SDSS_DerivedProperties,
+    WhereUniqueType: Prisma.SDSS_DerivedPropertiesWhereUniqueInput
+    WhereType: Prisma.SDSS_DerivedPropertiesWhereInput
+    OrderByType: Prisma.SDSS_DerivedPropertiesOrderByInput
+    SelectType: Prisma.SDSS_DerivedPropertiesSelect
+}
+
+export interface TullyEnvironmentOptions {
+    ReturnType: Tully_Environment,
+    WhereUniqueType: Prisma.Tully_EnvironmentWhereUniqueInput
+    WhereType: Prisma.Tully_EnvironmentWhereInput
+    OrderByType: Prisma.Tully_EnvironmentOrderByInput
+    SelectType: Prisma.Tully_EnvironmentSelect
 }
 

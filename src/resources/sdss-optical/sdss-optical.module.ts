@@ -16,8 +16,6 @@ const sdssOpticalLookupFactory = {
 
 }
 
-
-
 @Module({
   imports: [PrismaModule],
   controllers: [SdssOpticalController],

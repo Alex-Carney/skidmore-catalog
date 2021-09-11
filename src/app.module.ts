@@ -14,6 +14,8 @@ import { GraphqlConfig, ThrottlerConfig } from './configs/config.interface';
 import { TullyGroupModule } from './resolvers/tully-group/tully-group.module';
 import { APP_GUARD } from '@nestjs/core';
 import { SdssOpticalModule } from './resources/sdss-optical/sdss-optical.module';
+import { SdssDerivedModule } from './resources/sdss-derived/sdss-derived.module';
+import { TullyEnvironmentModule } from './resources/tully-environment/tully-environment.module';
 
 @Module({
   imports: [
@@ -51,6 +53,8 @@ import { SdssOpticalModule } from './resources/sdss-optical/sdss-optical.module'
     PostModule,
     TullyGroupModule,
     SdssOpticalModule,
+    SdssDerivedModule,
+    TullyEnvironmentModule,
   ],
   controllers: [AppController],
   providers: [

@@ -40,6 +40,7 @@ async function bootstrap() {
 
     const customOptions: SwaggerCustomOptions = {
       swaggerOptions: {
+        defaultModelsExpandDepth: -1, //schemas wont show up
         syntaxHighlight: {
           activated: false,
           theme: "agate"
