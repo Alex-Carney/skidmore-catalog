@@ -1,0 +1,48 @@
+-- CreateTable
+CREATE TABLE "Tully_Combined" (
+    "pgc" INTEGER NOT NULL,
+    "gal_glon" DOUBLE PRECISION NOT NULL,
+    "gal_glat" DOUBLE PRECISION NOT NULL,
+    "gal_sglon" DOUBLE PRECISION NOT NULL,
+    "gal_sglat" DOUBLE PRECISION NOT NULL,
+    "morph" DOUBLE PRECISION NOT NULL,
+    "vhelio" INTEGER NOT NULL,
+    "v_ls" INTEGER NOT NULL,
+    "vmod" INTEGER NOT NULL,
+    "j_h" DOUBLE PRECISION NOT NULL,
+    "j_k" DOUBLE PRECISION NOT NULL,
+    "k_mag" DOUBLE PRECISION NOT NULL,
+    "log_lk" DOUBLE PRECISION NOT NULL,
+    "log_rhok" DOUBLE PRECISION NOT NULL,
+    "nest" INTEGER NOT NULL,
+    "num_members" INTEGER NOT NULL,
+    "brightest_pcg" INTEGER NOT NULL,
+    "dis" DOUBLE PRECISION NOT NULL,
+    "dm" DOUBLE PRECISION NOT NULL,
+    "group_sglon" DOUBLE PRECISION NOT NULL,
+    "group_sglat" DOUBLE PRECISION NOT NULL,
+    "log_lkg" DOUBLE PRECISION NOT NULL,
+    "cf" DOUBLE PRECISION NOT NULL,
+    "sigmap" INTEGER NOT NULL,
+    "r2t" DOUBLE PRECISION NOT NULL,
+    "gal_v_mod" INTEGER NOT NULL,
+    "vbw" DOUBLE PRECISION NOT NULL,
+    "vbw_err" DOUBLE PRECISION NOT NULL,
+    "sigma_vbw" DOUBLE PRECISION NOT NULL,
+    "v_rms" INTEGER NOT NULL,
+    "rbw" DOUBLE PRECISION NOT NULL,
+    "rbw_err" DOUBLE PRECISION NOT NULL,
+    "m12vir" DOUBLE PRECISION NOT NULL,
+    "m12lum" DOUBLE PRECISION NOT NULL,
+    "hdc" INTEGER NOT NULL,
+    "ldc" INTEGER NOT NULL,
+    "twomplusplus" INTEGER NOT NULL,
+    "group_sgx" DOUBLE PRECISION NOT NULL,
+    "group_sgy" DOUBLE PRECISION NOT NULL,
+    "group_sgz" DOUBLE PRECISION NOT NULL,
+
+    PRIMARY KEY ("pgc")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Tully_Combined.pgc_unique" ON "Tully_Combined"("pgc");

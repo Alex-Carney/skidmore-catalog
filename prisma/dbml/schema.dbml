@@ -185,6 +185,49 @@ Table SDSS_DerivedProperties {
   logmh_err Float
 }
 
+Table Tully_Combined {
+  pgc Int [pk, unique]
+  gal_glon Float
+  gal_glat Float
+  gal_sglon Float
+  gal_sglat Float
+  morph Float
+  vhelio Int
+  v_ls Int
+  vmod Int
+  j_h Float
+  j_k Float
+  k_mag Float
+  log_lk Float
+  log_rhok Float
+  nest Int
+  num_members Int
+  brightest_pcg Int
+  dis Float
+  dm Float
+  group_sglon Float
+  group_sglat Float
+  log_lkg Float
+  cf Float
+  sigmap Int
+  r2t Float
+  gal_v_mod Int
+  vbw Float
+  vbw_err Float
+  sigma_vbw Float
+  v_rms Int
+  rbw Float
+  rbw_err Float
+  m12vir Float
+  m12lum Float
+  hdc Int
+  ldc Int
+  twomplusplus Int
+  group_sgx Float
+  group_sgy Float
+  group_sgz Float
+}
+
 Enum Role {
   ADMIN
   USER

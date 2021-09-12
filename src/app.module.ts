@@ -16,6 +16,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { SdssOpticalModule } from './resources/sdss-optical/sdss-optical.module';
 import { SdssDerivedModule } from './resources/sdss-derived/sdss-derived.module';
 import { TullyEnvironmentModule } from './resources/tully-environment/tully-environment.module';
+import { TullyCombinedModule } from './resources/tully-combined/tully-combined.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { TullyEnvironmentModule } from './resources/tully-environment/tully-envi
     SdssOpticalModule,
     SdssDerivedModule,
     TullyEnvironmentModule,
+    TullyCombinedModule,
   ],
   controllers: [AppController],
   providers: [
