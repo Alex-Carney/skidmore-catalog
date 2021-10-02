@@ -1,12 +1,13 @@
 
-    <header class="mb-auto">
+    <header class="mb-auto justify-content-center">
       <div>
-        <h3 class="float-md-start mb-0">S.E.G.C</h3>
-        <nav class="nav nav-masthead justify-content-center float-md-end">
-          <a class="nav-link active" aria-current="page" href="#">Home</a>
-          <a class="nav-link" href="#">Features</a>
-          <a class="nav-link" href="#">Contact</a>
-          <a class="nav-link bolded" href="/signin"><bdi class = "bolded">Sign In</bdi></a>
+        <!-- <h3 class="float-md-start mb-0">S.E.G.C</h3> -->
+        <nav class="nav nav-masthead justify-content-center ">
+          <a class="nav-link <%=homeActive%>" href="/">Home</a>
+          <a class="nav-link <%=docsActive%>" href="/documentation">API Docs</a>
+          <a class="nav-link <%=featuresActive%>" href="/tendril">Tendril Finder</a>
+          <a class="nav-link <%=contactActive%>" href="/contact">Contact</a>
+          <a class="nav-link bolded" href="/signin"><bdi class = "bolded">Authorize</bdi></a>
         </nav>
       </div>
     </header>

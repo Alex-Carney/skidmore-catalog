@@ -11,6 +11,8 @@ import { generateSearchJSON } from '../resource options/resource-globals';
 
 const tag = "Tully Environment"
 
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 @Controller('tully-environment')
 export class TullyEnvironmentController {
   constructor(@Inject(TULLY_ENVIRONMENT_LOOKUP) private readonly db: DatabaseLookupService<TullyEnvironmentOptions>) {}

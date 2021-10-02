@@ -10,15 +10,9 @@ const config: Config = {
   swagger: {
     enabled: true,
     title: `Skidmore Catalog`,
-    description: 'An API for data from the Skidmore College physics research group',
+    description: 'An API for data from the Skidmore College physics research group. Click <a href="/">here</a> to go back to the homepage',
     version: '1.0',
     path: 'api',
-  },
-  graphql: {
-    playgroundEnabled: true,
-    debug: true,
-    schemaDestination: './src/schema.graphql',
-    sortSchema: true,
   },
   security: {
     expiresIn: '2m',

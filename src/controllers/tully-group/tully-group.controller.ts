@@ -13,6 +13,8 @@ import { parseAsync, parse } from 'json2csv';
 
 //TODO: Move ApiTags up here (and auth?)
 
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 @Controller('tully-group')
 export class TullyGroupController {
     //inject the tully-group service class, which holds the actual logic for querying from the database 

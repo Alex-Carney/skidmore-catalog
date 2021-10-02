@@ -12,6 +12,7 @@
   <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"> -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
+  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
 
   <title>Skidmore Catalog</title>
   <!-- <link rel="canonical" href="https://getbootstrap.com/docs/5.0/examples/cover/"> -->
@@ -47,77 +48,25 @@
 
   <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
 
-    <%- include("partials/header"); -%>
+    <%- include("partials/header", {homeActive: 'active', featuresActive: '', contactActive: '', docsActive:''}); -%>
 
       <main class="px-3">
         <h1>Skidmore Extragalactic Catalog</h1>
         <p class="lead">An API for querying data from numerous databases, along with access to our powerful Tendril
           Finder</p>
         <p class="lead">
-          <a href="/api" class="btn btn-lg btn-secondary fw-bold border-white bg-white api-btn">REST API</a>
-          <a href="/graphql/" class="btn btn-lg btn-secondary fw-bold border-white bg-white api-btn">GraphQL API</a>
+          <a href="/api" class="btn btn-lg btn-secondary fw-bold border-white bg-white api-btn">Take Me There</a>
         </p>
       </main>
 
       <footer class="mt-auto text-white-50">
         <p>2021 Skidmore College Physics Department</p>
-        <p>Made with Bootstrap, NestJS, Prisma, PostgreSQL, Docker, GraphQL, Swagger, and more, by Alex Carney</p>
+        <p style="margin-bottom: 0;">Made with TypeScript, NestJS, Docker, PostgreSQL, Prisma, Bootstrap, and more</p>
+        <p style="margin-top: 0;">by Alex Carney</p>
       </footer>
 
   </div>
 </div>
-
-
-    <!-- START THE FEATURETTES -->
-    <div class="container marketing">
-    <hr class="featurette-divider">
-
-    <div class="row featurette">
-      <div class="col-md-7">
-        <h2 class="featurette-heading">REST API with documentation. <span class="text-muted">Built to OpenAPI specifications with Swagger.</span></h2>
-        <p class="lead">Browse numerous extragalactic databases with our easy-to-use tool. Building complex API requests and queries is made easy using our documentation</p>
-      </div>
-      <div class="col-md-5">
-        <!-- <svg class="bd-placeholder-img bd-placeholder-img-lg featurette-image img-fluid mx-auto" width="500" height="500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: 500x500" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#eee"/><text x="50%" y="50%" fill="#aaa" dy=".3em">500x500</text></svg> -->
-        <img class="bd-placeholder-img-lg featurette-image img-fluid mx-auto" width="500" height="500" src="restplacement.png">
-      </div>
-    </div>
-
-    <hr class="featurette-divider">
-
-    <div class="row featurette">
-      <div class="col-md-7 order-md-2">
-        <h2 class="featurette-heading">GraphQL API, with playground. <span class="text-muted">Hosted by Apollo Server</span></h2>
-        <p class="lead">For those interested in the cutting edge of API design, our hosted data is queriable through a graphQL playground.</p>
-      </div>
-      <div class="col-md-5 order-md-1">
-        <!-- <svg class="bd-placeholder-img bd-placeholder-img-lg featurette-image img-fluid mx-auto" width="500" height="500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: 500x500" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#eee"/><text x="50%" y="50%" fill="#aaa" dy=".3em">500x500</text></svg> -->
-        <img class="bd-placeholder-img-lg featurette-image img-fluid mx-auto" width="500" height="500" src="graphql.png">
-
-      </div>
-    </div>
-
-    <hr class="featurette-divider">
-
-    <div class="row featurette">
-      <div class="col-md-7">
-        <h2 class="featurette-heading">The Tendril Finder. <span class="text-muted">Powered by Machine Learning.</span></h2>
-        <p class="lead">Upload an environment file, and our algorithm does the rest. Finding and classifying Tendrils has never been this user friendly.</p>
-      </div>
-      <div class="col-md-5">
-        <!-- <svg class="bd-placeholder-img bd-placeholder-img-lg featurette-image img-fluid mx-auto" width="500" height="500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: 500x500" preserveAspectRatio="xMidYMid slice" focusable="false"><title>Placeholder</title><rect width="100%" height="100%" fill="#eee"/><text x="50%" y="50%" fill="#aaa" dy=".3em">500x500</text></svg> -->
-        <img class="bd-placeholder-img-lg featurette-image img-fluid mx-auto" width="500" height="500" src="tendril.png">
-      </div>
-    </div>
-
-    <hr class="featurette-divider">
-
-    <!-- /END THE FEATURETTES -->
-
-  </div><!-- /.container -->
-
-
-
 
 
 </body>

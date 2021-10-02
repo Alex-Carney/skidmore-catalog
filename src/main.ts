@@ -49,7 +49,7 @@ async function bootstrap() {
         },
         persistAuthorization: true, //users' tokens persist even after refreshing the page
       },
-      customSiteTitle: 'SEGC API Docs',
+      customSiteTitle: 'API · Skidmore Catalog',
     };
 
     SwaggerModule.setup(swaggerConfig.path || 'api', app, document, customOptions);

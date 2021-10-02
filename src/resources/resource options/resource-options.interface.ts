@@ -3,7 +3,7 @@
  *  Each resource hosted by the API will have its provider options defined here 
  * */
 
-import { Prisma, SDSS_OpticalProperties, Tully_Combined, Tully_Environment } from ".prisma/client";
+import { Prisma, SDSS_OpticalProperties, Tully_Combined, Tully_Environment } from "@prisma/client";
 import { Type } from "@nestjs/common";
 import { SDSS_DerivedProperties } from "@prisma/client";
 

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Odekon_Catalog" ALTER COLUMN "objid_new_1_1" SET DATA TYPE DOUBLE PRECISION;

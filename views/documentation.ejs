@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+    <meta name="generator" content="Hugo 0.84.0">
+    <title>Documentation · Skidmore Catalog</title>
+
+    <!-- <link rel="canonical" href="https://getbootstrap.com/docs/5.0/examples/blog/"> -->
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.0.3/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+
+    
+
+    <!-- Bootstrap core CSS -->
+<!-- <link href="../assets/dist/css/bootstrap.min.css" rel="stylesheet"> -->
+
+    <style>
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+    </style>
+
+    
+    <!-- Custom styles for this template -->
+    <!-- <link href="https://fonts.googleapis.com/css?family=Playfair&#43;Display:700,900&amp;display=swap" rel="stylesheet"> -->
+    <!-- Custom styles for this template -->
+    <link href="tendril.css" rel="stylesheet">
+  </head>
+  <body>
+  
+
+<main class="container">
+
+<div class="d-flex h-1000 text-center text-white bg-dark hero background-tint">
+    <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+        <%- include("partials/header", {homeActive: '', featuresActive: '', contactActive: '', docsActive: 'active'}); -%>
+    </div>
+</div>
+    
+
+  <div class="p-4 p-md-5 mb-4 text-white rounded bg-dark">
+    <div class="col-md-6 px-0">
+      <h1 class="display-4 fst-italic">API Documentation</h1>
+      <p class="lead my-3">Built with NestJS on the backend, with Swagger documentation to OpenAPI specifications.</p>
+      <p class="lead my-3">Fast, reliable, consistent, and equipped with a custom query language. </p>
+    </div>
+  </div>
+
+  <div class="row g-5">
+    <div class="col-md-8">
+
+      <article class="blog-post">
+        <a id="solvingaproblem"></a>
+        <h1>Overview</h1>
+        <p>When I started doing research this summer with the Skidmore-APPS collaboration, my greatest roadblock was handling data. There were dozens of spreadsheets containing extragalactic data, with cryptic column headers and millions of data entries with no inherent meaning to me. </p>
+        <p>Additionally, trying to access the full datasheets was a nightmare. Scattered across numerous websites and online databases, I had to parse through research papers to find the location of the publically available data. </p>
+        <p>Furthermore, most websites only hosted the files themselves, forcing you to download the entire spreadsheet instead of querying only the data needed. </p>
+        <p>Also, when working in collaboration with other researchers, I noticed that any time I tried to run their code, I would first have to change all references to file locations on local computers within the document, since everyone was downloading the entire spreadsheet onto their computer and reading it from there. </p>   
+        <p>Finally, I realized that once my research was completed, I wanted it to be publicly available, and there was no way for me to do that with our current infastructure. </p>   
+        <hr>
+        <p>Starting in August, I took it upon myself to build an online hub for the Skidmore research group to share and manage spreadsheets for our data analysis projects. </p>
+        <p>Since all of our research is data driven, I wanted to create an API where my colleagues could access the same data, forgoing the need to store spreadsheets on their own computers (increasing code sharability), along with the ability to query exact data needed, without being proficient in SQL. </p>
+        <p>I also wanted to put what I learned in software engineering academic courses to the test, by building my own publicly consumed service that would make my research process easier, along with students for years to come. </p>
+        <p>As the project evolved, I also realized I could eventually use the website as a way to publicly host the <i>Tendril Finder</i>, my capstone astrophysics data science research project, currently in progress. </p>  
+        <hr>
+        <a id="authorization"></a>
+        <h1>Authorization</h1>
+        <p>Due to the API being publically available, not all endpoints are open for public consumption. Such routes are locked behind JWT authorization tokens, which require an account to obtain. <a href='/contact'>Contact Us</a> here to send us a message about making an account. 
+        </p>
+        <p>Once you register an account and password, go to the TODO: AUTHORIZE tab on the home page and sign in. You will be presented with a JWT access token, which you can copy and paste and use to unlock the protected routes in the API.</p>
+        <p>If you are consuming the API through a script, the general process is as follows:</p>
+        <pre class="line-numbers">
+          <code class="python">
+
+            # language: python
+
+            import requests
+            import pandas as pd
+            import io
+
+            url_signin = "https://68.9.221.13:3000/signin"
+
+            # compose your URL using the API and paste it here
+            url_fetch = "https://68.9.221.13:3000/tully-group"
+
+            # Create the payload using your email and password
+            r = requests.post(url_signin, data={'email': '', 'password': ''})
+
+            # Extract the JWT token from the response 
+            token = r.json()['accessToken']
+
+            # GET request, all subsequent requests must include the Authorization: Bearer header 
+            s = requests.get(url_fetch, headers={'Authorization': "Bearer {}".format(token)}).content
+
+            # If pandas has trouble reading the file, use this workaround 
+            df = pd.read_csv(io.StringIO(s.decode('utf-8')))
+        </code>
+        </pre> 
+
+        <p><strong>Additionally, note that all users, authorized or not, are subject to a request rate limit, currently set to 10 requests per minute (
+          only applied to API routes)
+        </p></strong>
+
+        <hr>
+        <a id="designingqueries"></a>
+        <h1>Some Background</h1>
+
+        <p>If you are comfortable with SQL, skip to <a href=#sqlqueries>here</a></p> 
+        <p>If you are comfortable with internet protocols and the basics of APIs, skip to <a href=#querybuilder>here</a>. </p> 
+        <hr>
+        <p>For people new to consuming APIs, it is helpful to understand how the REST architectural style works, along with HTTP protocol in general. </p>
+
+        <h4>REST APIs</h4>
+
+        <p>REpresentational State Transfer is an architecture for building and consuming APIs, and is currently one of the most wide spread design frameworks for APIs</p>
+        <p>The core structure of a REST API lies in its resources. Accessing a resource is done through modifying a Universal Resource Identifiers (similar to a URL).</p>
+        <p>The URI contains the network location of the resource, along with necessary identifiers for accessing that resource.</p>
+        <p>Requests are made (usually over HTTP, but not necessarily) using a resource method. In the case of the Skidmore Catalog, these are the resource methods you will be working with:</p>
+        <ul>
+          <li>GET: This is the most common request header. The sole purpose of a GET request is to retrieve data.</li>
+          <li>POST: Any time you are supplying information to a website, you are likely making a POST request. A POST request includes a response body, which consists of a map between fields and a response. For example, when you sign in to the Skidmore Catalog, you are sending a request with a body that looks like {email: "your email", password: "your password"}. 
+            Obviously, this allows the server to process that data you send, and send back a response accordingly. 
+          </li>
+        </ul>
+        <p>Requests also contain headers, which include information about the request, such as authorization tokens</p>
+        <p>Responses also have headers, containing information about the server, along with a status code:</p>
+        <ul>
+          <li>2**: Request processed successfully, response should be fine</li>
+          <li>4**: Request was not able to be processed due to an issue on the client's end (404: couldn't find resource you asked for, 403: forbidden due to authorization failure</li>
+          <li>5**: Refers to internal server errors</li>
+        </ul>
+        <p>Finally, there is the response body, which is either HTML to be rendered by your browser, or in the case of the catalog API, raw csv data to work with. </p>
+        <hr>
+
+        <a id="querybuilder"></a>
+        <h1>Using the query builder</h1>
+
+        <p>For relatively simple queries, you can select from a selection of drop-down fields to extract exactly the data you want from a resource.</p>
+
+        <p>For every resource, there is an endpoint that allows for a custom query. When you click "Try it out", there are 4 parameters to fill out:</p>
+
+        <h4>Field</h4>
+
+        <img src="queryfield.png" alt="the field parameter in the swagger docs" style="max-width: 100%; height: auto;">
+        <p></p>
+
+        <p>The field parameter refers to the column that you want to apply a condition and a threshold to. For example, if we wanted to return the optical data from the SDSS catalog, for all galaxies farther away than some threshold, we would select the DIST field</p>
+        <p>You can also use the query builder to search by ID, by selecting the appropriate ID column from the field select drop down. In this case, we would select AGC</p>
+        <p>Consult the data sheets for more information about the meaning of the columns (along with their units, useful for the threshold parameter)</p>
+
+        <h4>Condition</h4>
+
+        <img src="querycondition.png" alt="the condition parameter in the swagger docs" style="max-width: 100%; height: auto;">
+        <p></p>
+
+        <p>The condition parameter refers to the conditional you want to apply to your search</p>
+        <ul>
+          <li>gt: greater than</li>
+          <li>gte: greater than or equal to</li>
+          <li>lt: less than</li>
+          <li>lte: less than or equal to</li>
+          <li>equals: equals exactly</li>
+          <li>not: not equal to</li>
+        </ul>
+
+        <p>For example, when searching by ID, you would almost always use <i>equals</i></p>
+
+
+        <h4>Include</h4>
+
+        <img src="queryinclude.png" alt="the include parameter in the swagger docs" style="max-width: 100%; height: auto;">
+        <p></p>
+
+        <p>The include parameter allows an array of columns to be selected. These are the columns that will be returned in the response payload</p>
+        <p>For example, if you wanted the entire data set, you would select all the fields (by dragging your mouse)</p>
+        <p>You can also use CTRL+CLICK to select single fields at a time</p>
+        <p>For example, if you only wanted to know the location of galaxies, you would use CTRL+CLICK to select agc, ra, dec (ID, celestial coordiantes)</p>
+        <p>Note, you don't necessarily have to return data that you are operating on. For example, if you wanted to search for a galaxy's information by ID, you don't have to return the ID in the payload.</p>
+
+        <h4>Threshold</h4>
+
+        <img src="querythreshold.png" alt="the threshold parameter in the swagger docs" style="max-width: 100%; height: auto;">
+        <p></p>
+
+        <p>The threshold allows you to type a number that acts as the threshold that is compared against the conditional. For example, when searching by ID, this is where you would put the ID.</p>
+        <p>For thresholds pertaining to cosmological properties, make sure to consult the data sheets first so that your threshold makes sense (units)</p>
+
+        <hr>
+
+        <a id="sqlqueries"></a>
+        <h1>SQL Queries</h1>
+
+        <p>Sometimes, your query may be too complicated for the query builder. If we wanted to search using multiple columns and conditionals, you would need more precise control over your query.</p>
+        <p>Enter SQL, Structured Query Language</p>
+        <p>If you are proficient in SQL, there is an endpoint for every resource allowing for a custom SQL query</p>
+        <p>For this API, the only SQL allowed are WHERE statements. The SELECT (fields) statement is handled by the drop-down on the endpoint (check out the previous section for how to use that)</p>
+        <p>As an example, if we wanted to only return galaxies in a certain portion of the sky, we could use</p>
+        <pre class="line-numbers">
+          <code class="SQL">
+            -- language: SQL 
+            WHERE 
+            ra BETWEEN 0 AND 1 
+            AND 
+            dec BETWEEN 15 AND 20
+        </code>
+        </pre> 
+        <p>Which can obviously be modified for any celestial coordinate and threshold</p>
+        <p>Note: SQL inputs are sanitized by prisma on the backend, but regardless, all SQL endpoints require authentication, due to possibilities of SQL injection</p>
+
+        <hr>
+
+        <a id="retrievedata"></a>
+        <h1>Retrieving Data</h1>
+        <p>Once you have your query planned out (or if you just want to return all the data), how do you actually process that data?</p>
+        <p>One approach is to simply copy the response body from the swagger docs, and use that raw csv data wherever you need it</p>
+        <p>However, a faster and more appropriate method is to directly read from the URI into an object you can actually use</p>
+        <p>For this example, I'll be using Pandas, a Python data science library.</p>
+        <p>Step 1: Execute your query on the docs, and look through the response body to make sure it's what you wanted</p>
+        <p>Step 2: Copy the 'REQUEST URL' field from swagger responses block</p>
+        <p>Step 3: Read the data straight into a pandas dataframe:</p>
+        <pre class="line-numbers">
+          <code class="python">
+            # language: python
+            df = pd.read_csv("copied url")
+        </code>
+        </pre> 
+
+        <p>With one line of code, you have a mutable form of the data to start analyzing.</p>
+        <p>Note: For endpoints that require authorization, there are a few more steps required to retrieve the data. See the example <a href=#authorization>here</a></p>
+        <p>You can also use the auto-generated "Curl" to access the data remotely.</p>
+
+        <hr>
+
+        <a id="techstack"></a>
+        <h1>Tech Stack</h1>
+
+        <p>For those that are interested, here are the technologies/frameworks I used for this project:</p>
+        <p>Web Development:</p>
+        <ul>
+          <li>TypeScript: An extension to JavaScript that is strongly typed, allowing me to use concepts from my Object Oriented Programming classes for web development</li>
+          <li>NestJS: By far my favorite JavaScript framework, used to create a scalable, enterprise grade backend</li>
+          <li>Docker: To containerize the entire application (and the database) so that it can be hosted anywhere, with ease</li>
+          <li>PostgreSQL: A database to store necessary datasets, along with execute SQL searches</li>
+          <li>Prisma: An ORM (object relational mapper) to handle database management and querying</li>
+          <li>SwaggerUI: To build the API to OpenAPI specifications, along with providing an interactive documentation page to consume the API</li>
+          <li>Bootstrap: To quickly create a simple UI</li>
+          <li>PassportJS: To implement JWT authentication</li>
+          <li>Webpack: To consolidate dozens of TypeScript files into a single JS file suitable for the web</li>
+          <li>GitHub: To host the source code of the project, allowing it to be moved to new server environments</li>
+        </ul>
+        <p>Tendril Finder:</p>
+        <ul>
+          <li>Python: The primary language for data science</li>
+          <li>Pandas/Numpy/NetworkX/Scikit-Learn/Astropy/and more: Python packages commonly used for data science</li>
+          <li>Jupyter Notebooks: For providing cohesive documentation to the various Python scripts used for the project</li>
+          <li>Asana: For managing my research team</li>
+        </ul>
+
+
+    </div>
+
+    <div class="col-md-4">
+      <div class="position-sticky container" style="top: 2rem;">
+
+        <div class="p-4">
+          <h4 class="fst-italic">Contents</h4>
+          <ol class="list-unstyled mb-0">
+            <li><a href="#solvingaproblem">Overview</a></li>
+            <li><a href="#authorization">Authorization</a></li>
+            <li><a href="#designingqueries">Some Background</a></li>
+            <li><a href="#querybuilder">Using the query builder</a></li>
+            <li><a href="#sqlqueries">SQL Queries</a></li>
+            <li><a href="#retrievedata">Retrieving Data</a></li>
+            <li><a href="#techstack">Tech Stack</a></li>
+          </ol>
+        </div>
+
+        <!-- <div class="p-4">
+          <h4 class="fst-italic">Elsewhere</h4>
+          <ol class="list-unstyled">
+            <li><a href="#">GitHub</a></li>
+            <li><a href="#">Twitter</a></li>
+            <li><a href="#">Facebook</a></li>
+          </ol> -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+
+    
+  </body>
+</html>
