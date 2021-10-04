@@ -10,7 +10,7 @@ const config: Config = {
   swagger: {
     enabled: true,
     title: `Skidmore Catalog`,
-    description: 'An API for data from the Skidmore College physics research group. Click <a href="/">here</a> to go back to the homepage',
+    description: 'An API for data from the Skidmore College physics research group. Click <a href="/">here</a> to go back to the homepage. Click <a href="/documentation">here</a> for instructions/documentation',
     version: '1.0',
     path: 'api',
   },
