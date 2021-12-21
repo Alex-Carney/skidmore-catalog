@@ -8,7 +8,7 @@ import { AppService } from '../services/app.service';
 @SkipThrottle()
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService,
+  constructor(private readonly appService: AppService, //appService is useless, we dont need it here!
     private readonly authService: AuthService) {}
 
   @Get()
