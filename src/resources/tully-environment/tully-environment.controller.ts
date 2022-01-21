@@ -18,7 +18,7 @@ export class TullyEnvironmentController {
   constructor(@Inject(TULLY_ENVIRONMENT_LOOKUP) private readonly db: DatabaseLookupService<TullyEnvironmentOptions>) {}
 
   //----------------------------------------------------------------------------------------------------
-
+  
   // @UseGuards(JwtAuthGuard)
   @ApiTags(tag) //displays the 'catagory' that this endpoint falls under
   @ApiOperation({summary: "returns all the data from the tully environment list"})
@@ -34,6 +34,7 @@ export class TullyEnvironmentController {
   //swagger to display the information for that instead. 
   @Get()
   async getAllTullyEnvironment(): Promise<Tully_Environment[]> {
+      
       const payload = await this.db.returnAll();
       return parseAsync(payload)
   }

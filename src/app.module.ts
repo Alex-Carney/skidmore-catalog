@@ -13,6 +13,8 @@ import { SdssOpticalModule } from './resources/sdss-optical/sdss-optical.module'
 import { SdssDerivedModule } from './resources/sdss-derived/sdss-derived.module';
 import { TullyEnvironmentModule } from './resources/tully-environment/tully-environment.module';
 import { TullyCombinedModule } from './resources/tully-combined/tully-combined.module';
+import { ResourceModule } from './resolvers/resource/resource.module';
+//import { RoleModule } from './resolvers/role/role.module';
 
 @Module({
   imports: [
@@ -29,6 +31,8 @@ import { TullyCombinedModule } from './resources/tully-combined/tully-combined.m
     }),
     AuthModule,
     UserModule,
+    //RoleModule,
+    ResourceModule,
     TullyGroupModule,
     SdssOpticalModule,
     SdssDerivedModule,

@@ -6,7 +6,7 @@
     <meta name="description" content="">
     <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
     <meta name="generator" content="Hugo 0.84.0">
-    <title>Contact Us · Skidmore Catalog</title>
+    <title>Sign Up · Skidmore Catalog</title>
 
     <!-- <link rel="canonical" href="https://getbootstrap.com/docs/5.0/examples/sign-in/">
 
@@ -47,28 +47,38 @@ integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/
 <!-- <div class="d-flex justify-content-center"> -->
 <main class="form-signin">
 
-  <form action="/signin" method="POST">
+  <form action="/contact" method="POST">
     <a href="/">
         <img class="mb-4" src="galaxy.png" alt=""
         width=150" height="70">
     </a>
-    <h1 class="h3 mb-3 fw-normal">Get in touch!</h1>
+    <h1 class="h3 mb-3 fw-normal">Create an Account</h1>
     <div class="form-floating">
-      <input name="name" class="form-control" id="floatingInput" placeholder="John Doe">
-      <label for="floatingInput">Full Name</label>
+      <input name="fname" class="form-control" id="floatingInput" placeholder="John">
+      <label for="floatingInput">First Name</label>
+    </div>
+    <div class="form-floating">
+      <input name="lname" class="form-control" id="floatingInput" placeholder="John">
+      <label for="floatingInput">Last Name</label>
     </div>
     <div class="form-floating">
       <input name="email" type="email" class="form-control" id="floatingInput" placeholder="name@example.com">
       <label for="floatingInput">Email address</label>
     </div>
     <div class="form-floating">
-        <input name="organization" class="form-control" id="floatingInput" placeholder="Skidmore College">
-        <label for="floatingInput">Organization</label>
+        <input name="password" type="password" class="form-control" id="floatingPassword" placeholder="password">
+        <label for="floatingInput">Password</label>
     </div>
     <div class="form-floating">
+      <input name="role" class="form-control" id="floatingInput" placeholder="SKIDMORE">
+      <label for="floatingInput">Role</label>
+  </div>
+  <!-- TODO: HREF to documentation on RBAC  -->
+  <p class="text-muted">What are roles?</p> 
+    <!-- <div class="form-floating">
         <textarea  id="message" name="message" class="form-control" placeholder="What will you use our service for...?" style="height:200px; width:300px"></textarea>
         <label for="floatingInput">What will you use our service for?</label>
-    </div>
+    </div> -->
 
 
     <button class="w-100 btn btn-lg btn-primary" style="margin-top: 1rem;" type="submit">Submit</button>

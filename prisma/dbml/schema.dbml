@@ -10,19 +10,58 @@ Table User {
   password String [not null]
   firstname String
   lastname String
-  posts Post [not null]
-  role Role [not null]
+  resourcesUploaded Resource [not null]
+  roles RolesOnUsers [not null]
 }
 
-Table Post {
+Table Role {
   id String [pk]
   createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  published Boolean [not null]
-  title String [not null]
-  content String
-  author User
-  authorId String
+  title String [unique, not null]
+  resources ResourcesOnRoles [not null]
+  possessors RolesOnUsers [not null]
+}
+
+Table RolesOnUsers {
+  role Role [not null]
+  roleTitle String [not null]
+  user User [not null]
+  userId String [not null]
+  permissionLevel Int [not null]
+
+  indexes {
+    (roleTitle, userId) [pk]
+  }
+}
+
+Table Resource {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  createdBy User
+  title String [unique, not null]
+  roles ResourcesOnRoles [not null]
+  creatorId String
+  fields ResourceField [not null]
+}
+
+Table ResourcesOnRoles {
+  resource Resource [not null]
+  resourceTitle String [not null]
+  role Role [not null]
+  roleTitle String [not null]
+
+  indexes {
+    (resourceTitle, roleTitle) [pk]
+  }
+}
+
+Table ResourceField {
+  id String [pk]
+  fieldName String [not null]
+  dataType String [not null]
+  localizedName String [not null]
+  resource Resource [not null]
+  resourceTitle String [not null]
 }
 
 Table Tully_Group {
@@ -340,9 +379,14 @@ Table Odekon_Catalog {
   zgroup Float
 }
 
-Enum Role {
-  ADMIN
-  USER
-}
+Ref: RolesOnUsers.roleTitle > Role.title
 
-Ref: Post.authorId > User.id
+Ref: RolesOnUsers.userId > User.id
+
+Ref: Resource.creatorId > User.id
+
+Ref: ResourcesOnRoles.resourceTitle > Resource.title
+
+Ref: ResourcesOnRoles.roleTitle > Role.title
+
+Ref: ResourceField.resourceTitle > Resource.title

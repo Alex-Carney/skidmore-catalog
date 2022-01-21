@@ -1,7 +1,8 @@
 export interface Config {
   nest: NestConfig;
   cors: CorsConfig;
-  swagger: SwaggerConfig;
+  legacy_swagger: SwaggerConfig;
+  v2_swagger: SwaggerConfig;
   security: SecurityConfig;
   throttler: ThrottlerConfig;
 }

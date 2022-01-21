@@ -51,7 +51,12 @@ integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/
         <img class="mb-4" src="galaxy.png" alt=""
         width=150" height="70">
     </a>
-    <h1 class="h3 mb-3 fw-normal">Please sign in</h1>
+    <% if(status === "Please Sign In") {%>
+    <h1 class="h3 mb-3 fw-normal"><%= status %></h1>
+    <% }  else { %>
+      <h1 class="h3 mb-3 fw-normal" style="color:red;"><%= status %></h1>
+    <% }   %>
+
     <div class="form-floating">
       <input name="email" type="email" class="form-control" id="floatingInput" placeholder="name@example.com">
       <label for="floatingInput">Email address</label>

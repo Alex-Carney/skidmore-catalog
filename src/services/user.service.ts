@@ -3,15 +3,19 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PasswordService } from './password.service';
 import { ChangePasswordInput } from '../resolvers/user/dto/change-password.input';
 import { UpdateUserInput } from '../resolvers/user/dto/update-user.input';
+import { Prisma, User } from '@prisma/client';
+import { Request } from "express";
+import { AuthService } from './auth.service';
 
 @Injectable()
 export class UserService {
   constructor(
     private prisma: PrismaService,
-    private passwordService: PasswordService
+    private passwordService: PasswordService,
+    private authService: AuthService, 
   ) {}
 
-  updateUser(userId: string, newUserData: UpdateUserInput) {
+ async updateUser(userId: string, newUserData: UpdateUserInput) {
     return this.prisma.user.update({
       data: newUserData,
       where: {
@@ -45,4 +49,57 @@ export class UserService {
       where: { id: userId },
     });
   }
+
+  async getUserFromRequest(
+    req: Request 
+  ): Promise<User> {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader.split(' ')[1]; 
+    // return this.authService.getUserFromToken(token).then(response => {
+    //     return response;
+    // }).catch(err => {
+    //     console.log(err);
+    //     return err;
+    // });
+    return this.authService.getUserFromToken(token);
+  }
+
+  async updateRoles(
+    userId: string,
+    newRoles: string[],
+    remove: boolean,
+  ){
+    //first get the current list, then update it with the new version
+    const user = await this.prisma.user.findUnique({
+       where: { id: userId }
+    });
+    //get the roles and add the array of new ones to it 
+    const roles = user['roles'];
+
+    let idx: number; 
+    if(remove) {
+      newRoles.forEach((e) => {
+        idx = roles.indexOf(e);
+        if(idx > -1) {roles.splice(idx, 1);}
+      })
+    } else {
+      newRoles.forEach((e) => roles.push(e));
+    }
+
+    return this.prisma.user.update({
+      data: {
+        roles: roles
+      },
+    where: { id: userId }, 
+    });
+  }
+
+  // async getRoles(userWhereUniqueInput: Prisma.UserWhereUniqueInput) {
+  //   return this.prisma.user.findUnique({
+  //     where: userWhereUniqueInput,
+  //   })['roles']
+
+  // }
+
+
 }
