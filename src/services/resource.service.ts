@@ -57,7 +57,7 @@ export class ResourceService {
                             // console.log(typeof element);
                             //Three possibilities: Not a number, a number, or "". 
                             if(element !== "") {
-                                fields.set(fieldsNames[index], [Number.isNaN(Number(element)) ? "text" : "numeric", "c" + md5(fieldsNames[index])]);
+                                fields.set(fieldsNames[index], [Number.isNaN(Number(element)) ? "text" : "numeric", /**"c" + md5(fieldsNames[index])*/]);
                             }
                             //ignore null fields, but keep looping through the file until there are none left  
                         });
@@ -100,6 +100,17 @@ export class ResourceService {
      * @returns The record of the newly created resource, including the auto-generated ResourceField objects
      */
     async publishDataModel(dataModel: Record<string, Array<string>>, resourceName: string, userId: string, repositories: string[]) {
+
+        /**
+         * At first I kept the localized name in the datamodel itself, but ran into the issue where if users wanted to change their
+         * datamodels by adding a new column, they would have no idea what to supply for the "localizedname" field. I didn't want to
+         * inconveinence my users by having them generate the localized names themselves, so they are added whenever the data model 
+         * is being published accordingly 
+         */
+        Object.keys(dataModel).forEach((fieldName) => {
+            dataModel[fieldName].push("c" + md5(fieldName));
+        })
+
         /**
          * This code allows all of the entries in the dataModel to be handled at once in a single prisma query.
          * An example fieldInfo looks like this: [fieldName, [dataType, localizedName]] all as strings
@@ -118,12 +129,6 @@ export class ResourceService {
          * The repositories are added to the explicit ResourcesOnRoles m-n relation in the transaction below
          */
         const connectManyInput = repositories.map((repository) => {
-            // return {
-            //     resourceTitle_roleTitle: {
-            //         resourceTitle: resourceName,
-            //         roleTitle: repository,
-            //     }
-            // };
             return {
                 roleTitle: repository,
             }
@@ -170,7 +175,7 @@ export class ResourceService {
                     },
                 },
                 include: {
-                    fields: true,
+                    fields: true, //may reduce the amount of information returned later 
                 }
             }),
             //statement 3
@@ -216,7 +221,7 @@ export class ResourceService {
 
         const fieldMap = new Map<string, Array<string>>();
         fieldInfo.fields.forEach((field) => {
-            fieldMap.set(field.fieldName, [field.dataType, field.localizedName])
+            fieldMap.set(field.fieldName, [field.dataType, /**field.localizedName*/])
         })
 
         return asMap ? fieldMap : this.mapToObj(fieldMap);
@@ -232,14 +237,32 @@ export class ResourceService {
         {disconnect: {resourceTitle_roleTitle: {resourceTitle: resourceName, roleTitle: repository}}} 
         : {connect: {resourceTitle_roleTitle: {resourceTitle: resourceName, roleTitle: repository}}}; 
   
-        return this.prisma.resource.update({
-            where: {
-                title: resourceName,
-            },
-            data: {
-                roles: updateArgs
-            }
-        })
+        // return this.prisma.resource.update({
+        //     where: {
+        //         title: resourceName,
+        //     },
+        //     data: {
+        //         roles: updateArgs
+        //     }
+        // })
+
+        if(remove) {
+            return this.prisma.resourcesOnRoles.delete({
+                where: {
+                    resourceTitle_roleTitle: {
+                        resourceTitle: resourceName,
+                        roleTitle: repository,
+                    }
+                },
+            })
+        } else {
+            return this.prisma.resourcesOnRoles.create({
+                data: {
+                    resourceTitle: resourceName,
+                    roleTitle: repository,
+                }
+            })
+        }
     }
 
     async updateDataModelFields(resourceName: string, userId: string, repository: string, dataModel: Record<string, Array<string>>) {
@@ -249,6 +272,7 @@ export class ResourceService {
        if(access == false) {
            return //throw authentication error
        }
+       
 
        console.log("Name" + resourceName);
        
@@ -258,14 +282,25 @@ export class ResourceService {
        const currKeys = Object.keys(currentDataModel);
        const newKeys = Object.keys(dataModel);
 
-       console.log(currKeys);
-       console.log(newKeys);
+       Object.keys(currentDataModel).forEach((fieldName) => {
+        currentDataModel[fieldName].push("c" + md5(fieldName));
+        })
+        Object.keys(dataModel).forEach((fieldName) => {
+        dataModel[fieldName].push("c" + md5(fieldName));
+        })
 
-       let alterInputOne = currKeys.map((key) => {
+        console.log(currKeys);
+        console.log(newKeys);
+
+        let alterInputOne = currKeys.map((key) => {
             console.log(key);
             console.log(newKeys);
             console.log(newKeys.includes(key));
 
+            console.log("one going to transform key" + key + " info " + currentDataModel[key][0]);
+            const localizedFieldName = "c" + md5(currentDataModel[key][0]);
+            console.log("equal next?" + localizedFieldName);
+            console.log("equal above?" + currentDataModel[key][1]);
             if(newKeys.includes(key)) {
                 //if this key is present in the new datamodel, check if the data type is the same
                 if(currentDataModel[key][0] !== dataModel[key][0]) {
@@ -283,7 +318,10 @@ export class ResourceService {
         * After alterInputOne, we have accounted for all elements IN current that are NOT in new keys. Now, we must go the other way,
         * in order to determine what columns to ADD
         */
-       let alterInputTwo = newKeys.map((key) => {
+        let alterInputTwo = newKeys.map((key) => {
+            console.log("going to transform key" + key + " into " + dataModel[key])
+            
+            
             if(!(currKeys.includes(key))) {
                 return `ADD COLUMN IF NOT EXISTS "${dataModel[key][1]}" ${dataModel[key][0]}`;
             } else {
@@ -294,51 +332,55 @@ export class ResourceService {
        console.log(alterInputOne);
        console.log(alterInputTwo);
 
+       //TODO: FIX THIS LOOOL
+
        alterInputOne = alterInputOne.replace(/\$R,/g, "").replace(/\$R/g, "");
        alterInputTwo = alterInputTwo.replace(/\$R,/g, "").replace(/\$R/g, "");
 
+       //final test, remove all trailing commas
+       if(alterInputOne.charAt(alterInputOne.length - 1) == ",") {
+        alterInputOne = alterInputOne.slice(0,-1);
+       }
+       if(alterInputTwo.charAt(alterInputTwo.length - 1) == ",") {
+        alterInputTwo = alterInputTwo.slice(0,-1);
+       }
+
        console.log(alterInputOne);
        console.log(alterInputTwo);
-
-       return
-
-
-
-
 
        const createManyInput = Object.entries(dataModel).map((fieldInfo) => {
         return {
             fieldName: fieldInfo[0],
             dataType: fieldInfo[1][0],
             localizedName: fieldInfo[1][1],
-        };
-    });
+            };
+        });
 
-    const deleteManyInput = Object.entries(dataModel).map((fieldInfo) => {
-        return `'${fieldInfo[0]}'`
-    }).toString();
+        const deleteManyInput = Object.entries(dataModel).map((fieldInfo) => {
+            return `'${fieldInfo[0]}'`
+        }).toString();
 
-    /**
-     * [1][1] refers to the Localized Name property
-     * [0] refers to the Field Display Name property
-     * [1][0] refers to the Field Data Type property 
-     */
+        /**
+         * [1][1] refers to the Localized Name property
+         * [0] refers to the Field Display Name property
+         * [1][0] refers to the Field Data Type property 
+         */
 
-    //If the number of columns has increased, reflect changes accordingly 
-    const alterTableAddColumn = Object.entries(dataModel).map((fieldInfo) => {
-        return `ADD COLUMN IF NOT EXISTS "${fieldInfo[1][1]}" ${fieldInfo[1][0]}`;
-    }).toString();
+        // //If the number of columns has increased, reflect changes accordingly 
+        // const alterTableAddColumn = Object.entries(dataModel).map((fieldInfo) => {
+        //     return `ADD COLUMN IF NOT EXISTS "${fieldInfo[1][1]}" ${fieldInfo[1][0]}`;
+        // }).toString();
 
-    //If the types of any columns have changed, reflect changes accordingly 
-    //Using, along with field0::dataType allows us to automatically cast each entry to the new type, if possible 
-    const alterTableChangeColumnDataType = Object.entries(dataModel).map((fieldInfo) => {
-        return `ALTER COLUMN "${fieldInfo[1][1]}" TYPE ${fieldInfo[1][0]} USING ${fieldInfo[1][1]}::${fieldInfo[1][0]}`;
-    }).toString()
+        // //If the types of any columns have changed, reflect changes accordingly 
+        // //Using, along with field0::dataType allows us to automatically cast each entry to the new type, if possible 
+        // const alterTableChangeColumnDataType = Object.entries(dataModel).map((fieldInfo) => {
+        //     return `ALTER COLUMN "${fieldInfo[1][1]}" TYPE ${fieldInfo[1][0]} USING ${fieldInfo[1][1]}::${fieldInfo[1][0]}`;
+        // }).toString()
 
-    //
+        //
 
-    console.log(createManyInput)
-    console.log(deleteManyInput)
+        console.log(createManyInput)
+        console.log(deleteManyInput)
 
     /**
      * Here I ran into another problem with prisma. The "upsert" action allows me to EITHER update OR add new records. However, unlike create, 
@@ -360,8 +402,14 @@ export class ResourceService {
                         }
                     }
                 }
-            })
+            }),
+            //ALTER TABLE DROP COLUMNS
+            this.prisma.$executeRaw(`ALTER TABLE datastore."${resourceName}" ${alterInputOne}`),
+            this.prisma.$executeRaw(`ALTER TABLE datastore."${resourceName}" ${alterInputTwo}`)
             //this.prisma.$executeRaw(`ALTER TABLE`)
+
+            //TODO: don't run the alter table statment if the string is empty
+            //fix all the random bugs that shouldnt be there
        ])
 
        

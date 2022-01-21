@@ -95,7 +95,7 @@ export class ResourceController {
     })
     @ApiOperation({summary: "search by location - upload a file with celestial coordinates"})
     @ApiTags('Resource Data')
-    @Put('update-data-model')
+    @Put('update-resource-repositories')
     async updateDataModelRepositories(@Req() req: Request, @Body() updateRepositories: UpdateResourceRepositoriesDTO) {
         const user = await this.userService.getUserFromRequest(req);
         return this.resourceService.updateDataModelRepositories(updateRepositories.resourceName, user['id'], updateRepositories.repository, updateRepositories.removeRepositories);
