@@ -292,6 +292,9 @@ export class ResourceService {
         console.log(currKeys);
         console.log(newKeys);
 
+        const createNewInput = [];
+        const deleteInput = [];
+
         let alterInputOne = currKeys.map((key) => {
             console.log(key);
             console.log(newKeys);
@@ -310,6 +313,7 @@ export class ResourceService {
                 }
             } else {
                 //this is an entry that is in the CURRENT DATA MODEL, but NOT THE NEW ONE. Drop it
+                deleteInput.push("'"+key+"'");
                 return `DROP COLUMN ${currentDataModel[key][1]}`
             }
        }).toString();
@@ -323,6 +327,11 @@ export class ResourceService {
             
             
             if(!(currKeys.includes(key))) {
+                createNewInput.push({
+                    fieldName: key,
+                    dataType: dataModel[key][0],
+                    localizedName: dataModel[key][1],
+                    });
                 return `ADD COLUMN IF NOT EXISTS "${dataModel[key][1]}" ${dataModel[key][0]}`;
             } else {
                 return "$R"
@@ -356,6 +365,8 @@ export class ResourceService {
             };
         });
 
+        console.log("original create many : " + createManyInput);
+
         const deleteManyInput = Object.entries(dataModel).map((fieldInfo) => {
             return `'${fieldInfo[0]}'`
         }).toString();
@@ -379,8 +390,11 @@ export class ResourceService {
 
         //
 
-        console.log(createManyInput)
-        console.log(deleteManyInput)
+        // console.log("createMany " + createManyInput)
+        // console.log("deleteMany " + deleteManyInput)
+
+        console.log("create: " + createNewInput);
+        console.log("delete: " + deleteInput);
 
     /**
      * Here I ran into another problem with prisma. The "upsert" action allows me to EITHER update OR add new records. However, unlike create, 
@@ -388,31 +402,69 @@ export class ResourceService {
      * https://github.com/prisma/prisma/issues/5066
      * Therefore, we must use a PUT method and delete everything then re-create it 
      */
-       const [newDataModelRecord, ] = await this.prisma.$transaction([
-           //statement 1
-            this.prisma.$executeRaw(`DELETE FROM universe."ResourceField" WHERE "fieldName" in (${deleteManyInput})`),
-            this.prisma.resource.update({
+        const transactionArray = [];
+        if(deleteInput.length >= 1) {
+            transactionArray.push(this.prisma.$executeRaw(`DELETE FROM universe."ResourceField" WHERE "fieldName" in (${deleteInput})`));
+        }
+        if(createNewInput.length >= 1) {
+            transactionArray.push(this.prisma.resource.update({
                 where: {
                     title: resourceName,
                 },
                 data: {
                     fields: {
                         createMany: {
-                            data: createManyInput,
+                            data: createNewInput,
                         }
                     }
                 }
-            }),
-            //ALTER TABLE DROP COLUMNS
-            this.prisma.$executeRaw(`ALTER TABLE datastore."${resourceName}" ${alterInputOne}`),
-            this.prisma.$executeRaw(`ALTER TABLE datastore."${resourceName}" ${alterInputTwo}`)
-            //this.prisma.$executeRaw(`ALTER TABLE`)
+            }));
+        }
+        if(alterInputOne.length >= 1) {
+            transactionArray.push(this.prisma.$executeRaw(`ALTER TABLE datastore."${resourceName}" ${alterInputOne}`));
+        }
+        if(alterInputTwo.length >= 1) {
+            transactionArray.push(this.prisma.$executeRaw(`ALTER TABLE datastore."${resourceName}" ${alterInputTwo}`));
+        }
+        // this.prisma.resourceField.updateMany({
+        //     where: {
+        //         id: {
+        //             in: adf
+        //         }
+        //     },
+        //     data: {
+        //         dataType: 
+        //     }
 
-            //TODO: don't run the alter table statment if the string is empty
-            //fix all the random bugs that shouldnt be there
-       ])
+        // })
 
-       
+    //     const [newDataModelRecord, ] = await this.prisma.$transaction([
+    //        //statement 1
+    //         this.prisma.$executeRaw(`DELETE FROM universe."ResourceField" WHERE "fieldName" in (${deleteInput})`),
+    //         this.prisma.resource.update({
+    //             where: {
+    //                 title: resourceName,
+    //             },
+    //             data: {
+    //                 fields: {
+    //                     createMany: {
+    //                         data: createNewInput,
+    //                     }
+    //                 }
+    //             }
+    //         }),
+    //         //ALTER TABLE DROP COLUMNS
+    //         this.prisma.$executeRaw(`ALTER TABLE datastore."${resourceName}" ${alterInputOne}`),
+    //         alterInputTwo.length > 1 ? this.prisma.$executeRaw(`ALTER TABLE datastore."${resourceName}" ${alterInputTwo}`) : undefined
+    //         //this.prisma.$executeRaw(`ALTER TABLE`)
+
+    //         //TODO: don't run the alter table statment if the string is empty
+    //         //fix all the random bugs that shouldnt be there
+    //    ])
+
+       const [newDataModelRecord, ] = await this.prisma.$transaction(transactionArray);
+
+       return newDataModelRecord;
 
 
 
