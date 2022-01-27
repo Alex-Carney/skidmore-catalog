@@ -295,6 +295,8 @@ export class ResourceService {
 
         const createNewInput = [];
         const deleteInput = [];
+        const changeDatatypeToText = [];
+        const changeDatatypeToNumeric = [];
 
         let alterInputOne = currKeys.map((key) => {
             console.log(key);
@@ -308,6 +310,7 @@ export class ResourceService {
             if(newKeys.includes(key)) {
                 //if this key is present in the new datamodel, check if the data type is the same
                 if(currentDataModel[key][0] !== dataModel[key][0]) {
+                    dataModel[key][0] == "text" ? changeDatatypeToText.push(key) : changeDatatypeToNumeric.push(key);
                     return `ALTER COLUMN "${currentDataModel[key][1]}" TYPE ${dataModel[key][0]} USING ${currentDataModel[key][1]}::${dataModel[key][0]}`;
                 } else {
                     return "$R" //signal to remove this entry and its comma from the final string
@@ -405,6 +408,7 @@ export class ResourceService {
      */
         const transactionArray = [];
         if(deleteInput.length >= 1) {
+            console.log(`DELETE FROM universe."ResourceField" WHERE "fieldName" in (${deleteInput})`);
             transactionArray.push(this.prisma.$executeRaw(`DELETE FROM universe."ResourceField" WHERE "fieldName" in (${deleteInput})`));
         }
         if(createNewInput.length >= 1) {
@@ -421,10 +425,55 @@ export class ResourceService {
                 }
             }));
         }
+        if(changeDatatypeToNumeric.length >= 1) {
+            transactionArray.push(this.prisma.resource.update({
+                where: {
+                    title: resourceName,
+                },
+                data: {
+                    fields: {
+                        updateMany: {
+                            where: {
+                                fieldName: {
+                                    in: changeDatatypeToNumeric
+                                }
+                            },
+                            data: {
+                                dataType: "numeric"
+                            }
+                        }
+                    }
+                }
+            }));
+        }
+        if(changeDatatypeToText.length >= 1) {
+            transactionArray.push(this.prisma.resource.update({
+                where: {
+                    title: resourceName,
+                },
+                data: {
+                    fields: {
+                        updateMany: {
+                            where: {
+                                fieldName: {
+                                    in: changeDatatypeToText
+                                }
+                            },
+                            data: {
+                                dataType: "text"
+                            }
+                        }
+                    }
+                }
+            }));
+        }
+
         if(alterInputOne.length >= 1) {
+            console.log(`ALTER TABLE datastore."${resourceName}" ${alterInputOne}`)
             transactionArray.push(this.prisma.$executeRaw(`ALTER TABLE datastore."${resourceName}" ${alterInputOne}`));
         }
         if(alterInputTwo.length >= 1) {
+            console.log(`ALTER TABLE datastore."${resourceName}" ${alterInputTwo}`)
             transactionArray.push(this.prisma.$executeRaw(`ALTER TABLE datastore."${resourceName}" ${alterInputTwo}`));
         }
         // this.prisma.resourceField.updateMany({
@@ -506,14 +555,14 @@ export class ResourceService {
         });
 
         const buf = file.buffer;
-        console.log(buf.toString())
+        //console.log(buf.toString())
 
         //step 2: authenticate the request, does this user have WRITE priviledges for this resource under this repository?
 
 
-        console.log(dataModel);
+        //console.log(dataModel);
 
-        console.log(dataModel.fields);
+        //console.log(dataModel.fields);
 
         // let localizedFields = "";
         // dataModel.fields.forEach((field) => {
@@ -526,6 +575,8 @@ export class ResourceService {
         //
         // console.log(insertArgumentsOne);
 
+        const insertValueBufferSize = 500; //number of rows to queue up before pushing to DB
+
         try {
             const rl = readline.createInterface({
                 input: Readable.from(buf),
@@ -537,6 +588,7 @@ export class ResourceService {
             const fieldNames = [];
             const inputColumnOrderIndex= [];
             let insertArgumentsOne = "";
+            const insertBuffer = [];
             const sst = performance.now()
             for await (const line of rl) {
                 if(lNum == 0) {
@@ -549,68 +601,81 @@ export class ResourceService {
                      */
 
                     line.split(',').forEach((field) => fieldNames.push(field));
-                    console.log("field names " + fieldNames);
+                    //console.log("field names " + fieldNames);
                     let localizedFields = "";
                     fieldNames.forEach((field) => {
                         const fieldIdx = dataModel.fields.findIndex((obj) => {
                             return obj.fieldName == field;
                         });
                         inputColumnOrderIndex.push(fieldIdx);
-                        console.log(dataModel.fields[fieldIdx].fieldName + " with ln " + dataModel.fields[fieldIdx].localizedName);
+                        //console.log(dataModel.fields[fieldIdx].fieldName + " with ln " + dataModel.fields[fieldIdx].localizedName);
                         localizedFields += (dataModel.fields[fieldIdx].localizedName + ",");
                     });
                     //TODO: Can this read by column please!?!??
                     insertArgumentsOne = `datastore."${dataModel.title}" ( ${localizedFields.slice(0,-1)} )` //remove trailing comma
 
-                    console.log(insertArgumentsOne);
+                    //console.log(insertArgumentsOne);
 
-                    //TODO: Create a buffer system so that an SQL query isn't executed for each line
+
 
                     //TODO: Do we have to delete all existing data or can we implement PATCH
                     await this.prisma.$executeRaw(`DELETE FROM datastore."${dataModel.title}"`);
 
 
                 } else {
-                    // console.log(line)
-                    // const bruh = line.split(',')[0];
-                    // console.log(typeof bruh)
-                    // console.log(bruh)
-                    // console.log(`INSERT INTO universe."CopyExample" (field1, field2, field2) VALUES (${line.split(',')[0]}, ${line.split(',')[1]}, ${line.split(',')[2]})`);
-                    //const st = performance.now()
-                    //TODO: delimiters other than ,???
                     const lineData = line.split(',').map((fieldDataValue, idx) => {
-
-                        console.log("fdv " + fieldDataValue);
-
                         const dt = dataModel.fields[inputColumnOrderIndex[idx]].dataType;
-
-
-                        console.log("Line 585 data model " + dt);
-
                         return dt === "text" ? "'"+fieldDataValue+"'" : Number(fieldDataValue);
-
-
-
-                        //
-                        // const dtObj = dataModel.fields.find((obj) => { return obj.fieldName == fieldDataValue});
-                        //
-                        // console.log("dtObj " + dtObj);
-                        // return dtObj.fieldName === "text" ? "'"+dtObj.fieldName+"'" : Number(dtObj.fieldName);
-
-                        // const dt = dataModel.fields[idx].dataType;
-                        // return dt === "text" ? "'"+fieldDataValue+"'" : Number(fieldDataValue);
                     });
+                    insertBuffer.push(`(${lineData})`);
 
-                    const insertArgs = `${insertArgumentsOne} VALUES (${lineData})`
-                    console.log("INSERT INTO " + insertArgs);
-                    await this.prisma.$executeRaw("INSERT INTO " + insertArgs);
-                    //await this.prisma.$executeRaw`INSERT INTO universe."CopyExample" (field1, field2, field3) VALUES (${Number(line.split(',')[0])}, ${Number(line.split(',')[1])}, ${Number(line.split(',')[2])})`
-                    //await this.prisma.$executeRaw`INSERT INTO universe."CopyExample" (field1, field2, field3) VALUES (${line.split(',')[0]}, ${line.split(',')[1]}, ${line.split(',')[2]})`
-                    //const et = performance.now()
-                    //console.log("Milliseconds: " + (et-st));
+
+                    if(lNum % insertValueBufferSize == 0){
+                        // console.log(line)
+                        // const bruh = line.split(',')[0];
+                        // console.log(typeof bruh)
+                        // console.log(bruh)
+                        // console.log(`INSERT INTO universe."CopyExample" (field1, field2, field2) VALUES (${line.split(',')[0]}, ${line.split(',')[1]}, ${line.split(',')[2]})`);
+                        //const st = performance.now()
+                        // delimiters other than ,???
+                        // const lineData = line.split(',').map((fieldDataValue, idx) => {
+                        //     //console.log("fdv " + fieldDataValue);
+                        //     const dt = dataModel.fields[inputColumnOrderIndex[idx]].dataType;
+                        //     //console.log("Line 585 data model " + dt);
+                        //     return dt === "text" ? "'"+fieldDataValue+"'" : Number(fieldDataValue);
+                        //     //
+                        //     // const dtObj = dataModel.fields.find((obj) => { return obj.fieldName == fieldDataValue});
+                        //     //
+                        //     // console.log("dtObj " + dtObj);
+                        //     // return dtObj.fieldName === "text" ? "'"+dtObj.fieldName+"'" : Number(dtObj.fieldName);
+                        //
+                        //     // const dt = dataModel.fields[idx].dataType;
+                        //     // return dt === "text" ? "'"+fieldDataValue+"'" : Number(fieldDataValue);
+                        // });
+
+                        const insertArgs = `${insertArgumentsOne} VALUES ${insertBuffer}`;
+                        //console.log("INSERT INTO " + insertArgs);
+                        await this.prisma.$executeRaw("INSERT INTO " + insertArgs);
+                        //await this.prisma.$executeRaw`INSERT INTO universe."CopyExample" (field1, field2, field3) VALUES (${Number(line.split(',')[0])}, ${Number(line.split(',')[1])}, ${Number(line.split(',')[2])})`
+                        //await this.prisma.$executeRaw`INSERT INTO universe."CopyExample" (field1, field2, field3) VALUES (${line.split(',')[0]}, ${line.split(',')[1]}, ${line.split(',')[2]})`
+                        //const et = performance.now()
+                        //console.log("Milliseconds: " + (et-st));
+
+                        //don't forget to forget the buffer
+                        insertBuffer.length = 0;
+                    }
                 }
                 lNum++;
             }
+            //empty the remaining buffer
+            if(insertBuffer.length >= 1) {
+
+                const insertArgs = `${insertArgumentsOne} VALUES ${insertBuffer}`;
+                console.log(insertArgs);
+                await this.prisma.$executeRaw("INSERT INTO " + insertArgs);
+            }
+
+            console.log(lNum);
 
             console.log(`Field Names: ${fieldNames}`)
             const eet = performance.now()
