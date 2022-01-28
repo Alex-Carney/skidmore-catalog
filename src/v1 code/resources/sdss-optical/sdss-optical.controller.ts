@@ -12,7 +12,7 @@ import { Sdss_Optical_FieldSelectDTO, Sdss_Optical_QueryParamDTO } from './dto/s
 @Controller('sdss-optical')
 export class SdssOpticalController {
 
-  //Since we have a custom provider, we have slightly different Dependency Injection syntax 
+  //Since we have a custom provider, we have slightly different Dependency Injection syntax
   constructor(@Inject(SDSS_OPTICAL_LOOKUP) private readonly db: DatabaseLookupService<SdssOpticalOptions>) {}
 
 
@@ -29,8 +29,8 @@ export class SdssOpticalController {
   })
   // @ApiBearerAuth()
   //@ApiBody({type: Tully_Group_DTO}) //as of 8/25/2021, swagger does not work well with Prisma. Prisma automatically creates our DTO's for us,
-  //but makes them as TYPES, not CLASSES. SwaggerUI cannot handle types, so we have to rewrite our DTO ourselves in tully-group.dto, and tell
-  //swagger to display the information for that instead. 
+  //but makes them as TYPES, not CLASSES. SwaggerUI cannot handle types, so we have to rewrite our DTO ourselves in tully-group-resolvers.dto, and tell
+  //swagger to display the information for that instead.
   @Get()
   async getAllSdssOpticalProperties(): Promise<SDSS_OpticalProperties[]> {
       const payload = await this.db.returnAll();
@@ -54,19 +54,19 @@ export class SdssOpticalController {
         const where = `{"${dto.sdssOpticalField}": { "${dto.sdssOpticalCondition}": ${(threshold)} }}`
         const search = {}
         const includeArray = Array(...dto.sdssOpticalInclude);
-        (includeArray[0].length == 1 ? Array(dto.sdssOpticalInclude) : includeArray).forEach((col) => {search[col] = true}) 
+        (includeArray[0].length == 1 ? Array(dto.sdssOpticalInclude) : includeArray).forEach((col) => {search[col] = true})
 
         const payload = await this.db.returnMultipleByQuery({
-          where: JSON.parse(where), 
+          where: JSON.parse(where),
         }, search)
 
-        return parseAsync(payload)     
-        
+        return parseAsync(payload)
+
       }
 
       //--------------------------------------------------------------------------------------------------
 
-      
+
     @ApiTags('SDSS Optical')
     @UseGuards(JwtAuthGuard)
     @ApiOperation({summary: "allows for a custom SQL query"})
@@ -76,14 +76,14 @@ export class SdssOpticalController {
     @ApiParam({name: "sql", schema: {type: "string"} ,description: "Sql code to be placed after SELECT {your fields} FROM SDSS_Optical_Properties ..."})
     @Get('sdss-custom/:sql')
     async getTullyGroupsWithSql(@Query() dto: Sdss_Optical_FieldSelectDTO, @Param('sql') sql: string): Promise<SDSS_OpticalProperties[]> {
-        
+
         console.log(dto.sdssOpticalFields.toString());
         console.log(sql);
-        
+
         const payload = await this.db.customQuery(dto.sdssOpticalFields.toString(), sql)
         return parseAsync(payload)
     }
-    
+
 
 
 

@@ -18,7 +18,7 @@ export class TullyEnvironmentController {
   constructor(@Inject(TULLY_ENVIRONMENT_LOOKUP) private readonly db: DatabaseLookupService<TullyEnvironmentOptions>) {}
 
   //----------------------------------------------------------------------------------------------------
-  
+
   // @UseGuards(JwtAuthGuard)
   @ApiTags(tag) //displays the 'catagory' that this endpoint falls under
   @ApiOperation({summary: "returns all the data from the tully environment list"})
@@ -30,11 +30,11 @@ export class TullyEnvironmentController {
   })
   // @ApiBearerAuth()
   //@ApiBody({type: Tully_Group_DTO}) //as of 8/25/2021, swagger does not work well with Prisma. Prisma automatically creates our DTO's for us,
-  //but makes them as TYPES, not CLASSES. SwaggerUI cannot handle types, so we have to rewrite our DTO ourselves in tully-group.dto, and tell
-  //swagger to display the information for that instead. 
+  //but makes them as TYPES, not CLASSES. SwaggerUI cannot handle types, so we have to rewrite our DTO ourselves in tully-group-resolvers.dto, and tell
+  //swagger to display the information for that instead.
   @Get()
   async getAllTullyEnvironment(): Promise<Tully_Environment[]> {
-      
+
       const payload = await this.db.returnAll();
       return parseAsync(payload)
   }
@@ -56,21 +56,21 @@ export class TullyEnvironmentController {
         const where = `{"${dto.tullyEnvironmentField}": { "${dto.tullyEnvironmentCondition}": ${(threshold)} }}`
         // const search = {}
         // const includeArray = Array(...dto.sdssOpticalInclude);
-        // (includeArray[0].length == 1 ? Array(dto.sdssOpticalInclude) : includeArray).forEach((col) => {search[col] = true}) 
+        // (includeArray[0].length == 1 ? Array(dto.sdssOpticalInclude) : includeArray).forEach((col) => {search[col] = true})
 
         const search = generateSearchJSON(dto.tullyEnvironmentInclude)
 
         const payload = await this.db.returnMultipleByQuery({
-          where: JSON.parse(where), 
+          where: JSON.parse(where),
         }, search)
 
-        return parseAsync(payload)     
-        
+        return parseAsync(payload)
+
       }
 
       //--------------------------------------------------------------------------------------------------
 
-      
+
     @ApiTags('Tully Environment')
     @UseGuards(JwtAuthGuard)
     @ApiOperation({summary: "allows for a custom SQL query"})
@@ -80,11 +80,11 @@ export class TullyEnvironmentController {
     @ApiParam({name: "sql", schema: {type: "string"} ,description: "Sql code to be placed after SELECT {your fields} FROM SDSS_Optical_Properties ..."})
     @Get('tully-env-custom/:sql')
     async getTullyEnvironmentWithSql(@Query() dto: Tully_Environment_FieldSelectDTO, @Param('sql') sql: string): Promise<Tully_Environment[]> {
-      
+
         const payload = await this.db.customQuery(dto.tullyEnvironmentFields.toString(), sql)
         return parseAsync(payload)
     }
-    
+
 
 
 }

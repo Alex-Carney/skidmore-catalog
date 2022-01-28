@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { ThresholdOptions } from "src/resources/resource options/resource-globals";
+import { ThresholdOptions } from "src/v1 code/resources/resource options/resource-globals";
 
 export enum TullyCombinedFields {
     pgc = 'pgc',
@@ -136,33 +136,33 @@ export class Tully_Combined_QueryParamDTO {
       enum: TullyCombinedFields,
       enumName: 'Target Tully Combined Field',
       isArray: false,
-       
+
     })
-    tullyCombinedField: TullyCombinedFields; //this is the field to apply the filter to 
-  
+    tullyCombinedField: TullyCombinedFields; //this is the field to apply the filter to
+
     @ApiProperty({
       enum: ThresholdOptions,
       enumName: 'Target Tully Combined Threshold',
       isArray: false,
-      
+
     })
     tullyCombinedCondition: ThresholdOptions; //can be one of the conditional statments
-  
+
     @ApiProperty({
       enum: TullyCombinedFields,
       enumName: 'Tully Combined fields to Return',
       isArray: true,
     })
-    //include: Prisma.Tully_GroupSelect; 
+    //include: Prisma.Tully_GroupSelect;
     tullyCombinedInclude: TullyCombinedFields;
-  
+
   }
-  
+
   export class Tully_Combined_FieldSelectDTO {
     @ApiProperty({
       enum: TullyCombinedFields,
       enumName: 'Tully Combined Fields Sql Return',
-      isArray: true 
+      isArray: true
     })
     tullyCombinedFields: TullyCombinedFields;
   }

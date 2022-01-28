@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { ThresholdOptions } from "src/resources/resource options/resource-globals";
+import { ThresholdOptions } from "src/v1 code/resources/resource options/resource-globals";
 
 export enum SdssDerivedFields {
 agc = 'agc',
@@ -67,7 +67,7 @@ logsfrgswlc_err: number;
 @ApiProperty()
 logmh: number;
 @ApiProperty()
-logmh_err: number;  
+logmh_err: number;
 }
 
 export class Sdss_Derived_QueryParamDTO {
@@ -76,33 +76,33 @@ export class Sdss_Derived_QueryParamDTO {
       enum: SdssDerivedFields,
       enumName: 'Target Sdss Derived Field',
       isArray: false,
-       
+
     })
-    sdssDerivedField: SdssDerivedFields; //this is the field to apply the filter to 
-  
+    sdssDerivedField: SdssDerivedFields; //this is the field to apply the filter to
+
     @ApiProperty({
       enum: ThresholdOptions,
       enumName: 'Target Sdss Derived Threshold',
       isArray: false,
-      
+
     })
     sdssDerivedCondition: ThresholdOptions; //can be one of the conditional statments
-  
+
     @ApiProperty({
       enum: SdssDerivedFields,
       enumName: 'Sdss Derived Fields to Return',
       isArray: true,
     })
-    //include: Prisma.Tully_GroupSelect; 
+    //include: Prisma.Tully_GroupSelect;
     sdssDerivedInclude: SdssDerivedFields;
-  
+
   }
-  
+
   export class Sdss_Derived_FieldSelectDTO {
     @ApiProperty({
       enum: SdssDerivedFields,
       enumName: 'Sdss Derived Fields Sql Return',
-      isArray: true 
+      isArray: true
     })
    sdssDerivedFields: SdssDerivedFields;
   }

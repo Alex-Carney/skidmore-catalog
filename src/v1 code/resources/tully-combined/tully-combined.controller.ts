@@ -25,8 +25,8 @@ export class TullyCombinedController {
   })
   // @ApiBearerAuth()
   //@ApiBody({type: Tully_Group_DTO}) //as of 8/25/2021, swagger does not work well with Prisma. Prisma automatically creates our DTO's for us,
-  //but makes them as TYPES, not CLASSES. SwaggerUI cannot handle types, so we have to rewrite our DTO ourselves in tully-group.dto, and tell
-  //swagger to display the information for that instead. 
+  //but makes them as TYPES, not CLASSES. SwaggerUI cannot handle types, so we have to rewrite our DTO ourselves in tully-group-resolvers.dto, and tell
+  //swagger to display the information for that instead.
   @Get()
   async getAllTullyCombined(): Promise<Tully_Combined[]> {
       const payload = await this.db.returnAll();
@@ -52,16 +52,16 @@ export class TullyCombinedController {
         const search = generateSearchJSON(dto.tullyCombinedInclude)
 
         const payload = await this.db.returnMultipleByQuery({
-          where: JSON.parse(where), 
+          where: JSON.parse(where),
         }, search)
 
-        return parseAsync(payload)     
-        
+        return parseAsync(payload)
+
       }
 
       //--------------------------------------------------------------------------------------------------
 
-      
+
     @ApiTags('Tully Combined')
     // @UseGuards(JwtAuthGuard)
     @ApiOperation({summary: "allows for a custom SQL query -- Select an array of fields to return"})
@@ -71,11 +71,11 @@ export class TullyCombinedController {
     @ApiParam({name: "sql", schema: {type: "string"} ,description: "Sql code to be placed after SELECT {your fields} FROM Tully_Combined ..."})
     @Get('tully-combined-custom/:sql')
     async getTullyGroupsWithSql(@Query() dto: Tully_Combined_FieldSelectDTO, @Param('sql') sql: string): Promise<Tully_Combined[]> {
-        
+
         const payload = await this.db.customQuery(dto.tullyCombinedFields.toString(), sql)
         return parseAsync(payload)
     }
-    
+
 
 
 }

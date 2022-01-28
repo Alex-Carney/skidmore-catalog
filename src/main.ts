@@ -11,11 +11,11 @@ import {
   SwaggerConfig,
 } from './configs/config.interface';
 import * as compression from "compression"
-import { TullyGroupModule } from './resolvers/tully-group/tully-group.module';
-import { TullyEnvironmentModule } from './resources/tully-environment/tully-environment.module';
-import { TullyCombinedModule } from './resources/tully-combined/tully-combined.module';
-import { SdssOpticalModule } from './resources/sdss-optical/sdss-optical.module';
-import { SdssDerivedModule } from './resources/sdss-derived/sdss-derived.module';
+import { TullyGroupModule } from './v1 code/tully-group-resolvers/tully-group.module';
+import { TullyEnvironmentModule } from './v1 code/resources/tully-environment/tully-environment.module';
+import { TullyCombinedModule } from './v1 code/resources/tully-combined/tully-combined.module';
+import { SdssOpticalModule } from './v1 code/resources/sdss-optical/sdss-optical.module';
+import { SdssDerivedModule } from './v1 code/resources/sdss-derived/sdss-derived.module';
 import { UserModule } from './resolvers/user/user.module';
 import { ResourceModule } from './resolvers/resource/resource.module';
 
@@ -90,14 +90,14 @@ async function bootstrap() {
   SwaggerModule.setup(v2SwaggerConfig.path || 'api', app, v2Document, v2CustomOptions);
 }
 
-  // V2 Swagger API 
+  // V2 Swagger API
 
   // Cors
   if (corsConfig.enabled) {
     app.enableCors();
   }
 
- 
+
 
 
 

@@ -29,18 +29,18 @@ export class RoleService {
     //this means it can work for an input array of roles
     //for each element in the domain (titles) map it to some codomain (create, where object)
     // const connectOrCreateArguments = titles.map(title => {
-    //     return {create: 
+    //     return {create:
     //         {
-    //             role: 
+    //             role:
     //                 {
     //                     create: {
     //                         title: title,
     //                     }
-    //                 }, 
+    //                 },
     //             permissionLevel: 3
-    //     },      
+    //     },
     //         where: {roleId_userId: {roleId: title, userId: userId}}
-            
+
     //     }
     // });
     //return {create: {roleId_userId: {roleId: title, userId: userId}, permissionLevel: 3}, where: {roleId_userId: {roleId: title, userId: userId}}}
@@ -59,25 +59,25 @@ export class RoleService {
     //     data: {
     //         roles: {
     //             upsert: {
-    //                 create: 
+    //                 create:
     //                 {
-    //                     role: 
+    //                     role:
     //                         {
     //                             create: {
     //                                 title: title,
     //                             }
-    //                         }, 
+    //                         },
     //                     permissionLevel: 3
-    //                 },      
-    //                 where: 
+    //                 },
+    //                 where:
     //                 {
     //                     roleId_userId: {roleId: title, userId: userId}
     //                 },
-    //                 update: 
+    //                 update:
     //                 {
-                        
+
     //                 }
-                    
+
     //             }
     //         }
     //     }
@@ -139,12 +139,12 @@ export class RoleService {
 
 /**
  * @method Each role has multiple administrators. Only a role admin can change administration priviledges, and grant read/write access of resources
- * under that role to another user. By default, the creator of the role is the first admin, who can then add more using this endpoint (which uses 
+ * under that role to another user. By default, the creator of the role is the first admin, who can then add more using this endpoint (which uses
  * this service)
- * 
- * @param userId current admin logged in making changes 
+ *
+ * @param userId current admin logged in making changes
  * @param newAdminEmail Email (unique identifier) of new admin to be added
- * @param roleToUpdate Which of the current admin's roles is being modified 
+ * @param roleToUpdate Which of the current admin's roles is being modified
  */
   async updateRoleAdmins(userId: string, updateRoleAdminDto: UpdateRoleAdminDTO): Promise<any> {
       //step 1: Verify that a current admin of this role is the one doing the operation
@@ -191,8 +191,8 @@ export class RoleService {
             }
         });
       } else {
-          //throw an error? //You are not the owner of this role 
-          return 
+          //throw an error? //You are not the owner of this role
+          return
       }
   }
 
@@ -203,10 +203,10 @@ export class RoleService {
 
 // //   }
 //   async accessLevel(userId: string, roleToValidate: string): Promise<number> {
-//     //Get the role we are trying to validate, include the list of administrators   
+//     //Get the role we are trying to validate, include the list of administrators
 //     const admin = await this.prisma.role.findUnique({
-//         //get the role in question  
-//         where: { 
+//         //get the role in question
+//         where: {
 
 
 //               title: roleToValidate,
@@ -219,7 +219,7 @@ export class RoleService {
 //                       id: userId
 //                   }
 //               }
-//           }, 
+//           },
 //       });
 //       console.log(admin);
 //       return Boolean(admin) //empty "admin" object = false
@@ -258,7 +258,7 @@ async accessLevel(userId: string, roleTitle: string): Promise<{permissionLevel: 
                 //         title: roleToDelete,
                 //     }
                 // })
-                
+
                 /**
                  * Unfortunately, this is another example where I've encountered a bug with prisma. Currently, deleting the parent
                  * in a many-to-many relation is not supported, even though the code above should work. Therefore, we must execute
@@ -267,8 +267,8 @@ async accessLevel(userId: string, roleTitle: string): Promise<{permissionLevel: 
                 await this.prisma.$executeRaw`DELETE FROM universe."Role" WHERE title = ${roleToDelete}`;
                 //await this.prisma.$executeRaw('DELETE FROM $1 WHERE title = $2', 'universe."Role"', roleToDelete)
               } else {
-                  //throw an error? //You are not the owner of this role 
-                  return 
+                  //throw an error? //You are not the owner of this role
+                  return
               }
   }
 
@@ -281,6 +281,11 @@ async accessLevel(userId: string, roleTitle: string): Promise<{permissionLevel: 
               id: true,
           }
       })
+  }
+
+  async authenticateUserRequest(userId: string, repository: string, requiredLevel: number): Promise<boolean> {
+    const access = await this.accessLevel(userId, repository);
+    return access['permissionLevel'] >= requiredLevel;
   }
 
 

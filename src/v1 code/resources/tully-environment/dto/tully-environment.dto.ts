@@ -1,6 +1,6 @@
 
 import { ApiProperty } from '@nestjs/swagger';
-import { ThresholdOptions } from 'src/resources/resource options/resource-globals';
+import { ThresholdOptions } from 'src/v1 code/resources/resource options/resource-globals';
 
 
 export enum TullyEnvironmentFields {
@@ -320,33 +320,33 @@ export class Tully_Environment_QueryParamDTO {
       enum: TullyEnvironmentFields,
       enumName: 'Target Tully Environment Field',
       isArray: false,
-       
+
     })
-    tullyEnvironmentField: TullyEnvironmentFields; //this is the field to apply the filter to 
-  
+    tullyEnvironmentField: TullyEnvironmentFields; //this is the field to apply the filter to
+
     @ApiProperty({
       enum: ThresholdOptions,
       enumName: 'Target Tully Environment Threshold',
       isArray: false,
-      
+
     })
     tullyEnvironmentCondition: ThresholdOptions; //can be one of the conditional statments
-  
+
     @ApiProperty({
       enum: TullyEnvironmentFields,
       enumName: 'Tully Environment Fields to Return',
       isArray: true,
     })
-    //include: Prisma.Tully_GroupSelect; 
+    //include: Prisma.Tully_GroupSelect;
     tullyEnvironmentInclude: TullyEnvironmentFields;
-  
+
   }
-  
+
   export class Tully_Environment_FieldSelectDTO {
     @ApiProperty({
       enum: TullyEnvironmentFields,
       enumName: 'Tully Environment Fields Sql Return',
-      isArray: true 
+      isArray: true
     })
     tullyEnvironmentFields: TullyEnvironmentFields;
   }

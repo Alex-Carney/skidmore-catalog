@@ -1,11 +1,11 @@
-// THIS IS NOT USEFUL AND WILL BE DELETED 
+// THIS IS NOT USEFUL AND WILL BE DELETED
 
 //as of 8/25/2021, swagger does not work well with Prisma. Prisma automatically creates our DTO's for us,
-//but makes them as TYPES, not CLASSES. SwaggerUI cannot handle types, so we have to rewrite our DTO ourselves in tully-group.dto, and tell
-//swagger to display the information for that instead. 
+//but makes them as TYPES, not CLASSES. SwaggerUI cannot handle types, so we have to rewrite our DTO ourselves in tully-group-resolvers.dto, and tell
+//swagger to display the information for that instead.
 
-//if this bug/issue is fixed, then this file will be completely useless and can be safely deleted. However, the @ApiBody tags in the controllers 
-//will have to be updated accordingly 
+//if this bug/issue is fixed, then this file will be completely useless and can be safely deleted. However, the @ApiBody tags in the controllers
+//will have to be updated accordingly
 
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -82,15 +82,15 @@ export class Sdss_Optical_QueryParamDTO {
     enum: SdssOpticalFields,
     enumName: 'Target Sdss Optical Field',
     isArray: false,
-     
+
   })
-  sdssOpticalField: SdssOpticalFields; //this is the field to apply the filter to 
+  sdssOpticalField: SdssOpticalFields; //this is the field to apply the filter to
 
   @ApiProperty({
     enum: ThresholdOptions2,
     enumName: 'Target Sdss Optical Threshold',
     isArray: false,
-    
+
   })
   sdssOpticalCondition: ThresholdOptions2; //can be one of the conditional statments
 
@@ -99,7 +99,7 @@ export class Sdss_Optical_QueryParamDTO {
     enumName: 'Sdss Optical Fields to Return',
     isArray: true,
   })
-  //include: Prisma.Tully_GroupSelect; 
+  //include: Prisma.Tully_GroupSelect;
   sdssOpticalInclude: SdssOpticalFields;
 
 }
@@ -108,7 +108,7 @@ export class Sdss_Optical_FieldSelectDTO {
   @ApiProperty({
     enum: SdssOpticalFields,
     enumName: 'Sdss Optical Fields Sql Return',
-    isArray: true 
+    isArray: true
   })
  sdssOpticalFields: SdssOpticalFields;
 }

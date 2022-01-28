@@ -1,11 +1,11 @@
-// THIS IS NOT USEFUL AND WILL BE DELETED 
+// THIS IS NOT USEFUL AND WILL BE DELETED
 
 //as of 8/25/2021, swagger does not work well with Prisma. Prisma automatically creates our DTO's for us,
-//but makes them as TYPES, not CLASSES. SwaggerUI cannot handle types, so we have to rewrite our DTO ourselves in tully-group.dto, and tell
-//swagger to display the information for that instead. 
+//but makes them as TYPES, not CLASSES. SwaggerUI cannot handle types, so we have to rewrite our DTO ourselves in tully-group-resolvers.dto, and tell
+//swagger to display the information for that instead.
 
-//if this bug/issue is fixed, then this file will be completely useless and can be safely deleted. However, the @ApiBody tags in the controllers 
-//will have to be updated accordingly 
+//if this bug/issue is fixed, then this file will be completely useless and can be safely deleted. However, the @ApiBody tags in the controllers
+//will have to be updated accordingly
 
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -29,7 +29,7 @@ export enum TullyGroupFields {
   v_mod = 'v_mod',
   dist_mod = 'dist_mod',
   sig_v = 'sig_v',
-  r2t = 'r2t', 
+  r2t = 'r2t',
   sigmap = 'sigmap',
   mass = 'mass',
   cf = 'cf',
@@ -38,17 +38,17 @@ export enum TullyGroupFields {
 
 export class Tully_Group_DTO {
 
-  @ApiProperty()  
-  nest:         number; 
-  @ApiProperty()  
-  num_members:  number; 
-  @ApiProperty()  
+  @ApiProperty()
+  nest:         number;
+  @ApiProperty()
+  num_members:  number;
+  @ApiProperty()
   pcg_name:     string;
-  @ApiProperty()  
+  @ApiProperty()
   sg_lon:       string;
-  @ApiProperty()  
+  @ApiProperty()
   sg_lat:       number;
-  @ApiProperty()  
+  @ApiProperty()
   log_lk:       number;
   @ApiProperty()
   v_mod:        number;
@@ -57,25 +57,25 @@ export class Tully_Group_DTO {
   @ApiProperty()
   sig_v:        number;
   @ApiProperty()
-  r2t:          number;  
+  r2t:          number;
   @ApiProperty()
-  sigmap:       number;  
+  sigmap:       number;
   @ApiProperty()
-  mass:         string; 
+  mass:         string;
   @ApiProperty()
   cf:           number;
 
 }
 
 export class QueryParamDTO {
-  
+
 
   @ApiProperty({
     enum: TullyGroupFields,
     enumName: 'Target Field',
-    isArray: false 
+    isArray: false
   })
-  field: TullyGroupFields; //this is the field to apply the filter to 
+  field: TullyGroupFields; //this is the field to apply the filter to
 
   @ApiProperty({
     enum: ThresholdOptions,
@@ -87,9 +87,9 @@ export class QueryParamDTO {
   @ApiProperty({
     enum: TullyGroupFields,
     enumName: 'Fields to return',
-    isArray: true 
+    isArray: true
   })
-  //include: Prisma.Tully_GroupSelect; 
+  //include: Prisma.Tully_GroupSelect;
   include: TullyGroupFields;
 
 }
@@ -98,7 +98,7 @@ export class FieldSelectDTO {
   @ApiProperty({
     enum: TullyGroupFields,
     enumName: 'return these fields',
-    isArray: true 
+    isArray: true
   })
   fields: TullyGroupFields;
 }
