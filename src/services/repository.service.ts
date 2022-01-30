@@ -1,11 +1,12 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { prisma, Role, User } from "@prisma/client";
 import { PrismaService } from "src/prisma/prisma.service";
 import { UpdateRoleAdminDTO } from "src/resolvers/user/dto/update-admin.dto";
 import { UserService } from "./user.service";
+import { RepositoryBusinessErrors } from "../errors/repository.error";
 
 @Injectable()
-export class RoleService {
+export class RepositoryService {
   constructor(
     private prisma: PrismaService,
     private userService: UserService,
@@ -17,10 +18,10 @@ export class RoleService {
    * the 'admin' of this resource, which can be updated with updateRoleAdmin. Additionally, the user is automatically added as one of the
    * "owners" of this newly created role
    * @param userId The user who is creating this role
-   * @param title  The name of this role CAPS
+   * @param titles
 
    */
-  upsertRoles(userId: string, titles: string[],): Promise<User> {
+async upsertRoles(userId: string, titles: string[],): Promise<User> {
 
     /**
      * Access the user supplied in the params, create a new role with them with the input title. Relations will be generated automatically
@@ -92,50 +93,62 @@ export class RoleService {
             permissionLevel: 3,
         }
     });
-    return this.prisma.user.update({
+
+    try {
+      /**
+       * A small quirk I don't understand, returning update data directly (inlining this statement) does not throw the
+       * error properly.
+       */
+      const dbUpdateData = await this.prisma.user.update({
         where: {id:userId},
         data: {
-            roles: {
-                create: createArguments,
-            }
+          roles: {
+            create: createArguments,
+          }
         }
-    })
+      });
+      return dbUpdateData;
+    } catch(err) {
+      //TODO: Logger error
+      throw new BadRequestException(RepositoryBusinessErrors.RepositoryAlreadyExists);
+    }
+
 
     /**TODO: Error handling if you try to add a role that already exists ("you must contact an admin of this role to gain access, if you're trying
     to create a new role choose a different name") **/
 
   }
 
-  getUserRoles(userId: string): any {
-      return this.prisma.user.findUnique({
-          where: {
-              id: userId,
-          },
-        //   include: {
-        //       roles: true,
-        //       rolesAdminOf: true
-        //   },
-        select: {
-            roles: {
-                select: {
-                    role: {
-                        select: {
-                            title: true,
-                        }
-                    }
-                }
+  async getUserRoles(userId: string) {
+  try {
+    const userRepositories = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      //   include: {
+      //       roles: true,
+      //       rolesAdminOf: true
+      //   },
+      select: {
+        roles: {
+          select: {
+            role: {
+              select: {
+                title: true,
+              }
             }
-            //roles: true,
+          }
         }
-      })
+        //roles: true,
+      }
+    });
+    return userRepositories
+  } catch(err) {
+    throw new NotFoundException(RepositoryBusinessErrors.UserNotFound)
   }
 
-//   async updateRoleAdmin(
-//       params:
+  }
 
-//   ) {
-
-//   }
 
 /**
  * @method Each role has multiple administrators. Only a role admin can change administration priviledges, and grant read/write access of resources
@@ -143,92 +156,57 @@ export class RoleService {
  * this service)
  *
  * @param userId current admin logged in making changes
- * @param newAdminEmail Email (unique identifier) of new admin to be added
- * @param roleToUpdate Which of the current admin's roles is being modified
+ * @param updateRoleAdminDto
  */
   async updateRoleAdmins(userId: string, updateRoleAdminDto: UpdateRoleAdminDTO): Promise<any> {
       //step 1: Verify that a current admin of this role is the one doing the operation
-      const accessObj = await this.accessLevel(userId, updateRoleAdminDto.role);
-      if(accessObj['permissionLevel'] == 3) {
-        //step 2: do the transaction
-        // return this.prisma.role.update({
-        //     //get the role in question
-        //     where: {
-        //         title: updateRoleAdminDto.role,
-        //     },
-        //     data: {
-        //         //access 'admins' data for the role
-        //         admins: {
-        //             //add a relation between the user in question and this role's admins
-        //             connect: {
-        //                 email: newAdminEmail,
-        //             }
-        //         }
-        //     }
-        // })
-        console.log(updateRoleAdminDto.receiverEmail);
-        const recieverId = await this.userIdFromEmail(updateRoleAdminDto.receiverEmail);
-        console.log(recieverId);
-        console.log(recieverId['id'])
-        const newPermissionLevel = updateRoleAdminDto.remove ? 1 : 2; //if remove = true, revoke admin rights down to permission level 1 (read only),
+      await this.authenticateUserRequest(userId, updateRoleAdminDto.role, 2);
+
+      console.log(updateRoleAdminDto.receiverEmail);
+
+
+        //errors are handled in UserService
+      const receiverId = await this.userService.userIdFromEmail(updateRoleAdminDto.receiverEmail);
+
+
+
+      console.log(receiverId);
+      console.log(receiverId['id'])
+      const newPermissionLevel = updateRoleAdminDto.remove ? 1 : 2; //if remove = true, revoke admin rights down to permission level 1 (read only),
         //otherwise, promote to admin
-        return this.prisma.rolesOnUsers.upsert({
+        /**
+         * Creates a new relation between this repository and the users who own it. Relation is either created (user
+         * did not have repository before, add them with some initial permission level) or updated (promotion/demotion
+         * of users)
+         */
+        try {
+          const upsertResponse = this.prisma.rolesOnUsers.upsert({
             where: {
-                roleTitle_userId: { userId: recieverId['id'] , roleTitle: updateRoleAdminDto.role }
+              roleTitle_userId: { userId: receiverId['id'] , roleTitle: updateRoleAdminDto.role }
             },
             update: {
-                permissionLevel: newPermissionLevel
+              permissionLevel: newPermissionLevel
             },
             create: {
-                role: {
-                    connect: {title: updateRoleAdminDto.role}
-                },
-                user: {
-                    connect: {id: recieverId['id']}
-                },
-                permissionLevel: 2,
+              role: {
+                connect: {title: updateRoleAdminDto.role}
+              },
+              user: {
+                connect: {id: receiverId['id']}
+              },
+              permissionLevel: 2,
 
             }
-        });
-      } else {
-          //throw an error? //You are not the owner of this role
-          return
-      }
+          });
+          return upsertResponse;
+        } catch(err) {
+          throw new NotFoundException(RepositoryBusinessErrors.RepositoryNotFound)
+        }
+
   }
-
-//   async function deleteRole(
-//       params:
-
-//   ) {
-
-// //   }
-//   async accessLevel(userId: string, roleToValidate: string): Promise<number> {
-//     //Get the role we are trying to validate, include the list of administrators
-//     const admin = await this.prisma.role.findUnique({
-//         //get the role in question
-//         where: {
-
-
-//               title: roleToValidate,
-//           },
-//           //include its relation to users by administration priviledges (_RoleToAdmin relation table))
-//           include: {
-//               admins: {
-//                   //only return the admin who has the id of the user in question
-//                   where: {
-//                       id: userId
-//                   }
-//               }
-//           },
-//       });
-//       console.log(admin);
-//       return Boolean(admin) //empty "admin" object = false
-//   }
 
 async accessLevel(userId: string, roleTitle: string): Promise<{permissionLevel: number}> {
     //Get the relation between this role and the user, verify access level
-
-
     /**
      * Level 0: No access
      * Level 1: Tenent/Possessor of the role. Read priviledges of role resources
@@ -237,21 +215,26 @@ async accessLevel(userId: string, roleTitle: string): Promise<{permissionLevel: 
      */
 
 
-    return this.prisma.rolesOnUsers.findUnique({
-        where: {
-            roleTitle_userId: { userId: userId , roleTitle: roleTitle }
-        },
-        select: {
-            permissionLevel: true,
-        }
+    const accessResponse =  this.prisma.rolesOnUsers.findUnique({
+      where: {
+        roleTitle_userId: { userId: userId , roleTitle: roleTitle }
+      },
+      select: {
+        permissionLevel: true,
+      }
     });
+    console.log(accessResponse);
+    if(!accessResponse) {
+      throw new NotFoundException(RepositoryBusinessErrors.RepositoryUserRelationError);
+    }
+    return accessResponse;
+
 }
 
-  async deleteRole(userId: string, roleToDelete: string): Promise<Role> {
+  async deleteRole(userId: string, roleToDelete: string) {
 
             //step 1: Verify that a current admin of this role is the one doing the operation
-            const permissionLevelObj = await this.accessLevel(userId, roleToDelete);
-            if(permissionLevelObj['permissionLevel'] === 3) { //owners only
+            await this.authenticateUserRequest(userId, roleToDelete, 3); //owners only
                 //step 2: do the transaction
                 // return this.prisma.role.delete({
                 //     where: {
@@ -264,28 +247,36 @@ async accessLevel(userId: string, roleTitle: string): Promise<{permissionLevel: 
                  * in a many-to-many relation is not supported, even though the code above should work. Therefore, we must execute
                  * the SQL ourselves (the cascading delete is still handled automatically)
                  */
-                await this.prisma.$executeRaw`DELETE FROM universe."Role" WHERE title = ${roleToDelete}`;
+                try {
+                  await this.prisma.$executeRaw`DELETE FROM universe."Role" WHERE title = ${roleToDelete}`;
+                  return {message: 'Successfully deleted the ' + roleToDelete + ' repository'}
+                } catch(err) {
+                  throw new NotFoundException(RepositoryBusinessErrors.RepositoryNotFound);
+                }
+
                 //await this.prisma.$executeRaw('DELETE FROM $1 WHERE title = $2', 'universe."Role"', roleToDelete)
-              } else {
-                  //throw an error? //You are not the owner of this role
-                  return
-              }
   }
 
-  userIdFromEmail(userEmail: string): Promise<{id: string}> {
-      return this.prisma.user.findUnique({
-          where: {
-            email: userEmail,
-          },
-          select: {
-              id: true,
-          }
-      })
-  }
+  // userIdFromEmail(userEmail: string): Promise<{id: string}> {
+  //     return this.prisma.user.findUnique({
+  //         where: {
+  //           email: userEmail,
+  //         },
+  //         select: {
+  //             id: true,
+  //         }
+  //     })
+  // }
 
   async authenticateUserRequest(userId: string, repository: string, requiredLevel: number): Promise<boolean> {
     const access = await this.accessLevel(userId, repository);
-    return access['permissionLevel'] >= requiredLevel;
+    if(access['permissionLevel'] >= requiredLevel) {
+      return true
+    } else {
+      const errorResponse = RepositoryBusinessErrors.RepositoryAuthorizationError;
+      errorResponse.additionalInformation = 'Requires access level '+requiredLevel+' of this repository. You have access level ' + access['permissionLevel'];
+      throw new ForbiddenException(errorResponse);
+    }
   }
 
 

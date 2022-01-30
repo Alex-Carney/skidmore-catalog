@@ -38,7 +38,7 @@ export class ResourceController {
     async seedDatabase(@UploadedFile() file: Express.Multer.File, @Req() req: Request, @Body() seedDatabaseInputDto: SeedDatabaseInputDTO) {
         try {
             const user = await this.userService.getUserFromRequest(req);
-            return this.resourceService.seedResourceFromFile(file, seedDatabaseInputDto.resourceName, user['id'], seedDatabaseInputDto.repository);
+            return this.resourceService.seedResourceFromFile(file, seedDatabaseInputDto.resourceName, user['id'], seedDatabaseInputDto.repository, seedDatabaseInputDto.maxBufferSize);
         } catch(err) {
             console.log(err);
         }

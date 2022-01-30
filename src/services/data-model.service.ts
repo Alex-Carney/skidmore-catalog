@@ -3,7 +3,7 @@ import { PrismaService } from "src/prisma/prisma.service";
 import { UserService } from "./user.service";
 import { Readable } from "stream";
 import * as readline from "readline";
-import { RoleService } from "./role.service";
+import { RepositoryService } from "./repository.service";
 import * as md5 from 'md5';
 
 
@@ -12,7 +12,7 @@ export class DataModelService {
   constructor(
     private prisma: PrismaService,
     private userService: UserService,
-    private roleService: RoleService,
+    private roleService: RepositoryService,
   ) {}
 
 //TODO: install js-doc for Webstorm

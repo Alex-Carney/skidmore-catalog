@@ -1,18 +1,19 @@
 import { PrismaService } from './../prisma/prisma.service';
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
 import { PasswordService } from './password.service';
 import { ChangePasswordInput } from '../resolvers/user/dto/change-password.input';
 import { UpdateUserInput } from '../resolvers/user/dto/update-user.input';
 import { Prisma, User } from '@prisma/client';
 import { Request } from "express";
 import { AuthService } from './auth.service';
+import { UserBusinessErrors } from "../errors/user.error";
 
 @Injectable()
 export class UserService {
   constructor(
     private prisma: PrismaService,
     private passwordService: PasswordService,
-    private authService: AuthService, 
+    private authService: AuthService,
   ) {}
 
  async updateUser(userId: string, newUserData: UpdateUserInput) {
@@ -51,10 +52,10 @@ export class UserService {
   }
 
   async getUserFromRequest(
-    req: Request 
+    req: Request
   ): Promise<User> {
     const authHeader = req.headers['authorization'];
-    const token = authHeader.split(' ')[1]; 
+    const token = authHeader.split(' ')[1];
     // return this.authService.getUserFromToken(token).then(response => {
     //     return response;
     // }).catch(err => {
@@ -62,6 +63,23 @@ export class UserService {
     //     return err;
     // });
     return this.authService.getUserFromToken(token);
+  }
+
+  async userIdFromEmail(userEmail: string): Promise<{id: string}> {
+    try {
+      const user = this.prisma.user.findUnique({
+        where: {
+          email: userEmail,
+        },
+        select: {
+          id: true,
+        }
+      })
+      return user;
+    } catch(err) {
+      throw new NotFoundException(UserBusinessErrors.UserNotFound);
+    }
+
   }
 
   async updateRoles(
@@ -73,10 +91,10 @@ export class UserService {
     const user = await this.prisma.user.findUnique({
        where: { id: userId }
     });
-    //get the roles and add the array of new ones to it 
+    //get the roles and add the array of new ones to it
     const roles = user['roles'];
 
-    let idx: number; 
+    let idx: number;
     if(remove) {
       newRoles.forEach((e) => {
         idx = roles.indexOf(e);
@@ -90,7 +108,7 @@ export class UserService {
       data: {
         roles: roles
       },
-    where: { id: userId }, 
+    where: { id: userId },
     });
   }
 

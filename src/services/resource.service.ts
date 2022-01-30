@@ -4,7 +4,7 @@ import { UserService } from "./user.service";
 import { Readable } from "stream";
 import * as readline from "readline";
 import { performance } from "perf_hooks";
-import { RoleService } from "./role.service";
+import { RepositoryService } from "./repository.service";
 import { parseAsync } from 'json2csv';
 
 
@@ -14,7 +14,7 @@ export class ResourceService {
     constructor(
         private prisma: PrismaService,
         private userService: UserService,
-        private roleService: RoleService,
+        private roleService: RepositoryService,
     ) {}
 
     /**
@@ -23,8 +23,9 @@ export class ResourceService {
      * @param resourceName
      * @param userId
      * @param repository
+     * @param insertValueBufferSize
      */
-    async seedResourceFromFile(file: Express.Multer.File, resourceName: string, userId: string, repository: string) {
+    async seedResourceFromFile(file: Express.Multer.File, resourceName: string, userId: string, repository: string, insertValueBufferSize: number) {
 
         //step 1: get the datamodel of the resource this user is looking to seed
         //admin is required to read/write
@@ -64,15 +65,15 @@ export class ResourceService {
         //
         // console.log(insertArgumentsOne);
 
-        const insertValueBufferSize = 500; //number of rows to queue up before pushing to DB
-
+        //const insertValueBufferSize = 500; //number of rows to queue up before pushing to DB
+        let lNum = 0;
         try {
             const rl = readline.createInterface({
                 input: Readable.from(buf),
                 crlfDelay: Infinity
             });
 
-            let lNum = 0;
+
 
             const fieldNames = [];
             const inputColumnOrderIndex= [];
@@ -173,6 +174,10 @@ export class ResourceService {
 
         } catch(err) {
             console.log(err);
+            console.log(lNum);
+            const msg = err.message + ". This error occurred while reading lines between " + (lNum-insertValueBufferSize) + " and " + lNum + " of the seed file";
+            console.log(msg);
+            return msg;
         }
         return
 

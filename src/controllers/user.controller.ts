@@ -6,16 +6,16 @@ import { UserAddRoleDTO } from "src/resolvers/user/dto/add-role.dto";
 import { DeleteRoleDTO } from "src/resolvers/user/dto/delete-role.dto";
 import { UpdateRoleAdminDTO } from "src/resolvers/user/dto/update-admin.dto";
 import { AuthService } from "src/services/auth.service";
-import { RoleService } from "src/services/role.service";
+import { RepositoryService } from "src/services/repository.service";
 import { UserService } from "src/services/user.service";
 
 
     /**
      * In the API V2 architecture, resources are not controlled based on the user that uploaded them, but rather the ROLE that they were assigned
      * Therefore, the "users" themselves are not very important, they are just a way to login to access certain roles -- the roles provide access
-     * to the actual resources. 
-     * 
-     * Therefore, the only functions for users are viewing their roles + adding new roles 
+     * to the actual resources.
+     *
+     * Therefore, the only functions for users are viewing their roles + adding new roles
      */
 
 
@@ -24,13 +24,13 @@ import { UserService } from "src/services/user.service";
 @Controller('user-roles')
 export class UserController {
 
-    constructor(private readonly userService: UserService, private readonly authService: AuthService, private readonly roleService: RoleService) {}
+    constructor(private readonly userService: UserService, private readonly authService: AuthService, private readonly roleService: RepositoryService) {}
 
     //--------------------------------------------------------------------------------------------------------------
 
     @ApiTags('User Roles')
     @ApiBearerAuth()
-    @Get() 
+    @Get()
     async viewRoles(@Req() req: any): Promise<any> {
         const user = await this.userService.getUserFromRequest(req);
         return this.roleService.getUserRoles(user['id']);
@@ -47,7 +47,7 @@ export class UserController {
         // console.log(addRoleDto);
         // console.log(addRoleDto.roles);
         // const authHeader = req.headers['authorization'];
-        // const token = authHeader.split(' ')[1]; 
+        // const token = authHeader.split(' ')[1];
         // const userId = await this.authService.getUserFromToken(token).then(response => {
         //     return response['id']
         // }).catch(err => {
