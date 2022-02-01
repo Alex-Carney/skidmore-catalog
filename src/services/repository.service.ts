@@ -1,10 +1,14 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { prisma, Role, User } from "@prisma/client";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException
+} from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { UpdateRoleAdminDTO } from "src/resolvers/user/dto/update-admin.dto";
 import { UserService } from "./user.service";
 import { RepositoryBusinessErrors } from "../errors/repository.error";
-import { UserBusinessErrors } from "../errors/user.error";
 
 @Injectable()
 export class RepositoryService {
@@ -20,17 +24,17 @@ export class RepositoryService {
    * the 'admin' of this resource, which can be updated with updateRoleAdmin. Additionally, the user is automatically added as one of the
    * "owners" of this newly created role
    * @param userId The user who is creating this role
-   * @param titles
+   * @param repositories
 
    */
-  async upsertRoles(userId: string, titles: string[]): Promise<User> {
+  async upsertRoles(userId: string, repositories: string[]) {
 
     /**
      * Access the user supplied in the params, create a new role with them with the input title. Relations will be generated automatically
      */
 
       //this means it can work for an input array of roles
-    const createArguments = titles.map(title => {
+    const createArguments = repositories.map((title) => {
         return {
           role: {
             create: {
@@ -54,15 +58,12 @@ export class RepositoryService {
           }
         }
       });
-      return dbUpdateData;
+      return createArguments;
     } catch (err) {
       //TODO: Logger error
       throw new BadRequestException(RepositoryBusinessErrors.RepositoryAlreadyExists);
     }
 
-
-    /**TODO: Error handling if you try to add a role that already exists ("you must contact an admin of this role to gain access, if you're trying
-     to create a new role choose a different name") **/
 
   }
 
@@ -98,8 +99,9 @@ export class RepositoryService {
 
 
   /**
-   * @method Each role has multiple administrators. Only a role admin can change administration priviledges, and grant read/write access of resources
-   * under that role to another user. By default, the creator of the role is the first admin, who can then add more using this endpoint (which uses
+   * @method Each role has multiple administrators. Only a role owner can change administration priviledges, while administrators
+   *  can grant read/write access of resources under that role to another user.
+   *  By default, the creator of the role is the first owner, who can then add admins using this endpoint (which uses
    * this service)
    *
    * @param userId current admin logged in making changes
@@ -110,10 +112,8 @@ export class RepositoryService {
     console.log(updateRoleAdminDto.receiverEmail);
 
     /**
-     *Step 0: Validate request. We already know that userId is legitimate because that was called from the controller,
+     * Step 0: Validate request. We already know that userId is legitimate because that was called from the controller,
      * but we must ensure input repository is valid
-     *
-     * We will validate the existence of the recipient user in Step 1
      */
     await this.validateRepositoryExistence(updateRoleAdminDto.repository);
 
@@ -158,7 +158,7 @@ export class RepositoryService {
      * Edge case: Owner transferring ownership, must demote current owner to admin (there can only be 1 owner)
      */
     if(ownerTransferringOwnershipEdgeCase) {
-      await this.prisma.rolesOnUsers.update({
+      return await this.prisma.rolesOnUsers.update({
         where: {
           roleTitle_userId: {
             userId: userId,
@@ -168,11 +168,10 @@ export class RepositoryService {
         data: {
           permissionLevel: 2, //old owner becomes an admin
         }
-      })
-    }
-
+      });
+    } else {
       return updateResponse;
-
+    }
   }
 
   async accessLevel(userId: string, roleTitle: string): Promise<{ permissionLevel: number }> {
@@ -214,6 +213,9 @@ export class RepositoryService {
 
   async deleteRole(userId: string, roleToDelete: string) {
 
+    //Step 0: Verify that the repository exists
+    await this.validateRepositoryExistence(roleToDelete);
+
     //step 1: Verify that a current admin of this role is the one doing the operation
     await this.authenticateUserRequest(userId, roleToDelete, 3); //owners only
     //step 2: do the transaction
@@ -232,7 +234,7 @@ export class RepositoryService {
       await this.prisma.$executeRaw`DELETE FROM universe."Role" WHERE title = ${roleToDelete}`;
       return { message: "Successfully deleted the " + roleToDelete + " repository" };
     } catch (err) {
-      throw new NotFoundException(RepositoryBusinessErrors.RepositoryNotFound);
+      throw new InternalServerErrorException()
     }
 
     //await this.prisma.$executeRaw('DELETE FROM $1 WHERE title = $2', 'universe."Role"', roleToDelete)
