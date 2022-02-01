@@ -11,6 +11,13 @@ import {
   SwaggerConfig,
 } from './configs/config.interface';
 import * as compression from "compression"
+import { TullyGroupModule } from './v1 code/tully-group-resolvers/tully-group.module';
+import { TullyEnvironmentModule } from './v1 code/resources/tully-environment/tully-environment.module';
+import { TullyCombinedModule } from './v1 code/resources/tully-combined/tully-combined.module';
+import { SdssOpticalModule } from './v1 code/resources/sdss-optical/sdss-optical.module';
+import { SdssDerivedModule } from './v1 code/resources/sdss-derived/sdss-derived.module';
+import { UserModule } from './resolvers/user/user.module';
+import { ResourceModule } from './resolvers/resource/resource.module';
 
 declare const module: any
 
@@ -26,21 +33,24 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const nestConfig = configService.get<NestConfig>('nest');
   const corsConfig = configService.get<CorsConfig>('cors');
-  const swaggerConfig = configService.get<SwaggerConfig>('swagger');
+  const legacySwaggerConfig = configService.get<SwaggerConfig>('legacy_swagger');
+  const v2SwaggerConfig = configService.get<SwaggerConfig>('v2_swagger');
 
 
 
-  // Swagger Api
-  if (swaggerConfig.enabled) {
-    const options = new DocumentBuilder()
-      .setTitle(swaggerConfig.title || 'Nestjs')
-      .setDescription(swaggerConfig.description || 'The nestjs API description')
-      .setVersion(swaggerConfig.version || '1.0')
+  // Legacy Swagger Api
+  if (legacySwaggerConfig.enabled) {
+    const legacyOptions = new DocumentBuilder()
+      .setTitle(legacySwaggerConfig.title || 'Nestjs')
+      .setDescription(legacySwaggerConfig.description || 'The nestjs API description')
+      .setVersion(legacySwaggerConfig.version || '1.0')
       .addBearerAuth()
       .build();
-    const document = SwaggerModule.createDocument(app, options);
+    const legacyDocument = SwaggerModule.createDocument(app, legacyOptions, {
+      include: [TullyGroupModule, SdssOpticalModule, SdssDerivedModule, TullyEnvironmentModule, TullyCombinedModule],
+    });
 
-    const customOptions: SwaggerCustomOptions = {
+    const legacyCustomOptions: SwaggerCustomOptions = {
       swaggerOptions: {
         defaultModelsExpandDepth: -1, //schemas wont show up
         syntaxHighlight: {
@@ -49,18 +59,45 @@ async function bootstrap() {
         },
         persistAuthorization: true, //users' tokens persist even after refreshing the page
       },
-      customSiteTitle: 'API · Skidmore Catalog',
+      customSiteTitle: 'Legacy API · Skidmore Catalog',
     };
 
-    SwaggerModule.setup(swaggerConfig.path || 'api', app, document, customOptions);
+    SwaggerModule.setup(legacySwaggerConfig.path || 'api', app, legacyDocument, legacyCustomOptions);
   }
+  if (v2SwaggerConfig.enabled) {
+    const v2Options = new DocumentBuilder()
+    .setTitle(v2SwaggerConfig.title || 'Nestjs')
+    .setDescription(v2SwaggerConfig.description || 'The nestjs API description')
+    .setVersion(v2SwaggerConfig.version || '1.0')
+    .addBearerAuth()
+    .build();
+  const v2Document = SwaggerModule.createDocument(app, v2Options, {
+    include: [UserModule, ResourceModule],
+  });
+
+  const v2CustomOptions: SwaggerCustomOptions = {
+    swaggerOptions: {
+      defaultModelsExpandDepth: -1, //schemas wont show up
+      syntaxHighlight: {
+        activated: false,
+        theme: "agate"
+      },
+      persistAuthorization: true, //users' tokens persist even after refreshing the page
+    },
+    customSiteTitle: 'API · Skidmore Catalog',
+  };
+
+  SwaggerModule.setup(v2SwaggerConfig.path || 'api', app, v2Document, v2CustomOptions);
+}
+
+  // V2 Swagger API
 
   // Cors
   if (corsConfig.enabled) {
     app.enableCors();
   }
 
- 
+
 
 
 

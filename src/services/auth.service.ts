@@ -26,17 +26,48 @@ export class AuthService {
 
   //--------------------------------------------------------------------
 
-  async createUser(payload: SignupInput): Promise<Token> {
+  // async createUser(payload: SignupInput): Promise<Token> {
+  //   const hashedPassword = await this.passwordService.hashPassword(
+  //     payload.password
+  //   );
+
+  //   try {
+  //     const user = await this.prisma.user.create({
+  //       data: {
+  //         ...payload,
+  //         password: hashedPassword,
+  //         //role: [], //changed this from role: 'USER' which didn't do anything
+  //       },
+  //     });
+
+  //     return this.generateTokens({
+  //       userId: user.id,
+  //     });
+  //   } catch (e) {
+  //     if (
+  //       e instanceof Prisma.PrismaClientKnownRequestError &&
+  //       e.code === 'P2002'
+  //     ) {
+  //       throw new ConflictException(`Email ${payload.email} already used.`);
+  //     } else {
+  //       throw new Error(e);
+  //     }
+  //   }
+  // }
+
+ async createUser(email: string, password: string, firstname: string, lastname: string): Promise<Token> {
     const hashedPassword = await this.passwordService.hashPassword(
-      payload.password
+      password
     );
 
     try {
       const user = await this.prisma.user.create({
         data: {
-          ...payload,
+          email: email,
+          firstname: firstname,
+          lastname: lastname, 
           password: hashedPassword,
-          role: 'USER',
+          //role: [], //changed this from role: 'USER' which didn't do anything
         },
       });
 
@@ -48,7 +79,7 @@ export class AuthService {
         e instanceof Prisma.PrismaClientKnownRequestError &&
         e.code === 'P2002'
       ) {
-        throw new ConflictException(`Email ${payload.email} already used.`);
+        throw new ConflictException(`Email ${email} already used.`);
       } else {
         throw new Error(e);
       }
