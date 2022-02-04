@@ -1,10 +1,11 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { UserService } from "./user.service";
 import { Readable } from "stream";
 import * as readline from "readline";
 import { RepositoryService } from "./repository.service";
 import * as md5 from 'md5';
+import { DataModelBusinessErrors } from "../errors/data-model.error";
 
 
 @Injectable()
@@ -12,11 +13,20 @@ export class DataModelService {
   constructor(
     private prisma: PrismaService,
     private userService: UserService,
-    private roleService: RepositoryService,
+    private repositoryService: RepositoryService,
   ) {}
 
-//TODO: install js-doc for Webstorm
 
+  /**
+   * @method Parses an input file, attempting to return a data model object so that the user doesn't have to make it
+   * themselves for subsequent calls.
+   *
+   * Users the header from the file to extract field (column) names
+   * Reads rows until each column is mapped to an associated data type. Null values are allowed, so this may not be
+   * completed from a single input row
+   *
+   * @param file binary file from controller
+   */
   async generateDataModel(file: Express.Multer.File) {
     const buf = file.buffer;
     try {
@@ -25,45 +35,43 @@ export class DataModelService {
         crlfDelay: Infinity,
       });
 
-
-
       let lNum = 0;
-      const fieldsNames = new Array<string>();
-      const fields = new Map<string, Array<string>>(); //This map tracks the relationship between a column's name and its datatype
+      const fieldNames = new Array<string>();
+      const fieldToDataType = new Map<string, string>(); //This map tracks the relationship between a column's name and its datatype
       for await (const line of rl) {
-        //the first line must be the header -- containing the fields
+        //the first line must be the header -- containing the field names
         if(lNum == 0) {
           line.split(',').forEach((field) => {
-            //Postgres has column name requirements. No special characters allowed, lower case preferred
-            //remove non-letter leading chars
-            //field = field[0].replace(/[^a-zA-Z]/g, "") + field.substring(1).replace(/[^a-zA-Z0-9 _]/g, "").toLowerCase();
-            //UPDATE: separate display and localized names
-            fieldsNames.push(field);
+            fieldNames.push(field);
           });
         } else {
           //this could very well be a nested while instead, but i'd rather do it this way
-          if(fields.size < fieldsNames.length) {
+          if(fieldToDataType.size < fieldNames.length) {
             line.split(',').forEach((element, index) => {
-              // console.log(typeof element);
               //Three possibilities: Not a number, a number, or "".
               if(element !== "") {
-                fields.set(fieldsNames[index], [Number.isNaN(Number(element)) ? "text" : "numeric", /**"c" + md5(fieldsNames[index])*/]);
+                fieldToDataType.set(fieldNames[index], Number.isNaN(Number(element)) ? "text" : "numeric");
               }
               //ignore null fields, but keep looping through the file until there are none left
             });
           } else {
+            //no need to read the entire file, stop once all data types are extracted
             break;
           }
         }
         lNum++;
       }
-      console.log({fields});
-      return this.mapToObj(fields);
+      console.log({fields: fieldToDataType});
+      return this.convertMapToObj(fieldToDataType);
     } catch(err) {
-      console.log(err);
+      const errorToThrow = DataModelBusinessErrors.ErrorParsingInputFile;
+      errorToThrow.additionalInformation = err.message;
+      throw new BadRequestException(errorToThrow);
     }
 
   }
+
+  //--------------------------------------------------------------------
 
   /**
    * not my code https://stackoverflow.com/questions/37437805/convert-map-to-json-object-in-javascript
@@ -71,13 +79,15 @@ export class DataModelService {
    * @param inputMap
    * @returns
    */
-  mapToObj(inputMap: Map<string, Array<string>>) {
+  convertMapToObj(inputMap: Map<string, string>) {
     const obj = {};
     inputMap.forEach((v, k) => {
       obj[k] = v;
-    })
+    });
     return obj;
   }
+
+  //--------------------------------------------------------------------
 
   /**
    * Publishes the data model as a "Resource" object in the database. Also generates the "ResourceField" objects that store the localized name
@@ -117,11 +127,11 @@ export class DataModelService {
 
     /**
      * This code (similar to above) allows all of the entires in the "repositories" input to be handled at once in a single prisma query.
-     * The repositories are added to the explicit ResourcesOnRoles m-n relation in the transaction below
+     * The repositories are added to the explicit ResourcesOnRepositories m-n relation in the transaction below
      */
     const connectManyInput = repositories.map((repository) => {
       return {
-        roleTitle: repository,
+        repositoryTitle: repository,
       }
     });
 
@@ -154,7 +164,7 @@ export class DataModelService {
               id: userId,
             }
           },
-          roles: {
+          repositories: {
             createMany: {
               data: connectManyInput,
             }
@@ -175,12 +185,14 @@ export class DataModelService {
     return dataModelRecord;
   }
 
+  //--------------------------------------------------------------------
+
   returnDataModels(repository: string) {
     return this.prisma.resource.findMany({
       where: {
-        roles: {
+        repositories: {
           some: {
-            roleTitle: repository,
+            repositoryTitle: repository,
           }
         }
       },
@@ -191,14 +203,16 @@ export class DataModelService {
             dataType: true,
           }
         },
-        roles: {
+        repositories: {
           select: {
-            roleTitle: true,
+            repositoryTitle: true,
           }
         }
       }
     });
   }
+
+  //--------------------------------------------------------------------
 
   async returnDataModelExact(resourceName: string, asMap: boolean) {
     const fieldInfo = await this.prisma.resource.findUnique({
@@ -210,56 +224,52 @@ export class DataModelService {
       }
     })
 
-    const fieldMap = new Map<string, Array<string>>();
+    const fieldMap = new Map<string, string>();
     fieldInfo.fields.forEach((field) => {
-      fieldMap.set(field.fieldName, [field.dataType, /**field.localizedName*/])
+      fieldMap.set(field.fieldName, field.dataType)
     })
 
-    return asMap ? fieldMap : this.mapToObj(fieldMap);
+    return asMap ? fieldMap : this.convertMapToObj(fieldMap);
   }
 
+  //--------------------------------------------------------------------
+
   async updateDataModelRepositories(resourceName: string, userId: string, repository: string, remove: boolean) {
-    const access = await this.roleService.authenticateUserRequest(userId, repository, 2);
+    const access = await this.repositoryService.authenticateUserRequest(userId, repository, 2);
     if(access == false) {
       return //throw authentication error
     }
 
     const updateArgs = remove ?
-      {disconnect: {resourceTitle_roleTitle: {resourceTitle: resourceName, roleTitle: repository}}}
-      : {connect: {resourceTitle_roleTitle: {resourceTitle: resourceName, roleTitle: repository}}};
+      {disconnect: {resourceTitle_repositoryTitle: {resourceTitle: resourceName, repositoryTitle: repository}}}
+      : {connect: {resourceTitle_repositoryTitle: {resourceTitle: resourceName, repositoryTitle: repository}}};
 
-    // return this.prisma.resource.update({
-    //     where: {
-    //         title: resourceName,
-    //     },
-    //     data: {
-    //         roles: updateArgs
-    //     }
-    // })
 
     if(remove) {
-      return this.prisma.resourcesOnRoles.delete({
+      return this.prisma.resourcesOnRepositories.delete({
         where: {
-          resourceTitle_roleTitle: {
+          resourceTitle_repositoryTitle: {
             resourceTitle: resourceName,
-            roleTitle: repository,
+            repositoryTitle: repository,
           }
         },
       })
     } else {
-      return this.prisma.resourcesOnRoles.create({
+      return this.prisma.resourcesOnRepositories.create({
         data: {
           resourceTitle: resourceName,
-          roleTitle: repository,
+          repositoryTitle: repository,
         }
       })
     }
   }
 
+  //--------------------------------------------------------------------
+
   async updateDataModelFields(resourceName: string, userId: string, repository: string, dataModel: Record<string, Array<string>>) {
     //step 0: Only an ADMIN of this repository
 
-    const access = await this.roleService.authenticateUserRequest(userId, repository, 2);
+    const access = await this.repositoryService.authenticateUserRequest(userId, repository, 2);
     if(access == false) {
       return //throw authentication error
     }
@@ -508,9 +518,11 @@ export class DataModelService {
 
   }
 
+  //--------------------------------------------------------------------
+
   async deleteDataModel(resourceName: string, userId: string, repository: string) {
     //step 0: Only the OWNER of the ORIGINAL REPOSITORY (need to code that) can delete this resource
-    const access = await this.roleService.authenticateUserRequest(userId, repository, 3);
+    const access = await this.repositoryService.authenticateUserRequest(userId, repository, 3);
     if(access == false) {
       return //throw authentication error
     }

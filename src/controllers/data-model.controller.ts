@@ -8,8 +8,6 @@ import {
   ApiTags
 } from "@nestjs/swagger";
 import { Body, Controller, Delete, Get, Param, Post, Put, Req, UploadedFile, UseInterceptors } from "@nestjs/common";
-import { ResourceService } from "../services/resource.service";
-import { UserService } from "../services/user.service";
 import { DataModelService } from "../services/data-model.service";
 import { DataModelGenerateInputDTO } from "../resolvers/resource/dto/data-model-input.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
@@ -18,12 +16,13 @@ import { Request } from "express";
 import { UpdateResourceRepositoriesDTO } from "../resolvers/resource/dto/update-resource-repository.dto";
 import { UpdateDataModelDTO } from "../resolvers/resource/dto/data-model-update.dto";
 import { DeleteDataModelDTO } from "../resolvers/resource/dto/delete-data-model.dto";
+import { AuthService } from "../services/auth.service";
 
 @ApiBearerAuth()
 @ApiTags('Resource Model')
 @Controller('data-model')
 export class DataModelController {
-  constructor(private readonly dataModelService: DataModelService, private readonly userService: UserService) {}
+  constructor(private readonly dataModelService: DataModelService, private readonly authService: AuthService) {}
 
   //---------------------------------------------------------------------------------------------------------
 
@@ -101,7 +100,7 @@ export class DataModelController {
 
     try {
       // const dataModel = JSON.parse(dataModelPublishInputDto.dataModel);
-      const user = await this.userService.getUserFromRequest(req);
+      const user = await this.authService.getUserFromRequest(req);
       return this.dataModelService.publishDataModel(dataModelPublishInputDto.dataModel, dataModelPublishInputDto.resourceName, user['id'], dataModelPublishInputDto.repositories);
     } catch(err) {
       console.log(err);
@@ -186,7 +185,7 @@ export class DataModelController {
   })
   @Put('update-resource-repositories')
   async updateDataModelRepositories(@Req() req: Request, @Body() updateRepositories: UpdateResourceRepositoriesDTO) {
-    const user = await this.userService.getUserFromRequest(req);
+    const user = await this.authService.getUserFromRequest(req);
     return this.dataModelService.updateDataModelRepositories(updateRepositories.resourceName, user['id'], updateRepositories.repository, updateRepositories.removeRepositories);
   }
 
@@ -224,7 +223,7 @@ export class DataModelController {
   })
   @Put('update-data-model')
   async updateDataModel(@Req() req: Request, @Body() updateDataModel: UpdateDataModelDTO) {
-    const user = await this.userService.getUserFromRequest(req);
+    const user = await this.authService.getUserFromRequest(req);
     return this.dataModelService.updateDataModelFields(updateDataModel.resourceName, user['id'], updateDataModel.repository, updateDataModel.dataModel);
   }
 
@@ -257,7 +256,7 @@ export class DataModelController {
   })
   @Delete('delete-data-model')
   async deleteDataModel(@Req() req: Request, @Body() deleteDataModel: DeleteDataModelDTO) {
-    const user = await this.userService.getUserFromRequest(req);
+    const user = await this.authService.getUserFromRequest(req);
     return this.dataModelService.deleteDataModel(deleteDataModel.resourceName, user['id'], deleteDataModel.repository);
   }
 

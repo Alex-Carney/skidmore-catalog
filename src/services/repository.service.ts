@@ -6,9 +6,10 @@ import {
   NotFoundException
 } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
-import { UpdateRoleAdminDTO } from "src/resolvers/user/dto/update-admin.dto";
+import { UpdateRepositoryPermissionsDTO } from "src/resolvers/user/dto/update-admin.dto";
 import { UserService } from "./user.service";
 import { RepositoryBusinessErrors } from "../errors/repository.error";
+import { RepositoryPermissions } from "../resolvers/user/dto/permission-level-constants";
 
 @Injectable()
 export class RepositoryService {
@@ -20,28 +21,25 @@ export class RepositoryService {
 
 
   /**
-   * @method This method creates a new role with a name based on the input 'title'. The user who is supplied in the params is automatically
-   * the 'admin' of this resource, which can be updated with updateRoleAdmin. Additionally, the user is automatically added as one of the
-   * "owners" of this newly created role
-   * @param userId The user who is creating this role
-   * @param repositories
+   * @method This method creates a new repository with a name based on the input 'title'. The user who is supplied in the params is automatically
+   * the 'owner' of this repository, which can be updated with updateRepositoryPermissions.
+   * @param userId The user who is creating this repository
+   * @param repositoriesToCreate the names of repositories to be created
 
    */
-  async upsertRoles(userId: string, repositories: string[]) {
+  async createRepositories(userId: string, repositoriesToCreate: string[]) {
 
     /**
-     * Access the user supplied in the params, create a new role with them with the input title. Relations will be generated automatically
+     * Access the user supplied in the params, create a new repository with them with the input title. Relations will be generated automatically
      */
-
-      //this means it can work for an input array of roles
-    const createArguments = repositories.map((title) => {
+    const createArguments = repositoriesToCreate.map((title) => {
         return {
-          role: {
+          repository: {
             create: {
               title: title
             }
           },
-          permissionLevel: 3
+          permissionLevel: RepositoryPermissions.REPOSITORY_OWNER
         };
       });
 
@@ -50,10 +48,10 @@ export class RepositoryService {
        * A small quirk I don't understand, returning update data directly (inlining this statement) does not throw the
        * error properly.
        */
-      const dbUpdateData = await this.prisma.user.update({
+      await this.prisma.user.update({
         where: { id: userId },
         data: {
-          roles: {
+          repositories: {
             create: createArguments
           }
         }
@@ -67,27 +65,22 @@ export class RepositoryService {
 
   }
 
-  async getUserRoles(userId: string) {
+  async getUserRepositories(userId: string) {
     try {
       const userRepositories = await this.prisma.user.findUnique({
         where: {
           id: userId
         },
-        //   include: {
-        //       roles: true,
-        //       rolesAdminOf: true
-        //   },
         select: {
-          roles: {
+          repositories: {
             select: {
-              role: {
+              repository: {
                 select: {
                   title: true
                 }
               }
             }
           }
-          //roles: true,
         }
       });
       return userRepositories;
@@ -99,74 +92,67 @@ export class RepositoryService {
 
 
   /**
-   * @method Each role has multiple administrators. Only a role owner can change administration priviledges, while administrators
-   *  can grant read/write access of resources under that role to another user.
-   *  By default, the creator of the role is the first owner, who can then add admins using this endpoint (which uses
-   * this service)
+   * @method The repositories on users relation keeps track of permission level. Certain actions involving modification
+   * of repositories, or the data that they contain, requires a specified permission level. This service handles
+   * modifications to those permission levels.
    *
-   * @param userId current admin logged in making changes
-   * @param updateRoleAdminDto
+   * Most of the logic in this method revolves around ensuring the requested transaction is valid.
+   *
+   * @param userId current user logged in making changes, aimed at another user
+   * @param updateRepositoryPermissionsDTO more information in the UpdateRepositoryPermissionsDTO file
+   * @return updateResponse A body that contains the updated information
    */
-  async updateRoleAdmins(userId: string, updateRoleAdminDto: UpdateRoleAdminDTO): Promise<any> {
+  async updateRepositoryPermissions(userId: string, updateRepositoryPermissionsDTO: UpdateRepositoryPermissionsDTO): Promise<any> {
 
-    console.log(updateRoleAdminDto.receiverEmail);
-
-    /**
-     * Step 0: Validate request. We already know that userId is legitimate because that was called from the controller,
-     * but we must ensure input repository is valid
-     */
-    await this.validateRepositoryExistence(updateRoleAdminDto.repository);
-
-    /** Step 1: Determine if the user has the necessary permission level themselves to perform this action
-     * If the request is attempting to make a user into an admin or the new owner, permission level 3 is required
-     * Otherwise, if this request is attempting to demote another user, we must ensure that the demoted user has a
-     * lower access level than the requester.
-     */
-
-      //we need to know both the access level of the requesting user, and the user being acted upon
-      //get recipient user and their access level:
-    const userToChangePerms = await this.userService.userIdFromEmail(updateRoleAdminDto.receiverEmail);
-    const accessObjOfRecipient = await this.accessLevel(userToChangePerms["id"], updateRoleAdminDto.repository);
-    const accessObjOfRequester = await this.accessLevel(userId, updateRoleAdminDto.repository);
+    //TODO: Logger
 
     /**
-     * If the requester has access level less than or equal to 1 (read/write only), stop
-     * If the recipient has a higher permission level than the requester, stop
-     * If the requester is trying to promote the recipient to a equal or higher permission level, stop (unless it is an owner transferring ownership)
+     * Validate input repository. We already know that userId is legitimate because that was called from the controller,
+     * but we must ensure input repository is valid. NotFoundError is thrown from validateRepositoryExistence
      */
-    const ownerTransferringOwnershipEdgeCase: boolean = updateRoleAdminDto.permissionLevel == 3 && accessObjOfRequester["permissionLevel"] == 3;
-    if(accessObjOfRequester["permissionLevel"] < 2
-      || accessObjOfRecipient["permissionLevel"] >= accessObjOfRequester["permissionLevel"]
-      || (updateRoleAdminDto.permissionLevel >= accessObjOfRequester["permissionLevel"] && !ownerTransferringOwnershipEdgeCase)){
-      throw new ForbiddenException(RepositoryBusinessErrors.RepositoryAuthorizationError)
+    await this.validateRepositoryExistence(updateRepositoryPermissionsDTO.repository);
+
+
+    //validate whether current permissions allow for this action to be executed
+    const userToChangePerms = await this.userService.getUserIdFromEmail(updateRepositoryPermissionsDTO.receiverEmail);
+    const permissionLevelOfRecipient = await this.permissionLevelOfUserOnRepository(userToChangePerms["id"], updateRepositoryPermissionsDTO.repository);
+    const permissionLevelOfRequester = await this.permissionLevelOfUserOnRepository(userId, updateRepositoryPermissionsDTO.repository);
+
+      //edge case: owner transferring ownership, must demote current owner to admin (there can only be 1 owner)
+    const ownerTransferringOwnershipEdgeCase: boolean =
+      updateRepositoryPermissionsDTO.permissionLevel == RepositoryPermissions.REPOSITORY_OWNER && permissionLevelOfRequester == RepositoryPermissions.REPOSITORY_OWNER;
+
+    //handle unauthorized requests
+    if (permissionLevelOfRequester < RepositoryPermissions.REPOSITORY_ADMIN
+      || permissionLevelOfRecipient >= permissionLevelOfRequester
+      || (updateRepositoryPermissionsDTO.permissionLevel >= permissionLevelOfRequester && !ownerTransferringOwnershipEdgeCase)) {
+      throw new ForbiddenException(RepositoryBusinessErrors.RepositoryAuthorizationError);
     }
 
-    const updateResponse = await this.prisma.rolesOnUsers.update({
+    //update database record accordingly
+    const updateResponse = await this.prisma.repositoriesOnUsers.update({
       where: {
-        roleTitle_userId: {
+        repositoryTitle_userId: {
           userId: userToChangePerms["id"],
-          roleTitle: updateRoleAdminDto.repository //we know this repository exists at this point because of accessLevel call
+          repositoryTitle: updateRepositoryPermissionsDTO.repository
         }
       },
       data: {
-        permissionLevel: updateRoleAdminDto.permissionLevel,
+        permissionLevel: updateRepositoryPermissionsDTO.permissionLevel
       }
-    })
+    });
 
-
-    /**
-     * Edge case: Owner transferring ownership, must demote current owner to admin (there can only be 1 owner)
-     */
-    if(ownerTransferringOwnershipEdgeCase) {
-      return await this.prisma.rolesOnUsers.update({
+    //handle owner changing owner edge case, must demote current owner
+    if (ownerTransferringOwnershipEdgeCase) {
+      return await this.prisma.repositoriesOnUsers.update({
         where: {
-          roleTitle_userId: {
+          repositoryTitle_userId: {
             userId: userId,
-            roleTitle: updateRoleAdminDto.repository,
+            repositoryTitle: updateRepositoryPermissionsDTO.repository
           }
         },
         data: {
-          permissionLevel: 2, //old owner becomes an admin
+          permissionLevel: RepositoryPermissions.REPOSITORY_ADMIN
         }
       });
     } else {
@@ -174,56 +160,50 @@ export class RepositoryService {
     }
   }
 
-  async accessLevel(userId: string, roleTitle: string): Promise<{ permissionLevel: number }> {
-    //Get the relation between this role and the user, verify access level
+  async permissionLevelOfUserOnRepository(userId: string, repositoryTitle: string): Promise<number> {
+    //Get the relation between this repository and the user, verify access level
     /**
      * Level 0: No access
-     * Level 1: Tenent/Possessor of the role. Read priviledges of role resources
-     * Level 2: Admin of the role. Read, write, delete priviledges of role resources. Can add new tenents/possessors to the role
-     * Level 3: Owner of this role. Can add new admins to the role, and can delete the role
+     * Level 1: User of the repository. Read privileges of repository resources
+     * Level 2: Admin of the repository. Read, write, delete privileges of repository resources. Can add new possessors to the repository
+     * Level 3: Owner of this repository. Can add new admins to the repository, and can delete the repository
      */
 
     /**
      * NOTE: Do not call this function if the repository does not exist. Otherwise, a nonsense entry will be in the DB
      */
-
-
-    let accessResponse = await this.prisma.rolesOnUsers.findUnique({
+    let permissionResponse = await this.prisma.repositoriesOnUsers.findUnique({
       where: {
-        roleTitle_userId: { userId: userId, roleTitle: roleTitle }
+        repositoryTitle_userId: {
+          userId: userId,
+          repositoryTitle: repositoryTitle }
       },
       select: {
         permissionLevel: true
       }
     });
-    console.log(accessResponse);
-    if (!accessResponse) {
+    console.log(permissionResponse);
+    if (!permissionResponse) {
       //relation does not exist yet, create it, and return it
-      accessResponse = await this.prisma.rolesOnUsers.create({
+      permissionResponse = await this.prisma.repositoriesOnUsers.create({
         data: {
           userId: userId,
-          roleTitle: roleTitle, //MUST EXIST
-          permissionLevel: 0,
+          repositoryTitle: repositoryTitle, //MUST EXIST
+          permissionLevel: RepositoryPermissions.REPOSITORY_NO_ACCESS
         }
-      })
+      });
     }
-    return accessResponse;
+    return permissionResponse["permissionLevel"];
 
   }
 
-  async deleteRole(userId: string, roleToDelete: string) {
+  async deleteRepository(userId: string, repositoryToDelete: string) {
 
     //Step 0: Verify that the repository exists
-    await this.validateRepositoryExistence(roleToDelete);
+    await this.validateRepositoryExistence(repositoryToDelete);
 
-    //step 1: Verify that a current admin of this role is the one doing the operation
-    await this.authenticateUserRequest(userId, roleToDelete, 3); //owners only
-    //step 2: do the transaction
-    // return this.prisma.role.delete({
-    //     where: {
-    //         title: roleToDelete,
-    //     }
-    // })
+    //step 1: Verify that a current admin of this repository is the one doing the operation
+    await this.authenticateUserRequest(userId, repositoryToDelete, 3); //owners only
 
     /**
      * Unfortunately, this is another example where I've encountered a bug with prisma. Currently, deleting the parent
@@ -231,13 +211,12 @@ export class RepositoryService {
      * the SQL ourselves (the cascading delete is still handled automatically)
      */
     try {
-      await this.prisma.$executeRaw`DELETE FROM universe."Role" WHERE title = ${roleToDelete}`;
-      return { message: "Successfully deleted the " + roleToDelete + " repository" };
+      await this.prisma.$executeRaw`DELETE FROM universe."Repository" WHERE title = ${repositoryToDelete}`;
+      return { message: "Successfully deleted the " + repositoryToDelete + " repository" };
     } catch (err) {
-      throw new InternalServerErrorException()
+      throw new InternalServerErrorException();
     }
 
-    //await this.prisma.$executeRaw('DELETE FROM $1 WHERE title = $2', 'universe."Role"', roleToDelete)
   }
 
   // userIdFromEmail(userEmail: string): Promise<{id: string}> {
@@ -252,7 +231,7 @@ export class RepositoryService {
   // }
 
   async authenticateUserRequest(userId: string, repository: string, requiredLevel: number): Promise<boolean> {
-    const access = await this.accessLevel(userId, repository);
+    const access = await this.permissionLevelOfUserOnRepository(userId, repository);
     if (access["permissionLevel"] >= requiredLevel) {
       return true;
     } else {
@@ -263,12 +242,12 @@ export class RepositoryService {
   }
 
   async validateRepositoryExistence(repositoryTitle: string) {
-    const repo = await this.prisma.role.findUnique({
+    const repo = await this.prisma.repository.findUnique({
       where: {
-        title: repositoryTitle,
+        title: repositoryTitle
       }
     });
-    if(!repo) {
+    if (!repo) {
       throw new NotFoundException(RepositoryBusinessErrors.RepositoryNotFound);
     }
   }

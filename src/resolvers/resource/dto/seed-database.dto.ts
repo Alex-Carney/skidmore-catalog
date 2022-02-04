@@ -8,6 +8,11 @@ export class SeedDatabaseInputDTO {
     repository: string;
     @ApiProperty()
     maxBufferSize: number;
+    @ApiProperty({
+        description: "Delimiter for incoming data. Use %09 for tab and %20 for space",
+        example: ","
+    })
+    delimiter: string;
     @ApiProperty({type: 'string', format: 'binary'})
     file: any;
 }

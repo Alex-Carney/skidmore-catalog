@@ -6,6 +6,7 @@ import * as readline from "readline";
 import { performance } from "perf_hooks";
 import { RepositoryService } from "./repository.service";
 import { parseAsync } from "json2csv";
+import { SeedDatabaseInputDTO } from "../resolvers/resource/dto/seed-database.dto";
 
 
 @Injectable()
@@ -13,57 +14,44 @@ export class ResourceService {
   constructor(
     private prisma: PrismaService,
     private userService: UserService,
-    private roleService: RepositoryService
+    private repositoryService: RepositoryService
   ) {
   }
 
   /**
    *
    * @param file
-   * @param resourceName
+   * @param seedResourceDto
    * @param userId
-   * @param repository
-   * @param insertValueBufferSize
    */
-  async seedResourceFromFile(file: Express.Multer.File, resourceName: string, userId: string, repository: string, insertValueBufferSize: number) {
+  async seedResourceFromFile(file: Express.Multer.File, seedResourceDto: SeedDatabaseInputDTO, userId: string) {
 
     //step 1: get the datamodel of the resource this user is looking to seed
     //admin is required to read/write
-    const access = await this.roleService.authenticateUserRequest(userId, repository, 2);
+    const access = await this.repositoryService.authenticateUserRequest(userId, seedResourceDto.repository, 2);
     if (access == false) {
       return; // throw authentication error
     }
 
     const dataModel = await this.prisma.resource.findUnique({
       where: {
-        title: resourceName
+        title: seedResourceDto.resourceName
       },
       include: {
         fields: true,
-        roles: true
+        repositories: true
       }
     });
 
     const buf = file.buffer;
-    //console.log(buf.toString())
+    console.log(buf.toString())
 
     //step 2: authenticate the request, does this user have WRITE priviledges for this resource under this repository?
 
 
-    //console.log(dataModel);
+    console.log(dataModel);
 
-    //console.log(dataModel.fields);
-
-    // let localizedFields = "";
-    // dataModel.fields.forEach((field) => {
-    //     localizedFields += (field.localizedName + ",")
-    // });
-    // const insertArgumentsOne = `datastore."${dataModel.title}" ( ${localizedFields.slice(0,-1)} )` //remove trailing comma
-
-    //
-    // console.log(localizedFields);
-    //
-    // console.log(insertArgumentsOne);
+    console.log(dataModel.fields);
 
     //const insertValueBufferSize = 500; //number of rows to queue up before pushing to DB
     let lNum = 0;
@@ -89,7 +77,11 @@ export class ResourceService {
            * break the process. Therefore, we must account for the potential differences in the order of data
            */
 
-          line.split(",").forEach((field) => fieldNames.push(field));
+          line.split(seedResourceDto.delimiter).forEach((field) => {
+            console.log("LINE SPLIT" + field)
+            fieldNames.push(field)
+          });
+
           //console.log("field names " + fieldNames);
           let localizedFields = "";
           fieldNames.forEach((field) => {
@@ -97,13 +89,14 @@ export class ResourceService {
               return obj.fieldName == field;
             });
             inputColumnOrderIndex.push(fieldIdx);
+            console.log(fieldIdx);
             //console.log(dataModel.fields[fieldIdx].fieldName + " with ln " + dataModel.fields[fieldIdx].localizedName);
             localizedFields += (dataModel.fields[fieldIdx].localizedName + ",");
           });
           //TODO: Can this read by column please!?!??
           insertArgumentsOne = `datastore."${dataModel.title}" ( ${localizedFields.slice(0, -1)} )`; //remove trailing comma
 
-          //console.log(insertArgumentsOne);
+          console.log(insertArgumentsOne);
 
 
           //TODO: Do we have to delete all existing data or can we implement PATCH
@@ -111,14 +104,14 @@ export class ResourceService {
 
 
         } else {
-          const lineData = line.split(",").map((fieldDataValue, idx) => {
+          const lineData = line.split(seedResourceDto.delimiter).map((fieldDataValue, idx) => {
             const dt = dataModel.fields[inputColumnOrderIndex[idx]].dataType;
             return dt === "text" ? "'" + fieldDataValue + "'" : Number(fieldDataValue);
           });
           insertBuffer.push(`(${lineData})`);
 
 
-          if (lNum % insertValueBufferSize == 0) {
+          if (lNum % seedResourceDto.maxBufferSize == 0) {
             // console.log(line)
             // const bruh = line.split(',')[0];
             // console.log(typeof bruh)
@@ -173,7 +166,7 @@ export class ResourceService {
     } catch (err) {
       console.log(err);
       console.log(lNum);
-      const msg = err.message + ". This error occurred while reading lines between " + (lNum - insertValueBufferSize) + " and " + lNum + " of the seed file";
+      const msg = err.message + ". This error occurred while reading lines between " + (lNum - seedResourceDto.maxBufferSize) + " and " + lNum + " of the seed file";
       console.log(msg);
       return msg;
     }
@@ -206,7 +199,7 @@ export class ResourceService {
 
 
     //step 1: authenticate this request
-    const access = await this.roleService.accessLevel(userId, repository);
+    const access = await this.repositoryService.permissionLevelOfUserOnRepository(userId, repository);
     if (access["permissionLevel"] < 1) { //1 represents user
       return; //throw authentication 403 error (try accessing from a different respository if you believe you should be able to access)
     }
@@ -263,7 +256,7 @@ export class ResourceService {
       where: {
         AND: [
           { title: resourceName },
-          { roles: { some: { roleTitle: repository } } }
+          { repositories: { some: { repositoryTitle: repository } } }
         ]
       },
       include: {

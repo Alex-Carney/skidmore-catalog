@@ -1,24 +1,17 @@
-import { Body, Controller,  Delete,  Get,  Param,  Patch,  Post, Put, Req, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Post, Put, Req, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { LocationUpload } from 'src/models/inputs/location-upload.input';
 import { ResourceService } from 'src/services/resource.service';
 import { Request } from "express";
-import { DataModelGenerateInputDTO } from 'src/resolvers/resource/dto/data-model-input.dto';
-import { DataModelPublishInputDTO } from 'src/resolvers/resource/dto/data-model-publish.dto';
-import { UserService } from 'src/services/user.service';
 import { SeedDatabaseInputDTO } from 'src/resolvers/resource/dto/seed-database.dto';
 import { QueryDatabaseInputDTO } from 'src/resolvers/resource/dto/query-database.dto';
-import { parseAsync } from 'json2csv';
-import { DeleteDataModelDTO } from 'src/resolvers/resource/dto/delete-data-model.dto';
-import { UpdateDataModelDTO } from 'src/resolvers/resource/dto/data-model-update.dto';
-import { UpdateResourceRepositoriesDTO } from 'src/resolvers/resource/dto/update-resource-repository.dto';
+import { AuthService } from "../services/auth.service";
 
 @ApiBearerAuth()
 @Controller('resources')
 export class ResourceController {
 
-    constructor(private readonly resourceService: ResourceService, private readonly userService: UserService) {}
+    constructor(private readonly resourceService: ResourceService, private readonly authService: AuthService) {}
 
 
 
@@ -37,8 +30,8 @@ export class ResourceController {
     @Put('seed-database')
     async seedDatabase(@UploadedFile() file: Express.Multer.File, @Req() req: Request, @Body() seedDatabaseInputDto: SeedDatabaseInputDTO) {
         try {
-            const user = await this.userService.getUserFromRequest(req);
-            return this.resourceService.seedResourceFromFile(file, seedDatabaseInputDto.resourceName, user['id'], seedDatabaseInputDto.repository, seedDatabaseInputDto.maxBufferSize);
+            const user = await this.authService.getUserFromRequest(req);
+            return this.resourceService.seedResourceFromFile(file, seedDatabaseInputDto, user['id']);
         } catch(err) {
             console.log(err);
         }
@@ -57,7 +50,7 @@ export class ResourceController {
     @Post('query-database')
     async queryDatabase(@Req() req: Request, @Body() queryDatabaseInputDto: QueryDatabaseInputDTO) {
         try {
-            const user = await this.userService.getUserFromRequest(req);
+            const user = await this.authService.getUserFromRequest(req);
 
             const payload = await this.resourceService.queryResource
             (

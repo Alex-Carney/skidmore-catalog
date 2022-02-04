@@ -11,18 +11,18 @@ import { User } from "@prisma/client";
 import { Request } from "express";
 import { UserCreateRepositoryDTO } from "src/resolvers/user/dto/add-repositories.dto";
 import { DeleteRepositoryDTO } from "src/resolvers/user/dto/delete-repository.dto";
-import { UpdateRoleAdminDTO } from "src/resolvers/user/dto/update-admin.dto";
+import { UpdateRepositoryPermissionsDTO } from "src/resolvers/user/dto/update-admin.dto";
 import { AuthService } from "src/services/auth.service";
 import { RepositoryService } from "src/services/repository.service";
 import { UserService } from "src/services/user.service";
 
 
     /**
-     * In the API V2 architecture, resources are not controlled based on the user that uploaded them, but rather the ROLE that they were assigned
-     * Therefore, the "users" themselves are not very important, they are just a way to login to access certain roles -- the roles provide access
+     * In the API V2 architecture, resources are not controlled based on the user that uploaded them, but rather the repository that they were assigned
+     * Therefore, the "users" themselves are not very important, they are just a way to login to access certain repositories -- the repositories provide access
      * to the actual resources.
      *
-     * Therefore, the only functions for users are viewing their roles + adding new roles
+     * Therefore, the only functions for users are viewing their repositories + adding new repositories
      */
 
 
@@ -31,7 +31,7 @@ import { UserService } from "src/services/user.service";
 @Controller('repository')
 export class UserController {
 
-    constructor(private readonly userService: UserService, private readonly authService: AuthService, private readonly roleService: RepositoryService) {}
+    constructor(private readonly authService: AuthService, private readonly repositoryService: RepositoryService) {}
 
     //--------------------------------------------------------------------------------------------------------------
     @ApiOperation({
@@ -46,9 +46,9 @@ export class UserController {
         description: "Only users with accounts can use this route. You can create an account here"
     })
     @Get()
-    async viewRoles(@Req() req: any): Promise<any> {
-        const user = await this.userService.getUserFromRequest(req);
-        return this.roleService.getUserRoles(user['id']);
+    async getRepositories(@Req() req: any): Promise<any> {
+        const user = await this.authService.getUserFromRequest(req);
+        return this.repositoryService.getUserRepositories(user['id']);
     }
 
     @ApiCreatedResponse({
@@ -63,25 +63,25 @@ export class UserController {
     @ApiOperation({
         summary: "Creates new repositories",
         description: "Creates a set of repository objects that handle permissions, and organization of data. " +
-          "Creating a role automatically gives the caller the 'owner' permission"
+          "Creating a repository automatically gives the caller the 'owner' permission"
     })
     @ApiBadRequestResponse({
         description: 'invalid repository name. It is recommended to follow the naming conventions, and avoid special characters'
     })
     @ApiInternalServerErrorResponse({
-        description: "An internal error occurred while handling input data. Try publishing one role at a time"
+        description: "An internal error occurred while handling input data. Try publishing one repository at a time"
     })
     @ApiForbiddenResponse({
         description: "Only users with accounts can create repositories."
     })
     @Post('create-repositories')
-    async addRoles(@Req() req: Request, @Body() addRoleDto: UserCreateRepositoryDTO) {
-        const user = await this.userService.getUserFromRequest(req);
+    async createRepositories(@Req() req: Request, @Body() createRepositoryDTO: UserCreateRepositoryDTO) {
+        const user = await this.authService.getUserFromRequest(req);
 
-        console.log(addRoleDto.repositories);
-        console.log(typeof(addRoleDto.repositories));
+        console.log(createRepositoryDTO.repositories);
+        console.log(typeof(createRepositoryDTO.repositories));
 
-        return this.roleService.upsertRoles(user['id'], addRoleDto.repositories);
+        return this.repositoryService.createRepositories(user['id'], createRepositoryDTO.repositories);
     }
 
     @ApiOkResponse({
@@ -92,7 +92,7 @@ export class UserController {
           "receiverEmail: Email of an existing user to update permissions for " +
           "permissionLevel: New permission level for user. 0 = none, 1 = read+write, 2 = admin," +
           "3 = transfer ownership",
-        type: UpdateRoleAdminDTO
+        type: UpdateRepositoryPermissionsDTO
     })
     @ApiOperation({
         summary: "Update repository permissions",
@@ -110,9 +110,9 @@ export class UserController {
           "assign a permission level higher than the one you have. Additionally, only admins (level 2+) can change any permission"
     })
     @Patch('update-permissions')
-    async updateRoleAdmins(@Req() req: Request, @Body() updateAdminDto: UpdateRoleAdminDTO): Promise<any> {
-        const user = await this.userService.getUserFromRequest(req);
-        return this.roleService.updateRoleAdmins(user['id'], updateAdminDto)
+    async updateRepositoryPermissions(@Req() req: Request, @Body() updateAdminDto: UpdateRepositoryPermissionsDTO): Promise<any> {
+        const user = await this.authService.getUserFromRequest(req);
+        return this.repositoryService.updateRepositoryPermissions(user['id'], updateAdminDto)
     }
 
 
@@ -134,9 +134,9 @@ export class UserController {
         type: DeleteRepositoryDTO,
     })
     @Delete('delete-repositories')
-    async deleteRole(@Req() req: Request, @Body() removeRoleDto: DeleteRepositoryDTO): Promise<any> {
-        const user = await this.userService.getUserFromRequest(req);
-        return this.roleService.deleteRole(user['id'], removeRoleDto.repository);
+    async deleteRepository(@Req() req: Request, @Body() deleteRepositoryDTO: DeleteRepositoryDTO): Promise<any> {
+        const user = await this.authService.getUserFromRequest(req);
+        return this.repositoryService.deleteRepository(user['id'], deleteRepositoryDTO.repository);
     }
 }
 
