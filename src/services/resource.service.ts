@@ -7,6 +7,7 @@ import { performance } from "perf_hooks";
 import { RepositoryService } from "./repository.service";
 import { parseAsync } from "json2csv";
 import { SeedDatabaseInputDTO } from "../resolvers/resource/dto/seed-database.dto";
+import { RepositoryPermissions } from "../constants/permission-level-constants";
 
 
 @Injectable()
@@ -199,12 +200,8 @@ export class ResourceService {
 
 
     //step 1: authenticate this request
-    const access = await this.repositoryService.permissionLevelOfUserOnRepository(userId, repository);
-    if (access["permissionLevel"] < 1) { //1 represents user
-      return; //throw authentication 403 error (try accessing from a different respository if you believe you should be able to access)
-    }
+    await this.repositoryService.authenticateUserRequest(userId, repository, RepositoryPermissions.REPOSITORY_USER);
 
-    console.log(access);
 
     /**
      * Account for multiple cases: User may want to select all of their fields (select *) without having to type them all out

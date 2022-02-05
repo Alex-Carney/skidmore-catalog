@@ -4,8 +4,8 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
-  UnauthorizedException,
-} from '@nestjs/common';
+  UnauthorizedException, ForbiddenException
+} from "@nestjs/common";
 import { JwtService } from '@nestjs/jwt';
 import { PasswordService } from './password.service';
 import { SignupInput } from '../resolvers/auth/dto/signup.input';
@@ -120,8 +120,17 @@ export class AuthService {
 
     //--------------------------------------------------------------------
 
+  /**
+   *
+   * @param token
+   * @throws NotFoundException
+   */
   getUserFromToken(token: string): Promise<User> {
-    const id = this.jwtService.decode(token)['userId'];
+    const decodedToken = this.jwtService.decode(token);
+    if(!decodedToken) {
+      throw new ForbiddenException(UserBusinessErrors.InvalidBearerToken)
+    }
+    const id = decodedToken['userId']
     const foundUser = this.prisma.user.findUnique({ where: { id } });
     if(!foundUser) {
       throw new NotFoundException(UserBusinessErrors.UserNotFound);
@@ -131,11 +140,7 @@ export class AuthService {
 
     //--------------------------------------------------------------------
 
-  async getUserFromRequest(req: Request): Promise<User> {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader.split(' ')[1];
-    return this.getUserFromToken(token);
-  }
+
 
     //--------------------------------------------------------------------
 

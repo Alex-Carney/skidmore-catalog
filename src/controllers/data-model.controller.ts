@@ -13,16 +13,16 @@ import { DataModelGenerateInputDTO } from "../resolvers/resource/dto/data-model-
 import { FileInterceptor } from "@nestjs/platform-express";
 import { DataModelPublishInputDTO } from "../resolvers/resource/dto/data-model-publish.dto";
 import { Request } from "express";
-import { UpdateResourceRepositoriesDTO } from "../resolvers/resource/dto/update-resource-repository.dto";
-import { UpdateDataModelDTO } from "../resolvers/resource/dto/data-model-update.dto";
+import { UpdateDataModelRepositoriesDTO } from "../resolvers/resource/dto/update-resource-repository.dto";
+import { UpdateDataModelFieldsDTO } from "../resolvers/resource/dto/data-model-update.dto";
 import { DeleteDataModelDTO } from "../resolvers/resource/dto/delete-data-model.dto";
-import { AuthService } from "../services/auth.service";
+import { UserService } from "../services/user.service";
 
 @ApiBearerAuth()
 @ApiTags('Resource Model')
 @Controller('data-model')
 export class DataModelController {
-  constructor(private readonly dataModelService: DataModelService, private readonly authService: AuthService) {}
+  constructor(private readonly dataModelService: DataModelService, private readonly userService: UserService) {}
 
   //---------------------------------------------------------------------------------------------------------
 
@@ -92,19 +92,14 @@ export class DataModelController {
     description: "Only users with accounts can publish data models. You can do so here" //TODO: insert link
   })
   @Post('publish-data-model')
-  async publishDataModel(@Req() req: Request, @Body() dataModelPublishInputDto: DataModelPublishInputDTO) {
+  async publishDataModel(@Req() req: Request, @Body() dataModelPublishInputDTO: DataModelPublishInputDTO) {
 
-    console.log(dataModelPublishInputDto)
-    console.log(dataModelPublishInputDto.dataModel)
+    console.log(dataModelPublishInputDTO)
+    console.log(dataModelPublishInputDTO.dataModel)
 
+    const user = await this.userService.getUserFromRequest(req);
+    return this.dataModelService.publishDataModel(user['id'], dataModelPublishInputDTO);
 
-    try {
-      // const dataModel = JSON.parse(dataModelPublishInputDto.dataModel);
-      const user = await this.authService.getUserFromRequest(req);
-      return this.dataModelService.publishDataModel(user['id'], dataModelPublishInputDto);
-    } catch(err) {
-      console.log(err);
-    }
   }
 
   //-----------------------------------------------------------------------
@@ -161,7 +156,7 @@ export class DataModelController {
       'repository: The repository to access this model with. Requires admin privileges \n' +
       'dataModel: The NEW data model, containing all changes to be updated. It is recommended to paste a generated data model first, then update accordingly',
     required: true,
-    type: UpdateResourceRepositoriesDTO
+    type: UpdateDataModelRepositoriesDTO
   })
   @ApiOperation({
     summary: "Updates existing data model",
@@ -184,9 +179,9 @@ export class DataModelController {
     description: "Only users with accounts can publish data models. You can do so here" //TODO: insert link
   })
   @Put('update-resource-repositories')
-  async updateDataModelRepositories(@Req() req: Request, @Body() updateRepositories: UpdateResourceRepositoriesDTO) {
-    const user = await this.authService.getUserFromRequest(req);
-    return this.dataModelService.updateDataModelRepositories(updateRepositories.resourceName, user['id'], updateRepositories.repository, updateRepositories.removeRepositories);
+  async updateDataModelRepositories(@Req() req: Request, @Body() updateDataModelRepositoriesDTO: UpdateDataModelRepositoriesDTO) {
+    const user = await this.userService.getUserFromRequest(req);
+    return this.dataModelService.updateDataModelRepositories(user['id'], updateDataModelRepositoriesDTO);
   }
 
   //------------------------------------------------------------------------
@@ -199,7 +194,7 @@ export class DataModelController {
       'repository: The repository to access this model with. Requires admin privileges \n' +
       'dataModel: The NEW data model, containing all changes to be updated. It is recommended to paste a generated data model first, then update accordingly',
     required: true,
-    type: UpdateDataModelDTO
+    type: UpdateDataModelFieldsDTO
   })
   @ApiOperation({
     summary: "Updates existing data model",
@@ -222,9 +217,9 @@ export class DataModelController {
     description: "Only users with accounts can publish data models. You can do so here" //TODO: insert link
   })
   @Put('update-data-model')
-  async updateDataModel(@Req() req: Request, @Body() updateDataModel: UpdateDataModelDTO) {
-    const user = await this.authService.getUserFromRequest(req);
-    return this.dataModelService.updateDataModelFields(updateDataModel.resourceName, user['id'], updateDataModel.repository, updateDataModel.dataModel);
+  async updateDataModel(@Req() req: Request, @Body() updateDataModelFieldsDTO: UpdateDataModelFieldsDTO) {
+    const user = await this.userService.getUserFromRequest(req);
+    return this.dataModelService.updateDataModelFields(user['id'], updateDataModelFieldsDTO);
   }
 
 //------------------------------------------------------------------------------------
@@ -255,9 +250,9 @@ export class DataModelController {
     description: "Deleting a data model requires ownership of the repository" //TODO: insert link
   })
   @Delete('delete-data-model')
-  async deleteDataModel(@Req() req: Request, @Body() deleteDataModel: DeleteDataModelDTO) {
-    const user = await this.authService.getUserFromRequest(req);
-    return this.dataModelService.deleteDataModel(deleteDataModel.resourceName, user['id'], deleteDataModel.repository);
+  async deleteDataModel(@Req() req: Request, @Body() deleteDataModelDTO: DeleteDataModelDTO) {
+    const user = await this.userService.getUserFromRequest(req);
+    return this.dataModelService.deleteDataModel(user['id'], deleteDataModelDTO);
   }
 
 }

@@ -1,5 +1,11 @@
 import { PrismaService } from './../prisma/prisma.service';
-import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+  ForbiddenException
+} from "@nestjs/common";
 import { PasswordService } from './password.service';
 import { ChangePasswordInput } from '../resolvers/user/dto/change-password.input';
 import { UpdateUserInput } from '../resolvers/user/dto/update-user.input';
@@ -51,21 +57,33 @@ export class UserService {
     });
   }
 
-  async getUserIdFromEmail(userEmail: string): Promise<{id: string}> {
-    try {
-      const user = this.prisma.user.findUnique({
-        where: {
-          email: userEmail,
-        },
-        select: {
-          id: true,
-        }
-      })
-      return user;
-    } catch(err) {
-      throw new NotFoundException(UserBusinessErrors.UserNotFound);
+  async getUserFromEmail(userEmail: string): Promise<User> {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email: userEmail,
+      },
+    })
+    if(!user) {
+      const exceptionToThrow = UserBusinessErrors.UserNotFound;
+      exceptionToThrow.additionalInformation = 'No user with email ' + userEmail + ' found'
+      throw new NotFoundException(exceptionToThrow);
     }
+    return user;
 
+  }
+
+  /**
+   *
+   * @param req
+   * @throws NotFoundException through call to getUserFromToken
+   */
+  async getUserFromRequest(req: Request): Promise<User> {
+    const authHeader = req.headers['authorization'];
+    if(!authHeader) {
+      throw new ForbiddenException(UserBusinessErrors.UserNotAuthenticated)
+    }
+    const token = authHeader.split(' ')[1];
+    return this.authService.getUserFromToken(token);
   }
 
   // async updateRoles(

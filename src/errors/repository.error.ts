@@ -32,6 +32,13 @@ export const RepositoryBusinessErrors = {
     errorMessage: 'Relation does not exist',
     reason: 'There is no relation between this user and this repository. This is a bug, and should not occur',
     advice: 'Try making supplied user an admin (demoting them afterward if necessary) to instantiate this relation'
+  },
+
+  InvalidPermissionLevel: {
+    apiErrorCode: 'E_R_006',
+    errorMessage: 'Invalid request',
+    reason: 'Permission level must be an integer between 0 and 3.',
+    additionalInformation: '0 means no access // 1 means user (read/write) // 2 means admin // 3 means owner'
   }
 
 

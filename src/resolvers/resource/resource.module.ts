@@ -5,6 +5,8 @@ import { ResourceService } from "src/services/resource.service";
 import { UserModule } from "../user/user.module";
 import { DataModelController } from "../../controllers/data-model.controller";
 import { DataModelService } from "../../services/data-model.service";
+import { AuthModule } from "../auth/auth.module";
+import { AuthService } from "../../services/auth.service";
 
 @Module({
     imports: [PrismaModule, UserModule],

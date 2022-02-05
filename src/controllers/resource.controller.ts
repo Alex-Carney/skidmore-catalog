@@ -6,15 +6,13 @@ import { Request } from "express";
 import { SeedDatabaseInputDTO } from 'src/resolvers/resource/dto/seed-database.dto';
 import { QueryDatabaseInputDTO } from 'src/resolvers/resource/dto/query-database.dto';
 import { AuthService } from "../services/auth.service";
+import { UserService } from "../services/user.service";
 
 @ApiBearerAuth()
 @Controller('resources')
 export class ResourceController {
 
-    constructor(private readonly resourceService: ResourceService, private readonly authService: AuthService) {}
-
-
-
+    constructor(private readonly resourceService: ResourceService, private readonly userService: UserService) {}
 
     @ApiOkResponse({
         description: 'upload a file of celestial locations'
@@ -30,7 +28,7 @@ export class ResourceController {
     @Put('seed-database')
     async seedDatabase(@UploadedFile() file: Express.Multer.File, @Req() req: Request, @Body() seedDatabaseInputDto: SeedDatabaseInputDTO) {
         try {
-            const user = await this.authService.getUserFromRequest(req);
+            const user = await this.userService.getUserFromRequest(req);
             return this.resourceService.seedResourceFromFile(file, seedDatabaseInputDto, user['id']);
         } catch(err) {
             console.log(err);
@@ -50,7 +48,7 @@ export class ResourceController {
     @Post('query-database')
     async queryDatabase(@Req() req: Request, @Body() queryDatabaseInputDto: QueryDatabaseInputDTO) {
         try {
-            const user = await this.authService.getUserFromRequest(req);
+            const user = await this.userService.getUserFromRequest(req);
 
             const payload = await this.resourceService.queryResource
             (

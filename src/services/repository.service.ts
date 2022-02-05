@@ -15,7 +15,7 @@ import { RepositoryPermissions } from "../constants/permission-level-constants";
 @Injectable()
 export class RepositoryService {
   /**
-   * An injectable service handling all operations relating to repositories. Depends on PrismaService and UserService
+   * @service An injectable service handling all operations relating to repositories. Depends on PrismaService and UserService
    *
    * @param prisma
    * @param userService
@@ -78,34 +78,46 @@ export class RepositoryService {
   //----------------------------------------------------------------------------------------
 
   /**
-   * @method Fetches repositories associated with user
+   * @method Fetches repositories associated with user, along with the associated permission level
    *
    * @param userId
    * @throws NotFoundException Invalid userId
    * @returns userRepositories - repositories associated with user
    */
   async getUserRepositories(userId: string) {
-    try {
-      const userRepositories = await this.prisma.user.findUnique({
-        where: {
-          id: userId
-        },
-        select: {
-          repositories: {
-            select: {
-              repository: {
-                select: {
-                  title: true
-                }
-              }
-            }
-          }
-        }
-      });
-      return userRepositories;
-    } catch (err) {
-      throw new NotFoundException(RepositoryBusinessErrors.UserNotFound);
-    }
+
+
+    return await this.prisma.repositoriesOnUsers.findMany({
+      where: {
+        userId: userId
+      },
+      select: {
+        repositoryTitle: true,
+        permissionLevel: true,
+      }
+    })
+
+    // try {
+    //   const userRepositories = await this.prisma.user.findUnique({
+    //     where: {
+    //       id: user['id']
+    //     },
+    //     select: {
+    //       repositories: {
+    //         select: {
+    //           repository: {
+    //             select: {
+    //               title: true
+    //             }
+    //           }
+    //         }
+    //       }
+    //     }
+    //   });
+    //   return userRepositories;
+    // } catch (err) {
+    //   throw new NotFoundException(RepositoryBusinessErrors.UserNotFound);
+    // }
 
   }
 
@@ -132,10 +144,10 @@ export class RepositoryService {
      * but we must ensure input repository is valid. NotFoundError is thrown from validateRepositoryExistence
      */
     await this.validateRepositoryExistence(updateRepositoryPermissionsDTO.repository);
-
+    await this.validatePermissionLevelInput(updateRepositoryPermissionsDTO.targetNewPermissionLevel)
 
     //validate whether current permissions allow for this action to be executed - need information about requester and target
-    const userToChangePerms = await this.userService.getUserIdFromEmail(updateRepositoryPermissionsDTO.receiverEmail);
+    const userToChangePerms = await this.userService.getUserFromEmail(updateRepositoryPermissionsDTO.receiverEmail);
     const permissionLevelOfTarget = await this.permissionLevelOfUserOnRepository(userToChangePerms["id"], updateRepositoryPermissionsDTO.repository);
     const permissionLevelOfRequester = await this.permissionLevelOfUserOnRepository(userId, updateRepositoryPermissionsDTO.repository);
 
@@ -304,6 +316,18 @@ export class RepositoryService {
       throw new NotFoundException(RepositoryBusinessErrors.RepositoryNotFound);
     }
     return repo;
+  }
+
+  /**
+   * @method Throws an exception if the input permission level is outside the allowed range [0 3] or a non-integer
+   *
+   * @param permissionLevel
+   * @throws BadRequestException
+   */
+  async validatePermissionLevelInput(permissionLevel: number) {
+      if(permissionLevel < 0 || permissionLevel > 3 || !Number.isInteger(permissionLevel)) {
+        throw new BadRequestException()
+      }
   }
 
 

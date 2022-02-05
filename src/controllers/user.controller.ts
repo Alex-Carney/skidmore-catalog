@@ -23,6 +23,11 @@ import { UserService } from "src/services/user.service";
      * to the actual resources.
      *
      * Therefore, the only functions for users are viewing their repositories + adding new repositories
+     *
+     * The only function of the controller is to retrieve the associated user with the request, and call the correct
+     * service to handle the rest. Apparently it is bad practice to couple anything related to the web in the service
+     * layer, so the controller converts the request into the user id instead.
+     *
      */
 
 
@@ -31,7 +36,7 @@ import { UserService } from "src/services/user.service";
 @Controller('repository')
 export class UserController {
 
-    constructor(private readonly authService: AuthService, private readonly repositoryService: RepositoryService) {}
+    constructor(private readonly userService: UserService, private readonly repositoryService: RepositoryService) {}
 
     //--------------------------------------------------------------------------------------------------------------
     @ApiOperation({
@@ -46,10 +51,12 @@ export class UserController {
         description: "Only users with accounts can use this route. You can create an account here"
     })
     @Get()
-    async getRepositories(@Req() req: any): Promise<any> {
-        const user = await this.authService.getUserFromRequest(req);
+    async getRepositories(@Req() req: Request): Promise<any> {
+        const user = await this.userService.getUserFromRequest(req);
         return this.repositoryService.getUserRepositories(user['id']);
     }
+
+    //--------------------------------------------------------------------------------------------------------------
 
     @ApiCreatedResponse({
         description: 'Each repository listed was created'
@@ -76,13 +83,15 @@ export class UserController {
     })
     @Post('create-repositories')
     async createRepositories(@Req() req: Request, @Body() createRepositoryDTO: UserCreateRepositoryDTO) {
-        const user = await this.authService.getUserFromRequest(req);
+
+        const user = await this.userService.getUserFromRequest(req);
 
         console.log(createRepositoryDTO.repositories);
         console.log(typeof(createRepositoryDTO.repositories));
 
         return this.repositoryService.createRepositories(user['id'], createRepositoryDTO.repositories);
     }
+    //--------------------------------------------------------------------------------------------------------------
 
     @ApiOkResponse({
         description: "Permissions were updated successfully"
@@ -111,9 +120,10 @@ export class UserController {
     })
     @Patch('update-permissions')
     async updateRepositoryPermissions(@Req() req: Request, @Body() updateAdminDto: UpdateRepositoryPermissionsDTO): Promise<any> {
-        const user = await this.authService.getUserFromRequest(req);
+        const user = await this.userService.getUserFromRequest(req);
         return this.repositoryService.updateRepositoryPermissions(user['id'], updateAdminDto)
     }
+    //--------------------------------------------------------------------------------------------------------------
 
 
     @ApiOkResponse({
@@ -135,7 +145,7 @@ export class UserController {
     })
     @Delete('delete-repositories')
     async deleteRepository(@Req() req: Request, @Body() deleteRepositoryDTO: DeleteRepositoryDTO): Promise<any> {
-        const user = await this.authService.getUserFromRequest(req);
+        const user = await this.userService.getUserFromRequest(req);
         return this.repositoryService.deleteRepository(user['id'], deleteRepositoryDTO.repository);
     }
 }

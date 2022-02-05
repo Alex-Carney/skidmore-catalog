@@ -1,21 +1,38 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { UserService } from "./user.service";
 import { Readable } from "stream";
 import * as readline from "readline";
 import { RepositoryService } from "./repository.service";
-import * as md5 from 'md5';
+import * as md5 from "md5";
 import { DataModelBusinessErrors } from "../errors/data-model.error";
 import { DataModelPublishInputDTO } from "../resolvers/resource/dto/data-model-publish.dto";
+import { RepositoryPermissions } from "../constants/permission-level-constants";
+import { DeleteDataModelDTO } from "../resolvers/resource/dto/delete-data-model.dto";
+import { UpdateDataModelFieldsDTO } from "../resolvers/resource/dto/data-model-update.dto";
+import { UpdateDataModelRepositoriesDTO } from "../resolvers/resource/dto/update-resource-repository.dto";
 
 
 @Injectable()
 export class DataModelService {
+  /**
+   * @service An injectable service handling all operations relating to data models. Depends on PrismaService,
+   * UserService, and RepositoryService.
+   *
+   * @param prisma
+   * @param userService
+   * @param repositoryService
+   */
   constructor(
     private prisma: PrismaService,
     private userService: UserService,
-    private repositoryService: RepositoryService,
-  ) {}
+    private repositoryService: RepositoryService
+  ) {
+  }
+
+  //----------------------------------------------------------------------------------------
+  // CRUD OPERATIONS
+  //----------------------------------------------------------------------------------------
 
 
   /**
@@ -29,13 +46,14 @@ export class DataModelService {
    * @param file binary file from controller
    * @throws BadRequestException An error describing what went wrong while parsing input file
    * @returns DataModel An object representing a data model that can be copy and pasted for future calls
+   * @throws BadRequestException if an error occurs while parsing input file
    */
   async generateDataModel(file: Express.Multer.File) {
     const buf = file.buffer;
     try {
       const rl = readline.createInterface({
         input: Readable.from(buf),
-        crlfDelay: Infinity,
+        crlfDelay: Infinity
       });
 
       let lNum = 0;
@@ -43,16 +61,16 @@ export class DataModelService {
       const fieldToDataType = new Map<string, string>(); //This map tracks the relationship between a column's name and its datatype
       for await (const line of rl) {
         //the first line must be the header -- containing the field names
-        if(lNum == 0) {
-          line.split(',').forEach((field) => {
+        if (lNum == 0) {
+          line.split(",").forEach((field) => {
             fieldNames.push(field);
           });
         } else {
           //this could very well be a nested while instead, but i'd rather do it this way
-          if(fieldToDataType.size < fieldNames.length) {
-            line.split(',').forEach((element, index) => {
+          if (fieldToDataType.size < fieldNames.length) {
+            line.split(",").forEach((element, index) => {
               //Three possibilities: Not a number, a number, or "".
-              if(element !== "") {
+              if (element !== "") {
                 fieldToDataType.set(fieldNames[index], Number.isNaN(Number(element)) ? "text" : "numeric");
               }
               //ignore null fields, but keep looping through the file until there are none left
@@ -64,9 +82,9 @@ export class DataModelService {
         }
         lNum++;
       }
-      console.log({fields: fieldToDataType});
+      console.log({ fields: fieldToDataType });
       return this.convertMapToObj(fieldToDataType);
-    } catch(err) {
+    } catch (err) {
       const errorToThrow = DataModelBusinessErrors.ErrorParsingInputFile;
       errorToThrow.additionalInformation = err.message;
       throw new BadRequestException(errorToThrow);
@@ -74,26 +92,11 @@ export class DataModelService {
 
   }
 
-  //--------------------------------------------------------------------
-
-  /**
-   * not my code https://stackoverflow.com/questions/37437805/convert-map-to-json-object-in-javascript
-   * with some slight modifications
-   * @param inputMap: Map<string, string> input map to convert
-   * @returns obj The input map converted to a JSON object, to be returned to the view
-   */
-  convertMapToObj(inputMap: Map<string, string>) {
-    const obj = {};
-    inputMap.forEach((v, k) => {
-      obj[k] = v;
-    });
-    return obj;
-  }
 
   //--------------------------------------------------------------------
 
   /**
-   * Publishes the data model as a "Resource" object in the database. Also generates the "ResourceField" objects that store the localized name
+   * @method Publishes the data model as a "Resource" object in the database. Also generates the "ResourceField" objects that store the localized name
    * and data type.
    * Also creates an empty table in another section of the DB (datastore schema in Postgres) that will eventually be seeded with raw data by the user
    *
@@ -115,7 +118,7 @@ export class DataModelService {
        * names that Postgres would reject (special characters)
        */
       dataModelPublishInputDto.dataModel[fieldName].push("c" + md5(fieldName));
-    })
+    });
 
     /**
      * Allows all of the entries in the dataModel to be handled at once in a single prisma query.
@@ -126,7 +129,7 @@ export class DataModelService {
       return {
         fieldName: fieldInfo[0],
         dataType: fieldInfo[1][0],
-        localizedName: fieldInfo[1][1],
+        localizedName: fieldInfo[1][1]
       };
     });
 
@@ -136,8 +139,8 @@ export class DataModelService {
      */
     const connectManyInput = dataModelPublishInputDto.repositories.map((repository) => {
       return {
-        repositoryTitle: repository,
-      }
+        repositoryTitle: repository
+      };
     });
 
 
@@ -150,7 +153,7 @@ export class DataModelService {
     Object.values(dataModelPublishInputDto.dataModel).forEach((dataTypeAndLocName) => {
       createTableArguments += (dataTypeAndLocName[1] + " " + dataTypeAndLocName[0] + ",");
     });
-    const tableArguments = `datastore."${dataModelPublishInputDto.resourceName}" ( ${createTableArguments.slice(0,-1)} )` //remove trailing comma
+    const tableArguments = `datastore."${dataModelPublishInputDto.resourceName}" ( ${createTableArguments.slice(0, -1)} )`; //remove trailing comma
 
 
     /**
@@ -160,33 +163,33 @@ export class DataModelService {
      * The two statements are wrapped in a transaction because they both need to succeed (or fail) together or else the
      * database will become de-synced.
      */
-    const [dataModelRecord, ] = await this.prisma.$transaction([
+    const [dataModelRecord] = await this.prisma.$transaction([
       //statement 1
       this.prisma.resource.create({
         data: {
           title: dataModelPublishInputDto.resourceName,
           createdBy: {
             connect: {
-              id: userId,
+              id: userId
             }
           },
           repositories: {
             createMany: {
-              data: connectManyInput,
+              data: connectManyInput
             }
           },
           fields: {
             createMany: {
               data: createManyInput
             }
-          },
+          }
         },
         include: {
-          fields: true, //may reduce the amount of information returned later
+          fields: true //may reduce the amount of information returned later
         }
       }),
       //statement 2
-      this.prisma.$executeRaw("CREATE TABLE " + tableArguments),
+      this.prisma.$executeRaw("CREATE TABLE " + tableArguments)
     ]);
     return dataModelRecord;
   }
@@ -194,17 +197,18 @@ export class DataModelService {
   //--------------------------------------------------------------------
 
   /**
-   * Fetches user-friendly records of datamodels they have uploaded. Intended purpose is just called viewing
+   * @method Fetches user-friendly records of datamodels they have uploaded. Intended purpose is just called viewing
    *
    * @param repository
    * @returns datamodels An object description of the resources the user has uploaded
    */
-  returnDataModels(repository: string) {
+  async returnDataModels(repository: string) {
+    await this.repositoryService.validateRepositoryExistence(repository);
     return this.prisma.resource.findMany({
       where: {
         repositories: {
           some: {
-            repositoryTitle: repository,
+            repositoryTitle: repository
           }
         }
       },
@@ -212,12 +216,12 @@ export class DataModelService {
         fields: {
           select: {
             fieldName: true,
-            dataType: true,
+            dataType: true
           }
         },
         repositories: {
           select: {
-            repositoryTitle: true,
+            repositoryTitle: true
           }
         }
       }
@@ -234,19 +238,20 @@ export class DataModelService {
    * @param asMap boolean flag whether or not to return the data as a map or an object
    */
   async returnDataModelExact(resourceName: string, asMap: boolean) {
+    //TODO: validate resourceName?
     const fieldInfo = await this.prisma.resource.findUnique({
       where: {
-        title: resourceName,
+        title: resourceName
       },
       include: {
         fields: true,
       }
-    })
+    });
 
     const fieldMap = new Map<string, string>();
     fieldInfo.fields.forEach((field) => {
-      fieldMap.set(field.fieldName, field.dataType)
-    })
+      fieldMap.set(field.fieldName, field.dataType);
+    });
 
     return asMap ? fieldMap : this.convertMapToObj(fieldMap);
   }
@@ -254,76 +259,110 @@ export class DataModelService {
   //--------------------------------------------------------------------
 
   /**
+   * @method Updates repositories associated with a data model. User can choose whether incoming repositories should
+   * be removed from current list, or added
    *
-   * @param resourceName
    * @param userId
-   * @param repository
-   * @param remove
+   * @param updateDataModelRepositoriesDTO data transfer object associated with this call. More information in the
+   * UpdateDataModelRepositoriesDTO file
+   * @returns create/delete creation or deletion record of new repositories
    */
-  async updateDataModelRepositories(resourceName: string, userId: string, repository: string, remove: boolean) {
-    const access = await this.repositoryService.authenticateUserRequest(userId, repository, 2);
-    if(access == false) {
-      return //throw authentication error
-    }
+  async updateDataModelRepositories(userId: string, updateDataModelRepositoriesDTO: UpdateDataModelRepositoriesDTO) {
 
-    const updateArgs = remove ?
-      {disconnect: {resourceTitle_repositoryTitle: {resourceTitle: resourceName, repositoryTitle: repository}}}
-      : {connect: {resourceTitle_repositoryTitle: {resourceTitle: resourceName, repositoryTitle: repository}}};
+    await this.repositoryService.validateRepositoryExistence(updateDataModelRepositoriesDTO.repository);
+    await this.repositoryService.authenticateUserRequest(userId, updateDataModelRepositoriesDTO.repository, RepositoryPermissions.REPOSITORY_ADMIN);
+
+    //is the update removing or adding repositories to this data model
+    // const updateArgs = updateDataModelRepositoriesDTO.removeRepositories ?
+    //   {
+    //     disconnect:
+    //       {
+    //         resourceTitle_repositoryTitle: {
+    //           resourceTitle: updateDataModelRepositoriesDTO.resourceName,
+    //           repositoryTitle: updateDataModelRepositoriesDTO.repository
+    //         }
+    //       }
+    //   }
+    //   :
+    //   {
+    //     connect:
+    //       {
+    //         resourceTitle_repositoryTitle:
+    //           {
+    //             resourceTitle: updateDataModelRepositoriesDTO.resourceName,
+    //             repositoryTitle: updateDataModelRepositoriesDTO.repository
+    //           }
+    //       }
+    //   };
 
 
-    if(remove) {
+    if (updateDataModelRepositoriesDTO.removeRepositories) {
       return this.prisma.resourcesOnRepositories.delete({
         where: {
           resourceTitle_repositoryTitle: {
-            resourceTitle: resourceName,
-            repositoryTitle: repository,
+            resourceTitle: updateDataModelRepositoriesDTO.resourceName,
+            repositoryTitle: updateDataModelRepositoriesDTO.repository
           }
-        },
-      })
+        }
+      });
     } else {
       return this.prisma.resourcesOnRepositories.create({
         data: {
-          resourceTitle: resourceName,
-          repositoryTitle: repository,
+          resourceTitle: updateDataModelRepositoriesDTO.resourceName,
+          repositoryTitle: updateDataModelRepositoriesDTO.repository
         }
-      })
+      });
     }
   }
 
   //--------------------------------------------------------------------
 
-  async updateDataModelFields(resourceName: string, userId: string, repository: string, dataModel: Record<string, Array<string>>) {
-    //step 0: Only an ADMIN of this repository
+  /**
+   * @method This is the most complicated method in this project. User supplies an updated data model in their request.
+   * Parses input schema and compares it to the existing one, deducing changes that need to be made and executing them
+   * Additionally, these deduced changes must be mirrored in both the raw datastore itself, along with the record in the
+   * resource/resource field tables.
+   *
+   * Changes to datastore schema include: ALTER datatype of column, CREATE new columns, DROP old columns
+   * Changes to associated resource entries include: DELETE resource field, CREATE resource field, ALTER resource field type
+   *
+   * @param userId
+   * @param updateDataModelDTO data transfer object associated with this call. More information in the UpdateDataModelDTO
+   * file
+   *
+   */
+  async updateDataModelFields(userId: string, updateDataModelDTO: UpdateDataModelFieldsDTO) {
 
-    const access = await this.repositoryService.authenticateUserRequest(userId, repository, 2);
-    if(access == false) {
-      return //throw authentication error
-    }
+    //step 0: Only an ADMIN of this repository can update data model fields
+    await this.repositoryService.authenticateUserRequest(userId, updateDataModelDTO.repository, RepositoryPermissions.REPOSITORY_ADMIN);
 
+    console.log("Name" + updateDataModelDTO.resourceName);
 
-    console.log("Name" + resourceName);
+    //step 1: Grab the current data model to see what is different
+    const currentDataModel: Record<string, Array<string>> = await this.returnDataModelExact(updateDataModelDTO.resourceName, false);
 
-    //step 1: Grab the current datamodel to see what is different
-    const currentDataModel: Record<string, Array<string>> = await this.returnDataModelExact(resourceName, false);
-
+    //TODO: outsource this to addLocalizedFieldNameToDataModel
+    //step 1.5: Add localized field names
     const currKeys = Object.keys(currentDataModel);
-    const newKeys = Object.keys(dataModel);
+    const newKeys = Object.keys(updateDataModelDTO.dataModel);
 
     Object.keys(currentDataModel).forEach((fieldName) => {
       currentDataModel[fieldName].push("c" + md5(fieldName));
-    })
-    Object.keys(dataModel).forEach((fieldName) => {
-      dataModel[fieldName].push("c" + md5(fieldName));
-    })
+    });
+    Object.keys(updateDataModelDTO.dataModel).forEach((fieldName) => {
+      updateDataModelDTO.dataModel[fieldName].push("c" + md5(fieldName));
+    });
 
     console.log(currKeys);
     console.log(newKeys);
 
+    //step 2: Determine what combination of the possible changes to data model is being requested
     const createNewInput = [];
     const deleteInput = [];
     const changeDatatypeToText = [];
     const changeDatatypeToNumeric = [];
 
+    //step 2.5: alterInputOne handles modification of data type, along with dropping columns
     let alterInputOne = currKeys.map((key) => {
       console.log(key);
       console.log(newKeys);
@@ -333,72 +372,79 @@ export class DataModelService {
       const localizedFieldName = "c" + md5(currentDataModel[key][0]);
       console.log("equal next?" + localizedFieldName);
       console.log("equal above?" + currentDataModel[key][1]);
-      if(newKeys.includes(key)) {
+      if (newKeys.includes(key)) {
         //if this key is present in the new datamodel, check if the data type is the same
-        if(currentDataModel[key][0] !== dataModel[key][0]) {
-          dataModel[key][0] == "text" ? changeDatatypeToText.push(key) : changeDatatypeToNumeric.push(key);
-          return `ALTER COLUMN "${currentDataModel[key][1]}" TYPE ${dataModel[key][0]} USING ${currentDataModel[key][1]}::${dataModel[key][0]}`;
+        if (currentDataModel[key][0] !== updateDataModelDTO.dataModel[key][0]) {
+          updateDataModelDTO.dataModel[key][0] == "text" ? changeDatatypeToText.push(key) : changeDatatypeToNumeric.push(key);
+          return `ALTER COLUMN "${currentDataModel[key][1]}" 
+          TYPE ${updateDataModelDTO.dataModel[key][0]} 
+          USING ${currentDataModel[key][1]}
+          ::${updateDataModelDTO.dataModel[key][0]}`;
         } else {
-          return "$R" //signal to remove this entry and its comma from the final string
+          return "$R"; //signal to remove this entry and its comma from the final string
         }
       } else {
         //this is an entry that is in the CURRENT DATA MODEL, but NOT THE NEW ONE. Drop it
-        deleteInput.push("'"+key+"'");
-        return `DROP COLUMN ${currentDataModel[key][1]}`
+        deleteInput.push("'" + key + "'");
+        return `DROP COLUMN ${currentDataModel[key][1]}`;
       }
     }).toString();
 
     /**
-     * After alterInputOne, we have accounted for all elements IN current that are NOT in new keys. Now, we must go the other way,
-     * in order to determine what columns to ADD
+     * step 2.75:
+     * After alterInputOne, we have accounted for all elements IN current data model that are NOT in the new data model.
+     * Now, we must go the other way, in order to determine what columns to ADD
+     * alterInputTwo handles adding new columns
      */
     let alterInputTwo = newKeys.map((key) => {
-      console.log("going to transform key" + key + " into " + dataModel[key])
+      console.log("going to transform key" + key + " into " + updateDataModelDTO.dataModel[key]);
 
 
-      if(!(currKeys.includes(key))) {
+      if (!(currKeys.includes(key))) {
         createNewInput.push({
           fieldName: key,
-          dataType: dataModel[key][0],
-          localizedName: dataModel[key][1],
+          dataType: updateDataModelDTO.dataModel[key][0],
+          localizedName: updateDataModelDTO.dataModel[key][1]
         });
-        return `ADD COLUMN IF NOT EXISTS "${dataModel[key][1]}" ${dataModel[key][0]}`;
+        return `ADD COLUMN IF NOT EXISTS "${updateDataModelDTO.dataModel[key][1]}" ${updateDataModelDTO.dataModel[key][0]}`;
       } else {
-        return "$R"
+        return "$R";
       }
-    }).toString()
+    }).toString();
 
     console.log(alterInputOne);
     console.log(alterInputTwo);
 
-    //TODO: FIX THIS LOOOL
+    //Step 3: Clean SQL execution strings
 
+    //$R is a placeholder for "do nothing"
     alterInputOne = alterInputOne.replace(/\$R,/g, "").replace(/\$R/g, "");
     alterInputTwo = alterInputTwo.replace(/\$R,/g, "").replace(/\$R/g, "");
 
-    //final test, remove all trailing commas
-    if(alterInputOne.charAt(alterInputOne.length - 1) == ",") {
-      alterInputOne = alterInputOne.slice(0,-1);
+    //final string cleaning, remove all trailing commas
+    if (alterInputOne.charAt(alterInputOne.length - 1) == ",") {
+      alterInputOne = alterInputOne.slice(0, -1);
     }
-    if(alterInputTwo.charAt(alterInputTwo.length - 1) == ",") {
-      alterInputTwo = alterInputTwo.slice(0,-1);
+    if (alterInputTwo.charAt(alterInputTwo.length - 1) == ",") {
+      alterInputTwo = alterInputTwo.slice(0, -1);
     }
 
     console.log(alterInputOne);
     console.log(alterInputTwo);
 
-    const createManyInput = Object.entries(dataModel).map((fieldInfo) => {
+    //Step 4: Now that raw SQL executions have been written, generate mirrored prisma queries
+    const createManyInput = Object.entries(updateDataModelDTO.dataModel).map((fieldInfo) => {
       return {
         fieldName: fieldInfo[0],
         dataType: fieldInfo[1][0],
-        localizedName: fieldInfo[1][1],
+        localizedName: fieldInfo[1][1]
       };
     });
 
     console.log("original create many : " + createManyInput);
 
-    const deleteManyInput = Object.entries(dataModel).map((fieldInfo) => {
-      return `'${fieldInfo[0]}'`
+    const deleteManyInput = Object.entries(updateDataModelDTO.dataModel).map((fieldInfo) => {
+      return `'${fieldInfo[0]}'`;
     }).toString();
 
     /**
@@ -432,29 +478,37 @@ export class DataModelService {
      * https://github.com/prisma/prisma/issues/5066
      * Therefore, we must use a PUT method and delete everything then re-create it
      */
+
+    /**
+     * Final Step: Add every SQL change, including raw executions to data table, along with prisma executions to
+     * associated resource fields, to a single transaction.
+     */
     const transactionArray = [];
-    if(deleteInput.length >= 1) {
+    //DELETE
+    if (deleteInput.length >= 1) {
       console.log(`DELETE FROM universe."ResourceField" WHERE "fieldName" in (${deleteInput})`);
       transactionArray.push(this.prisma.$executeRaw(`DELETE FROM universe."ResourceField" WHERE "fieldName" in (${deleteInput})`));
     }
-    if(createNewInput.length >= 1) {
+    //CREATE
+    if (createNewInput.length >= 1) {
       transactionArray.push(this.prisma.resource.update({
         where: {
-          title: resourceName,
+          title: updateDataModelDTO.resourceName
         },
         data: {
           fields: {
             createMany: {
-              data: createNewInput,
+              data: createNewInput
             }
           }
         }
       }));
     }
-    if(changeDatatypeToNumeric.length >= 1) {
+    //UPDATE DATA TYPE 1
+    if (changeDatatypeToNumeric.length >= 1) {
       transactionArray.push(this.prisma.resource.update({
         where: {
-          title: resourceName,
+          title: updateDataModelDTO.resourceName
         },
         data: {
           fields: {
@@ -472,10 +526,11 @@ export class DataModelService {
         }
       }));
     }
-    if(changeDatatypeToText.length >= 1) {
+    //UPDATE DATA TYPE 2
+    if (changeDatatypeToText.length >= 1) {
       transactionArray.push(this.prisma.resource.update({
         where: {
-          title: resourceName,
+          title: updateDataModelDTO.resourceName
         },
         data: {
           fields: {
@@ -494,51 +549,18 @@ export class DataModelService {
       }));
     }
 
-    if(alterInputOne.length >= 1) {
-      console.log(`ALTER TABLE datastore."${resourceName}" ${alterInputOne}`)
-      transactionArray.push(this.prisma.$executeRaw(`ALTER TABLE datastore."${resourceName}" ${alterInputOne}`));
+    //MODIFICATION OF DATA TYPE + DROPPING COLUMNS (to raw datastore table)
+    if (alterInputOne.length >= 1) {
+      console.log(`ALTER TABLE datastore."${updateDataModelDTO.resourceName}" ${alterInputOne}`);
+      transactionArray.push(this.prisma.$executeRaw(`ALTER TABLE datastore."${updateDataModelDTO.resourceName}" ${alterInputOne}`));
     }
-    if(alterInputTwo.length >= 1) {
-      console.log(`ALTER TABLE datastore."${resourceName}" ${alterInputTwo}`)
-      transactionArray.push(this.prisma.$executeRaw(`ALTER TABLE datastore."${resourceName}" ${alterInputTwo}`));
+    //ADDING NEW COLUMNS (to raw datastore table)
+    if (alterInputTwo.length >= 1) {
+      console.log(`ALTER TABLE datastore."${updateDataModelDTO.resourceName}" ${alterInputTwo}`);
+      transactionArray.push(this.prisma.$executeRaw(`ALTER TABLE datastore."${updateDataModelDTO.resourceName}" ${alterInputTwo}`));
     }
-    // this.prisma.resourceField.updateMany({
-    //     where: {
-    //         id: {
-    //             in: adf
-    //         }
-    //     },
-    //     data: {
-    //         dataType:
-    //     }
-
-    // })
-
-    //     const [newDataModelRecord, ] = await this.prisma.$transaction([
-    //        //statement 1
-    //         this.prisma.$executeRaw(`DELETE FROM universe."ResourceField" WHERE "fieldName" in (${deleteInput})`),
-    //         this.prisma.resource.update({
-    //             where: {
-    //                 title: resourceName,
-    //             },
-    //             data: {
-    //                 fields: {
-    //                     createMany: {
-    //                         data: createNewInput,
-    //                     }
-    //                 }
-    //             }
-    //         }),
-    //         //ALTER TABLE DROP COLUMNS
-    //         this.prisma.$executeRaw(`ALTER TABLE datastore."${resourceName}" ${alterInputOne}`),
-    //         alterInputTwo.length > 1 ? this.prisma.$executeRaw(`ALTER TABLE datastore."${resourceName}" ${alterInputTwo}`) : undefined
-    //         //this.prisma.$executeRaw(`ALTER TABLE`)
-
-    //         //TODO: don't run the alter table statment if the string is empty
-    //         //fix all the random bugs that shouldnt be there
-    //    ])
-
-    const [newDataModelRecord, ] = await this.prisma.$transaction(transactionArray);
+    //Execute every change all at once, or none at all
+    const [newDataModelRecord] = await this.prisma.$transaction(transactionArray);
 
     return newDataModelRecord;
 
@@ -546,25 +568,57 @@ export class DataModelService {
 
   //--------------------------------------------------------------------
 
-  async deleteDataModel(resourceName: string, userId: string, repository: string) {
-    //step 0: Only the OWNER of the ORIGINAL REPOSITORY (need to code that) can delete this resource
-    const access = await this.repositoryService.authenticateUserRequest(userId, repository, 3);
-    if(access == false) {
-      return //throw authentication error
-    }
+  /**
+   * @method Deletes a data model, along with its associated table in the datastore schema. Once again, Prisma does not
+   * yet support deletion of many-to-many relations, but Postgres can handle the cascading deletes with a delete
+   * execution on the parent
+   *
+   * @param userId
+   * @param deleteDataModelDTO Data transfer object for operation. More information in the DeleteDataModelDTO file
+   * @returns message An object telling the user that their requested data model was deleted
+   */
+  async deleteDataModel(userId: string, deleteDataModelDTO: DeleteDataModelDTO) {
+    //step 0: validate inputs
+    await this.repositoryService.validateRepositoryExistence(deleteDataModelDTO.repository);
+    await this.repositoryService.authenticateUserRequest(userId, deleteDataModelDTO.repository, RepositoryPermissions.REPOSITORY_OWNER);
 
 
     //transaction steps: delete the data model record itself
     //delete the table storing the data itself
-    return this.prisma.$transaction([
-      //statement 1: have to use raw sql because prisma does not support cascading delete
-      this.prisma.$executeRaw(`DELETE FROM universe."Resource" WHERE title = '${resourceName}'`),
-      this.prisma.$executeRaw(`DROP TABLE datastore."${resourceName}"`)
+    try {
+      await this.prisma.$transaction([
+        this.prisma.$executeRaw(`DELETE FROM universe."Resource" WHERE title = '${deleteDataModelDTO.resourceName}'`),
+        this.prisma.$executeRaw(`DROP TABLE datastore."${deleteDataModelDTO.resourceName}"`)
+      ]);
+      return { message: "Successfully deleted the " + deleteDataModelDTO.resourceName + " data model" };
+    } catch (err) {
+      throw new InternalServerErrorException(err.message);
 
-      //step 2: delete the table inside of the datastore schema in the same way
-    ])
+    }
+
+
+    //----------------------------------------------------------------------------------------
+    // OTHER FUNCTIONALITY
+    //----------------------------------------------------------------------------------------
+
   }
 
+
+  //--------------------------------------------------------------------
+
+  /**
+   * not my code https://stackoverflow.com/questions/37437805/convert-map-to-json-object-in-javascript
+   * with some slight modifications
+   * @param inputMap: Map<string, string> input map to convert
+   * @returns obj The input map converted to a JSON object, to be returned to the view
+   */
+  convertMapToObj(inputMap: Map<string, string>) {
+    const obj = {};
+    inputMap.forEach((v, k) => {
+      obj[k] = v;
+    });
+    return obj;
+  }
 
 
 }
