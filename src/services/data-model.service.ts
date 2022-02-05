@@ -6,6 +6,7 @@ import * as readline from "readline";
 import { RepositoryService } from "./repository.service";
 import * as md5 from 'md5';
 import { DataModelBusinessErrors } from "../errors/data-model.error";
+import { DataModelPublishInputDTO } from "../resolvers/resource/dto/data-model-publish.dto";
 
 
 @Injectable()
@@ -26,6 +27,8 @@ export class DataModelService {
    * completed from a single input row
    *
    * @param file binary file from controller
+   * @throws BadRequestException An error describing what went wrong while parsing input file
+   * @returns DataModel An object representing a data model that can be copy and pasted for future calls
    */
   async generateDataModel(file: Express.Multer.File) {
     const buf = file.buffer;
@@ -76,8 +79,8 @@ export class DataModelService {
   /**
    * not my code https://stackoverflow.com/questions/37437805/convert-map-to-json-object-in-javascript
    * with some slight modifications
-   * @param inputMap
-   * @returns
+   * @param inputMap: Map<string, string> input map to convert
+   * @returns obj The input map converted to a JSON object, to be returned to the view
    */
   convertMapToObj(inputMap: Map<string, string>) {
     const obj = {};
@@ -92,15 +95,13 @@ export class DataModelService {
   /**
    * Publishes the data model as a "Resource" object in the database. Also generates the "ResourceField" objects that store the localized name
    * and data type.
-   * Also creates an empty table in another section of the DB that will eventually be seeded with data by the user
+   * Also creates an empty table in another section of the DB (datastore schema in Postgres) that will eventually be seeded with raw data by the user
    *
-   * @param dataModel: Returned from the "generateDataModel" method. Contains a record of column display name to column localized name and datatype
-   * @param resourceName Name of resource to be published
    * @param userId User who is publishing the resource (mainly for logging purposes)
-   * @param repositories
-   * @returns The record of the newly created resource, including the auto-generated ResourceField objects
+   * @param dataModelPublishInputDto The associated data transfer object. See source file for more details
+   * @returns dataModelRecord The record of the newly created resource, including the auto-generated ResourceField objects
    */
-  async publishDataModel(dataModel: Record<string, Array<string>>, resourceName: string, userId: string, repositories: string[]) {
+  async publishDataModel(userId: string, dataModelPublishInputDto: DataModelPublishInputDTO) {
 
     /**
      * At first I kept the localized name in the datamodel itself, but ran into the issue where if users wanted to change their
@@ -108,16 +109,20 @@ export class DataModelService {
      * inconveinence my users by having them generate the localized names themselves, so they are added whenever the data model
      * is being published accordingly
      */
-    Object.keys(dataModel).forEach((fieldName) => {
-      dataModel[fieldName].push("c" + md5(fieldName));
+    Object.keys(dataModelPublishInputDto.dataModel).forEach((fieldName) => {
+      /**
+       *"localized name" refers to the letter c + hashed version of input field name. This allows users to choose column
+       * names that Postgres would reject (special characters)
+       */
+      dataModelPublishInputDto.dataModel[fieldName].push("c" + md5(fieldName));
     })
 
     /**
-     * This code allows all of the entries in the dataModel to be handled at once in a single prisma query.
+     * Allows all of the entries in the dataModel to be handled at once in a single prisma query.
      * An example fieldInfo looks like this: [fieldName, [dataType, localizedName]] all as strings
      * createManyInput is used in the transaction to generate the resource record.
      */
-    const createManyInput = Object.entries(dataModel).map((fieldInfo) => {
+    const createManyInput = Object.entries(dataModelPublishInputDto.dataModel).map((fieldInfo) => {
       return {
         fieldName: fieldInfo[0],
         dataType: fieldInfo[1][0],
@@ -126,10 +131,10 @@ export class DataModelService {
     });
 
     /**
-     * This code (similar to above) allows all of the entires in the "repositories" input to be handled at once in a single prisma query.
+     * Similar to above, allows all of the entires in the "repositories" input to be handled at once in a single prisma query.
      * The repositories are added to the explicit ResourcesOnRepositories m-n relation in the transaction below
      */
-    const connectManyInput = repositories.map((repository) => {
+    const connectManyInput = dataModelPublishInputDto.repositories.map((repository) => {
       return {
         repositoryTitle: repository,
       }
@@ -137,28 +142,29 @@ export class DataModelService {
 
 
     /**
-     * This code builds the SQL statement for CREATE TABLE (args), based on the datamodel input that the user provides.
+     * Builds the SQL statement for CREATE TABLE (args), based on the datamodel input that the user provides.
      * Prisma does not know about the tables in the "datastore" schema, which is why we create these tables with raw SQL
      * instead of using prisma's CREATE API.
      */
     let createTableArguments = "";
-    Object.values(dataModel).forEach((dataTypeAndLocName) => {
+    Object.values(dataModelPublishInputDto.dataModel).forEach((dataTypeAndLocName) => {
       createTableArguments += (dataTypeAndLocName[1] + " " + dataTypeAndLocName[0] + ",");
     });
-    const tableArguments = `datastore."${resourceName}" ( ${createTableArguments.slice(0,-1)} )` //remove trailing comma
+    const tableArguments = `datastore."${dataModelPublishInputDto.resourceName}" ( ${createTableArguments.slice(0,-1)} )` //remove trailing comma
 
 
     /**
-     * This transaction creates the datamodel record (that is known by prisma and uses its API) along with the data that will store
-     * the raw data that the user seeds later. This second table is unknown to prisma, so it is created with raw SQL
-     * The two statements are wrapped in a transaction because they both need to succeed (or fail) together or else the database will become
-     * out of sync.
+     * This transaction creates the datamodel record (that is known by prisma and uses its API) along with the table inside
+     * the 'datastore' schema that will store the raw data that the user seeds later. This second table is unknown to
+     * prisma, so it is created with raw SQL.
+     * The two statements are wrapped in a transaction because they both need to succeed (or fail) together or else the
+     * database will become de-synced.
      */
     const [dataModelRecord, ] = await this.prisma.$transaction([
       //statement 1
       this.prisma.resource.create({
         data: {
-          title: resourceName,
+          title: dataModelPublishInputDto.resourceName,
           createdBy: {
             connect: {
               id: userId,
@@ -179,7 +185,7 @@ export class DataModelService {
           fields: true, //may reduce the amount of information returned later
         }
       }),
-      //statement 3
+      //statement 2
       this.prisma.$executeRaw("CREATE TABLE " + tableArguments),
     ]);
     return dataModelRecord;
@@ -187,6 +193,12 @@ export class DataModelService {
 
   //--------------------------------------------------------------------
 
+  /**
+   * Fetches user-friendly records of datamodels they have uploaded. Intended purpose is just called viewing
+   *
+   * @param repository
+   * @returns datamodels An object description of the resources the user has uploaded
+   */
   returnDataModels(repository: string) {
     return this.prisma.resource.findMany({
       where: {
@@ -214,6 +226,13 @@ export class DataModelService {
 
   //--------------------------------------------------------------------
 
+  /**
+   * Returns the exact datamodel associated with a resource. Intended purpose is for the user to copy, modify, then
+   * use in a subsequent call (usually update datamodel)
+   *
+   * @param resourceName resource to return data model of
+   * @param asMap boolean flag whether or not to return the data as a map or an object
+   */
   async returnDataModelExact(resourceName: string, asMap: boolean) {
     const fieldInfo = await this.prisma.resource.findUnique({
       where: {
@@ -234,6 +253,13 @@ export class DataModelService {
 
   //--------------------------------------------------------------------
 
+  /**
+   *
+   * @param resourceName
+   * @param userId
+   * @param repository
+   * @param remove
+   */
   async updateDataModelRepositories(resourceName: string, userId: string, repository: string, remove: boolean) {
     const access = await this.repositoryService.authenticateUserRequest(userId, repository, 2);
     if(access == false) {

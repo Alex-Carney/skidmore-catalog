@@ -101,7 +101,7 @@ export class DataModelController {
     try {
       // const dataModel = JSON.parse(dataModelPublishInputDto.dataModel);
       const user = await this.authService.getUserFromRequest(req);
-      return this.dataModelService.publishDataModel(dataModelPublishInputDto.dataModel, dataModelPublishInputDto.resourceName, user['id'], dataModelPublishInputDto.repositories);
+      return this.dataModelService.publishDataModel(user['id'], dataModelPublishInputDto);
     } catch(err) {
       console.log(err);
     }

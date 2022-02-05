@@ -9,16 +9,26 @@ import { PrismaService } from "src/prisma/prisma.service";
 import { UpdateRepositoryPermissionsDTO } from "src/resolvers/user/dto/update-admin.dto";
 import { UserService } from "./user.service";
 import { RepositoryBusinessErrors } from "../errors/repository.error";
-import { RepositoryPermissions } from "../resolvers/user/dto/permission-level-constants";
+import { RepositoryPermissions } from "../constants/permission-level-constants";
+
 
 @Injectable()
 export class RepositoryService {
+  /**
+   * An injectable service handling all operations relating to repositories. Depends on PrismaService and UserService
+   *
+   * @param prisma
+   * @param userService
+   */
   constructor(
     private prisma: PrismaService,
     private userService: UserService
   ) {
   }
 
+  //----------------------------------------------------------------------------------------
+  // CRUD OPERATIONS
+  //----------------------------------------------------------------------------------------
 
   /**
    * @method This method creates a new repository with a name based on the input 'title'. The user who is supplied in the params is automatically
@@ -65,6 +75,15 @@ export class RepositoryService {
 
   }
 
+  //----------------------------------------------------------------------------------------
+
+  /**
+   * @method Fetches repositories associated with user
+   *
+   * @param userId
+   * @throws NotFoundException Invalid userId
+   * @returns userRepositories - repositories associated with user
+   */
   async getUserRepositories(userId: string) {
     try {
       const userRepositories = await this.prisma.user.findUnique({
@@ -90,16 +109,18 @@ export class RepositoryService {
 
   }
 
+  //----------------------------------------------------------------------------------------
+
 
   /**
    * @method The repositories on users relation keeps track of permission level. Certain actions involving modification
-   * of repositories, or the data that they contain, requires a specified permission level. This service handles
+   * of repositories, or the data that they contain, requires a specified permission level. Handles
    * modifications to those permission levels.
    *
    * Most of the logic in this method revolves around ensuring the requested transaction is valid.
    *
    * @param userId current user logged in making changes, aimed at another user
-   * @param updateRepositoryPermissionsDTO more information in the UpdateRepositoryPermissionsDTO file
+   * @param updateRepositoryPermissionsDTO Associated data transfer object. More information in the UpdateRepositoryPermissionsDTO file
    * @return updateResponse A body that contains the updated information
    */
   async updateRepositoryPermissions(userId: string, updateRepositoryPermissionsDTO: UpdateRepositoryPermissionsDTO): Promise<any> {
@@ -113,23 +134,24 @@ export class RepositoryService {
     await this.validateRepositoryExistence(updateRepositoryPermissionsDTO.repository);
 
 
-    //validate whether current permissions allow for this action to be executed
+    //validate whether current permissions allow for this action to be executed - need information about requester and target
     const userToChangePerms = await this.userService.getUserIdFromEmail(updateRepositoryPermissionsDTO.receiverEmail);
-    const permissionLevelOfRecipient = await this.permissionLevelOfUserOnRepository(userToChangePerms["id"], updateRepositoryPermissionsDTO.repository);
+    const permissionLevelOfTarget = await this.permissionLevelOfUserOnRepository(userToChangePerms["id"], updateRepositoryPermissionsDTO.repository);
     const permissionLevelOfRequester = await this.permissionLevelOfUserOnRepository(userId, updateRepositoryPermissionsDTO.repository);
 
       //edge case: owner transferring ownership, must demote current owner to admin (there can only be 1 owner)
     const ownerTransferringOwnershipEdgeCase: boolean =
-      updateRepositoryPermissionsDTO.permissionLevel == RepositoryPermissions.REPOSITORY_OWNER && permissionLevelOfRequester == RepositoryPermissions.REPOSITORY_OWNER;
+      updateRepositoryPermissionsDTO.targetNewPermissionLevel == RepositoryPermissions.REPOSITORY_OWNER
+      && permissionLevelOfRequester == RepositoryPermissions.REPOSITORY_OWNER;
 
     //handle unauthorized requests
     if (permissionLevelOfRequester < RepositoryPermissions.REPOSITORY_ADMIN
-      || permissionLevelOfRecipient >= permissionLevelOfRequester
-      || (updateRepositoryPermissionsDTO.permissionLevel >= permissionLevelOfRequester && !ownerTransferringOwnershipEdgeCase)) {
+      || permissionLevelOfTarget >= permissionLevelOfRequester
+      || (updateRepositoryPermissionsDTO.targetNewPermissionLevel >= permissionLevelOfRequester && !ownerTransferringOwnershipEdgeCase)) {
       throw new ForbiddenException(RepositoryBusinessErrors.RepositoryAuthorizationError);
     }
 
-    //update database record accordingly
+    //call is valid, update database record accordingly
     const updateResponse = await this.prisma.repositoriesOnUsers.update({
       where: {
         repositoryTitle_userId: {
@@ -138,7 +160,7 @@ export class RepositoryService {
         }
       },
       data: {
-        permissionLevel: updateRepositoryPermissionsDTO.permissionLevel
+        permissionLevel: updateRepositoryPermissionsDTO.targetNewPermissionLevel
       }
     });
 
@@ -152,7 +174,7 @@ export class RepositoryService {
           }
         },
         data: {
-          permissionLevel: RepositoryPermissions.REPOSITORY_ADMIN
+          permissionLevel: RepositoryPermissions.REPOSITORY_ADMIN //old owner becomes admin
         }
       });
     } else {
@@ -160,18 +182,60 @@ export class RepositoryService {
     }
   }
 
-  async permissionLevelOfUserOnRepository(userId: string, repositoryTitle: string): Promise<number> {
-    //Get the relation between this repository and the user, verify access level
-    /**
-     * Level 0: No access
-     * Level 1: User of the repository. Read privileges of repository resources
-     * Level 2: Admin of the repository. Read, write, delete privileges of repository resources. Can add new possessors to the repository
-     * Level 3: Owner of this repository. Can add new admins to the repository, and can delete the repository
-     */
+  //----------------------------------------------------------------------------------------
+
+  /**
+   * @method Deletes a repository record, along with all dependent records, from the DB
+   *
+   * @param userId
+   * @param repositoryToDelete
+   * @throws InternalServerErrorException if raw SQL is unable to execute
+   * @returns message A message notifying the user that the repository was successfully deleted
+   */
+  async deleteRepository(userId: string, repositoryToDelete: string) {
+
+    //verify inputs
+    await this.validateRepositoryExistence(repositoryToDelete);
+    await this.authenticateUserRequest(userId, repositoryToDelete, RepositoryPermissions.REPOSITORY_OWNER);
 
     /**
-     * NOTE: Do not call this function if the repository does not exist. Otherwise, a nonsense entry will be in the DB
+     * Unfortunately, this is another example where I've encountered a bug with prisma. Currently, deleting the parent
+     * in a many-to-many relation is not supported. Therefore, we must execute
+     * the SQL ourselves (the cascading delete is still handled automatically by Postgres)
      */
+    try {
+      await this.prisma.$executeRaw`DELETE FROM universe."Repository" WHERE title = ${repositoryToDelete}`;
+      return { message: "Successfully deleted the " + repositoryToDelete + " repository" };
+    } catch (err) {
+      throw new InternalServerErrorException(err.message);
+    }
+
+  }
+
+  //----------------------------------------------------------------------------------------
+  // OTHER FUNCTIONALITY
+  //----------------------------------------------------------------------------------------
+
+  /**
+   * @private
+   * @method Gets the relation between this repository and the user, in order to verify permission level.
+   *
+   * NOTE: Do not call this method if the repository does not exist. This can be verified with
+   * this.validateRepositoryExistence
+   *
+   * Mappings between access level numbers, and the roles they convert to are in constants/permission-level-constants
+   *
+   * Level 0: No access
+   * Level 1: User of the repository. Read privileges of repository resources
+   * Level 2: Admin of the repository. Read, write, delete privileges of repository resources. Can add new possessors to the repository
+   * Level 3: Owner of this repository. Can add new admins to the repository, and can delete the repository
+   *
+   * @param userId
+   * @param repositoryTitle
+   * @returns permissionResponse An object with a 'permission level' field
+   */
+  private async permissionLevelOfUserOnRepository(userId: string, repositoryTitle: string): Promise<number> {
+
     let permissionResponse = await this.prisma.repositoriesOnUsers.findUnique({
       where: {
         repositoryTitle_userId: {
@@ -182,7 +246,9 @@ export class RepositoryService {
         permissionLevel: true
       }
     });
+
     console.log(permissionResponse);
+
     if (!permissionResponse) {
       //relation does not exist yet, create it, and return it
       permissionResponse = await this.prisma.repositoriesOnUsers.create({
@@ -197,41 +263,19 @@ export class RepositoryService {
 
   }
 
-  async deleteRepository(userId: string, repositoryToDelete: string) {
+  //----------------------------------------------------------------------------------------
 
-    //Step 0: Verify that the repository exists
-    await this.validateRepositoryExistence(repositoryToDelete);
-
-    //step 1: Verify that a current admin of this repository is the one doing the operation
-    await this.authenticateUserRequest(userId, repositoryToDelete, 3); //owners only
-
-    /**
-     * Unfortunately, this is another example where I've encountered a bug with prisma. Currently, deleting the parent
-     * in a many-to-many relation is not supported, even though the code above should work. Therefore, we must execute
-     * the SQL ourselves (the cascading delete is still handled automatically)
-     */
-    try {
-      await this.prisma.$executeRaw`DELETE FROM universe."Repository" WHERE title = ${repositoryToDelete}`;
-      return { message: "Successfully deleted the " + repositoryToDelete + " repository" };
-    } catch (err) {
-      throw new InternalServerErrorException();
-    }
-
-  }
-
-  // userIdFromEmail(userEmail: string): Promise<{id: string}> {
-  //     return this.prisma.user.findUnique({
-  //         where: {
-  //           email: userEmail,
-  //         },
-  //         select: {
-  //             id: true,
-  //         }
-  //     })
-  // }
-
-  async authenticateUserRequest(userId: string, repository: string, requiredLevel: number): Promise<boolean> {
-    const access = await this.permissionLevelOfUserOnRepository(userId, repository);
+  /**
+   * @method Public version for authenticating repository actions.
+   *
+   * @param userId
+   * @param repositoryTitle
+   * @param requiredLevel of the form RepositoryPermissions.VALUE
+   * @throws ForbiddenException Unauthorized action
+   * @returns true or exception
+   */
+  async authenticateUserRequest(userId: string, repositoryTitle: string, requiredLevel: number): Promise<boolean> {
+    const access = await this.permissionLevelOfUserOnRepository(userId, repositoryTitle);
     if (access["permissionLevel"] >= requiredLevel) {
       return true;
     } else {
@@ -241,6 +285,15 @@ export class RepositoryService {
     }
   }
 
+  //----------------------------------------------------------------------------------------
+
+  /**
+   * @method Validates that the input title refers to a repository in the DB.
+   *
+   * @param repositoryTitle
+   * @throws NotFoundException Repository Not found
+   * @returns repo The validated repository
+   */
   async validateRepositoryExistence(repositoryTitle: string) {
     const repo = await this.prisma.repository.findUnique({
       where: {
@@ -250,7 +303,9 @@ export class RepositoryService {
     if (!repo) {
       throw new NotFoundException(RepositoryBusinessErrors.RepositoryNotFound);
     }
+    return repo;
   }
+
 
 
 }

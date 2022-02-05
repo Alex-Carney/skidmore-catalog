@@ -18,5 +18,5 @@ export class UpdateRepositoryPermissionsDTO {
         maximum: 3,
         default: 0,
     })
-    permissionLevel: number //if true admin is revoked (does nothing if user is not an admin already)
+    targetNewPermissionLevel: number //if true admin is revoked (does nothing if user is not an admin already)
 }
