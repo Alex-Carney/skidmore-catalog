@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { UserService } from "./user.service";
 import { Readable } from "stream";
@@ -8,6 +8,8 @@ import { RepositoryService } from "./repository.service";
 import { parseAsync } from "json2csv";
 import { SeedDatabaseInputDTO } from "../resolvers/resource/dto/seed-database.dto";
 import { RepositoryPermissions } from "../constants/permission-level-constants";
+import { ResourceBusinessErrors } from "../errors/resource.error";
+import { Resource, ResourceField } from "@prisma/client";
 
 
 @Injectable()
@@ -45,7 +47,7 @@ export class ResourceService {
     });
 
     const buf = file.buffer;
-    console.log(buf.toString())
+    console.log(buf.toString());
 
     //step 2: authenticate the request, does this user have WRITE priviledges for this resource under this repository?
 
@@ -79,8 +81,8 @@ export class ResourceService {
            */
 
           line.split(seedResourceDto.delimiter).forEach((field) => {
-            console.log("LINE SPLIT" + field)
-            fieldNames.push(field)
+            console.log("LINE SPLIT" + field);
+            fieldNames.push(field);
           });
 
           //console.log("field names " + fieldNames);
@@ -258,7 +260,7 @@ export class ResourceService {
       },
       include: {
         //include only the fields that are included in the user's SELECT statement, generated above
-        fields: includeFieldArgs,
+        fields: includeFieldArgs
       }
     });
 
@@ -294,5 +296,75 @@ export class ResourceService {
     return headerLine + ("\n" + csvPayload.substring(csvPayload.indexOf("\n") + 1));
   }
 
+  //----------------------------------------------------------------------------------------
+  // OTHER FUNCTIONALITY
+  //----------------------------------------------------------------------------------------
+
+  /**
+   * @method Returns the requested resource, or throws an exception either if the resource doesn't exist, or if it is not
+   * accessible from the input repository.
+   *
+   * @param repositoryName
+   * @param resourceName
+   * @throws ForbiddenException if the resource exists, but is not accessible by the input repository
+   * @throws NotFoundException if the resource does not exist
+   */
+  async validateResourceExistence(repositoryName: string, resourceName: string) {
+    const resourceFromTitle = await this.prisma.resource.findUnique({
+      where: {
+        title: resourceName
+      }
+    });
+    if (!resourceFromTitle) {
+      throw new NotFoundException(ResourceBusinessErrors.ResourceNotFound);
+    }
+    const resourceOnRepository = await this.prisma.resourcesOnRepositories.findUnique({
+      where: {
+        resourceTitle_repositoryTitle: {
+          repositoryTitle: repositoryName,
+          resourceTitle: resourceName
+        }
+      }
+    });
+    if (!resourceOnRepository) {
+      throw new ForbiddenException(ResourceBusinessErrors.ResourceNotInRepository);
+    } else {
+      return resourceFromTitle;
+    }
+  }
+
+  //----------------------------------------------------------------------------------------
+
+  /**
+   * @method returns the requested resource field. Throws an exception if it does not exist within the supplied resource
+   *
+   * @param resourceName
+   * @param resourceFieldName
+   * @throws NotFoundException the resource field may exist, but not within the supplied resource.
+   */
+  async validateResourceFieldExistence(resourceName: string, resourceFieldName: string): Promise<Resource & {fields: ResourceField[]}> {
+    const resourceFieldFromResource = await this.prisma.resource.findUnique({
+      where: {
+        title: resourceName,
+      },
+      include: {
+        fields: {
+          where: {
+            fieldName: resourceFieldName
+          }
+        }
+      }
+    })
+    if(!resourceFieldFromResource) {
+      throw new NotFoundException(ResourceBusinessErrors.ResourceFieldNotFound)
+    } else {
+      return resourceFieldFromResource;
+    }
+
+  }
+
 
 }
+
+
+

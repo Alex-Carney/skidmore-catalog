@@ -17,6 +17,7 @@ import { UpdateDataModelRepositoriesDTO } from "../resolvers/resource/dto/update
 import { UpdateDataModelFieldsDTO } from "../resolvers/resource/dto/data-model-update.dto";
 import { DeleteDataModelDTO } from "../resolvers/resource/dto/delete-data-model.dto";
 import { UserService } from "../services/user.service";
+import { UpdateDataModelFieldNamesDTO } from "../resolvers/resource/dto/update-data-model-names.dto";
 
 @ApiBearerAuth()
 @ApiTags('Resource Model')
@@ -143,7 +144,7 @@ export class DataModelController {
   //@ApiTags('Resource Model Exact')
   @Get('/exact/:resourceName')
   async getDataModelExactByName(@Param('resourceName') resourceName: string) {
-    return this.dataModelService.returnDataModelExact(resourceName, false);
+    return this.dataModelService.returnDataModelExact(resourceName, false, false);
   }
 
   //---------------------------------------------------------------------------
@@ -220,6 +221,16 @@ export class DataModelController {
   async updateDataModel(@Req() req: Request, @Body() updateDataModelFieldsDTO: UpdateDataModelFieldsDTO) {
     const user = await this.userService.getUserFromRequest(req);
     return this.dataModelService.updateDataModelFields(user['id'], updateDataModelFieldsDTO);
+  }
+
+  @ApiBody({
+    description: "Test",
+    type: UpdateDataModelFieldNamesDTO
+  })
+  @Put('rename-data-model-columns')
+  async renameDataModelFields(@Req() req: Request, @Body() updateDataModelFieldNamesDTO: UpdateDataModelFieldNamesDTO) {
+    const user = await this.userService.getUserFromRequest(req);
+    return this.dataModelService.alterDataModelColumnNames(user['id'], updateDataModelFieldNamesDTO);
   }
 
 //------------------------------------------------------------------------------------

@@ -229,7 +229,7 @@ export class RepositoryService {
   //----------------------------------------------------------------------------------------
 
   /**
-   * @private
+   * @private user authenticateUserRequest for outside access
    * @method Gets the relation between this repository and the user, in order to verify permission level.
    *
    * NOTE: Do not call this method if the repository does not exist. This can be verified with
@@ -288,11 +288,12 @@ export class RepositoryService {
    */
   async authenticateUserRequest(userId: string, repositoryTitle: string, requiredLevel: number): Promise<boolean> {
     const access = await this.permissionLevelOfUserOnRepository(userId, repositoryTitle);
-    if (access["permissionLevel"] >= requiredLevel) {
+    console.log(access);
+    if (access >= requiredLevel) {
       return true;
     } else {
       const errorResponse = RepositoryBusinessErrors.RepositoryAuthorizationError;
-      errorResponse.additionalInformation = "Requires access level " + requiredLevel + " of this repository. You have access level " + access["permissionLevel"];
+      errorResponse.additionalInformation = "Requires access level " + requiredLevel + " of this repository. You have access level " + access;
       throw new ForbiddenException(errorResponse);
     }
   }
@@ -317,6 +318,8 @@ export class RepositoryService {
     }
     return repo;
   }
+
+  //----------------------------------------------------------------------------------------
 
   /**
    * @method Throws an exception if the input permission level is outside the allowed range [0 3] or a non-integer
