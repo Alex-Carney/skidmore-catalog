@@ -4,7 +4,7 @@ import { ApiProperty } from "@nestjs/swagger";
 export class UserCreateRepositoryDTO {
     @ApiProperty({
         description: "A list of repositories to create. It is recommended to follow naming conventions",
-        example: ["LASTNAME_REPOSITORY_NAME1", "LASTNAME_REPOSITORY_NAME2"],
+        example: "LASTNAME_REPOSITORY_NAME",
         isArray: true,
     })
     repositories: string[]

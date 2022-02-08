@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { UserService } from "./user.service";
 import { Readable } from "stream";
@@ -13,6 +13,7 @@ import { UpdateDataModelFieldsDTO } from "../resolvers/resource/dto/data-model-u
 import { UpdateDataModelRepositoriesDTO } from "../resolvers/resource/dto/update-resource-repository.dto";
 import { UpdateDataModelFieldNamesDTO } from "../resolvers/resource/dto/update-data-model-names.dto";
 import { ResourceService } from "./resource.service";
+import { NonExistenceFlags } from "../constants/nonexistant-constants";
 
 
 @Injectable()
@@ -30,7 +31,7 @@ export class DataModelService {
     private prisma: PrismaService,
     private userService: UserService,
     private repositoryService: RepositoryService,
-    private resourceService: ResourceService,
+    private resourceService: ResourceService
   ) {
   }
 
@@ -112,22 +113,17 @@ export class DataModelService {
    */
   async publishDataModel(userId: string, dataModelPublishInputDto: DataModelPublishInputDTO) {
 
-    /**
-     * At first I kept the localized name in the datamodel itself, but ran into the issue where if users wanted to change their
-     * datamodels by adding a new column, they would have no idea what to supply for the "localizedname" field. I didn't want to
-     * inconveinence my users by having them generate the localized names themselves, so they are added whenever the data model
-     * is being published accordingly
-     */
-    // Object.keys(dataModelPublishInputDto.dataModel).forEach((fieldName) => {
-    //   /**
-    //    *"localized name" refers to the letter c + hashed version of input field name. This allows users to choose column
-    //    * names that Postgres would reject (special characters)
-    //    */
-    //   console.log(dataModelPublishInputDto.dataModel[fieldName]);
-    //   dataModelPublishInputDto.dataModel[fieldName].push("c" + md5(fieldName));
-    // });
 
+    //step 0: validate inputs
+    for (const repositoryToValidate of dataModelPublishInputDto.repositories) {
+      //if any user input repository is invalid, stop all execution
+      await this.repositoryService.validateRepositoryExistence(repositoryToValidate);
+    }
+    await this.resourceService.validateResourceExistence(dataModelPublishInputDto.resourceName, true);
+
+    //step 1: modify incoming data model to include localized names
     this.addLocalizedNamesToFields(dataModelPublishInputDto.dataModel);
+
 
     /**
      * Allows all of the entries in the dataModel to be handled at once in a single prisma query.
@@ -172,35 +168,42 @@ export class DataModelService {
      * The two statements are wrapped in a transaction because they both need to succeed (or fail) together or else the
      * database will become de-synced.
      */
-    const [dataModelRecord] = await this.prisma.$transaction([
-      //statement 1
-      this.prisma.resource.create({
-        data: {
-          title: dataModelPublishInputDto.resourceName,
-          createdBy: {
-            connect: {
-              id: userId
+    try {
+      const [dataModelRecord] = await this.prisma.$transaction([
+        //statement 1
+        this.prisma.resource.create({
+          data: {
+            title: dataModelPublishInputDto.resourceName,
+            createdBy: {
+              connect: {
+                id: userId
+              }
+            },
+            repositories: {
+              createMany: {
+                data: connectManyInput
+              }
+            },
+            fields: {
+              createMany: {
+                data: createManyInput
+              }
             }
           },
-          repositories: {
-            createMany: {
-              data: connectManyInput
-            }
-          },
-          fields: {
-            createMany: {
-              data: createManyInput
-            }
+          include: {
+            fields: true //may reduce the amount of information returned later
           }
-        },
-        include: {
-          fields: true //may reduce the amount of information returned later
-        }
-      }),
-      //statement 2
-      this.prisma.$executeRaw("CREATE TABLE " + tableArguments)
-    ]);
-    return dataModelRecord;
+        }),
+        //statement 2
+        this.prisma.$executeRaw("CREATE TABLE " + tableArguments)
+      ]);
+      return dataModelRecord;
+    } catch (err) {
+      //one of the processes in the transaction failed
+      throw new InternalServerErrorException(err.message);
+    }
+
+
   }
 
   //--------------------------------------------------------------------
@@ -225,7 +228,7 @@ export class DataModelService {
         fields: {
           select: {
             fieldName: true,
-            dataType: true,
+            dataType: true
           }
         },
         repositories: {
@@ -248,15 +251,6 @@ export class DataModelService {
    * @param includeLocalizedName
    */
   async returnDataModelExact(resourceName: string, asMap: boolean, includeLocalizedName: boolean) {
-    //TODO: validate resourceName?
-    // const fieldInfo = await this.prisma.resource.findUnique({
-    //   where: {
-    //     title: resourceName
-    //   },
-    //   include: {
-    //     fields: true,
-    //   }
-    // });
     const fieldInfo = await this.prisma.resource.findUnique({
       where: {
         title: resourceName
@@ -266,7 +260,7 @@ export class DataModelService {
           select: {
             fieldName: true,
             dataType: true,
-            localizedName: includeLocalizedName,
+            localizedName: includeLocalizedName
           }
         }
       }
@@ -274,7 +268,7 @@ export class DataModelService {
 
     const fieldMap = new Map<string, Array<string>>();
     fieldInfo.fields.forEach((field) => {
-      if(includeLocalizedName) {
+      if (includeLocalizedName) {
         fieldMap.set(field.fieldName, [field.dataType, field.localizedName]);
       } else {
         fieldMap.set(field.fieldName, [field.dataType]);
@@ -300,47 +294,24 @@ export class DataModelService {
     await this.repositoryService.validateRepositoryExistence(updateDataModelRepositoriesDTO.repository);
     await this.repositoryService.authenticateUserRequest(userId, updateDataModelRepositoriesDTO.repository, RepositoryPermissions.REPOSITORY_ADMIN);
 
-    //is the update removing or adding repositories to this data model
-    // const updateArgs = updateDataModelRepositoriesDTO.removeRepositories ?
-    //   {
-    //     disconnect:
-    //       {
-    //         resourceTitle_repositoryTitle: {
-    //           resourceTitle: updateDataModelRepositoriesDTO.resourceName,
-    //           repositoryTitle: updateDataModelRepositoriesDTO.repository
-    //         }
-    //       }
-    //   }
-    //   :
-    //   {
-    //     connect:
-    //       {
-    //         resourceTitle_repositoryTitle:
-    //           {
-    //             resourceTitle: updateDataModelRepositoriesDTO.resourceName,
-    //             repositoryTitle: updateDataModelRepositoriesDTO.repository
-    //           }
-    //       }
-    //   };
+    const resourceTitle_repositoryTitle = {
+      resourceTitle: updateDataModelRepositoriesDTO.resourceName,
+      repositoryTitle: updateDataModelRepositoriesDTO.repository
+    };
 
 
     if (updateDataModelRepositoriesDTO.removeRepositories) {
       return this.prisma.resourcesOnRepositories.delete({
         where: {
-          resourceTitle_repositoryTitle: {
-            resourceTitle: updateDataModelRepositoriesDTO.resourceName,
-            repositoryTitle: updateDataModelRepositoriesDTO.repository
-          }
+          resourceTitle_repositoryTitle: resourceTitle_repositoryTitle
         }
       });
     } else {
       return this.prisma.resourcesOnRepositories.create({
-        data: {
-          resourceTitle: updateDataModelRepositoriesDTO.resourceName,
-          repositoryTitle: updateDataModelRepositoriesDTO.repository
-        }
+        data: resourceTitle_repositoryTitle
       });
     }
+
   }
 
   //--------------------------------------------------------------------
@@ -363,6 +334,7 @@ export class DataModelService {
 
     //step 0: Only an ADMIN of this repository can update data model fields
     await this.repositoryService.validateRepositoryExistence(updateDataModelDTO.repository);
+    await this.resourceService.validateResourceAccessFromRepository(updateDataModelDTO.repository, updateDataModelDTO.resourceName);
     await this.repositoryService.authenticateUserRequest(userId, updateDataModelDTO.repository, RepositoryPermissions.REPOSITORY_ADMIN);
 
 
@@ -371,9 +343,9 @@ export class DataModelService {
     //step 1: Grab the current data model to see what is different -- include the localized names
     const currentDataModel: Record<string, Array<string>> = await this.returnDataModelExact(updateDataModelDTO.resourceName, false, true);
 
-    console.log('--------CURRENT DATA MODEL---------')
-    console.log(currentDataModel)
-    console.log('-----------------')
+    console.log("--------CURRENT DATA MODEL---------");
+    console.log(currentDataModel);
+    console.log("-----------------");
 
     //step 2: update the user input data model to include the associated localized names
     this.addLocalizedNamesToFields(updateDataModelDTO.dataModel);
@@ -477,48 +449,13 @@ export class DataModelService {
       alterInputTwo = alterInputTwo.slice(0, -1);
     }
 
+    //############# DEBUGGING
     console.log(alterInputOne);
     console.log(alterInputTwo);
 
-    //Step 5: Now that raw SQL executions have been written, generate mirrored prisma queries
-    // const createManyInput = Object.entries(updateDataModelDTO.dataModel).map((fieldInfo) => {
-    //   return {
-    //     fieldName: fieldInfo[0],
-    //     dataType: fieldInfo[1][0],
-    //     localizedName: fieldInfo[1][1]
-    //   };
-    // });
-    //
-    // console.log("original create many : " + );
-    //
-    // const deleteManyInput = Object.entries(updateDataModelDTO.dataModel).map((fieldInfo) => {
-    //   return `'${fieldInfo[0]}'`;
-    // }).toString();
-
-    /**
-     * [1][1] refers to the Localized Name property
-     * [0] refers to the Field Display Name property
-     * [1][0] refers to the Field Data Type property
-     */
-
-    // //If the number of columns has increased, reflect changes accordingly
-    // const alterTableAddColumn = Object.entries(dataModel).map((fieldInfo) => {
-    //     return `ADD COLUMN IF NOT EXISTS "${fieldInfo[1][1]}" ${fieldInfo[1][0]}`;
-    // }).toString();
-
-    // //If the types of any columns have changed, reflect changes accordingly
-    // //Using, along with field0::dataType allows us to automatically cast each entry to the new type, if possible
-    // const alterTableChangeColumnDataType = Object.entries(dataModel).map((fieldInfo) => {
-    //     return `ALTER COLUMN "${fieldInfo[1][1]}" TYPE ${fieldInfo[1][0]} USING ${fieldInfo[1][1]}::${fieldInfo[1][0]}`;
-    // }).toString()
-
-    //
-
-    // console.log("createMany " + createManyInput)
-    // console.log("deleteMany " + deleteManyInput)
-
     console.log("create: " + createNewInput);
     console.log("delete: " + deleteInput);
+    //#############
 
     /**
      * Here I ran into another problem with prisma. The "upsert" action allows me to EITHER update OR add new records. However, unlike create,
@@ -615,43 +552,52 @@ export class DataModelService {
   }
 
   //--------------------------------------------------------------------
+  /**
+   * @method updateDataModelFields can handle changing schema data types, along with adding/removing fields. However,
+   * if a user attempts to 'rename' a field using that method, all of the stored data will be dropped. This method
+   * circumvents that issue, but requires its own API route.
+   *
+   * @param userId user attempting operation
+   * @param updateDataModelFieldNamesDTO Data transfer object for this operation. More information in its file
+   */
   async alterDataModelColumnNames(userId: string, updateDataModelFieldNamesDTO: UpdateDataModelFieldNamesDTO) {
     //step 0: validate inputs
     await this.repositoryService.validateRepositoryExistence(updateDataModelFieldNamesDTO.repository);
-    await this.resourceService.validateResourceExistence(updateDataModelFieldNamesDTO.repository, updateDataModelFieldNamesDTO.resourceName);
+    await this.resourceService.validateResourceAccessFromRepository(updateDataModelFieldNamesDTO.repository, updateDataModelFieldNamesDTO.resourceName);
     await this.repositoryService.authenticateUserRequest(userId, updateDataModelFieldNamesDTO.repository, RepositoryPermissions.REPOSITORY_ADMIN);
 
     //step 1: generate a list of ALTER TABLE statements based on the requested name changes
     const alterTableStatements = [];
     const updateResourceStatements = [];
-    for (const oldFieldName of Object.keys(updateDataModelFieldNamesDTO.fieldNameRemapping)) {
-      const oldField = await this.resourceService.validateResourceFieldExistence(updateDataModelFieldNamesDTO.resourceName, oldFieldName);
-      const oldFieldLocalizedName = oldField.fields[0].localizedName;
-      const newLocalizedName = "c" + md5(updateDataModelFieldNamesDTO.fieldNameRemapping[oldFieldName]);
-      alterTableStatements.push(`ALTER TABLE datastore."${updateDataModelFieldNamesDTO.resourceName}" RENAME "${oldFieldLocalizedName}" TO "${newLocalizedName}";`)
+    //parse user's request
+    for (const fieldNameToChange of Object.keys(updateDataModelFieldNamesDTO.fieldNameRemapping)) {
+      const validatedResourceField = await this.resourceService.validateResourceFieldExistence(updateDataModelFieldNamesDTO.resourceName, fieldNameToChange);
+      const oldFieldLocalizedName = validatedResourceField.fields[0].localizedName;
+      const newLocalizedName = "c" + md5(updateDataModelFieldNamesDTO.fieldNameRemapping[fieldNameToChange]);
+      alterTableStatements.push(`ALTER TABLE datastore."${updateDataModelFieldNamesDTO.resourceName}" RENAME "${oldFieldLocalizedName}" TO "${newLocalizedName}";`);
       updateResourceStatements.push(this.prisma.resourceField.updateMany({
         where: {
-          fieldName: oldFieldName
+          fieldName: fieldNameToChange
         },
         data: {
-          fieldName: updateDataModelFieldNamesDTO.fieldNameRemapping[oldFieldName],
-          localizedName: newLocalizedName,
+          fieldName: updateDataModelFieldNamesDTO.fieldNameRemapping[fieldNameToChange],
+          localizedName: newLocalizedName
         }
-      }))
+      }));
     }
     const transactionArray = [];
-    if(alterTableStatements.length > 0) {
+    if (alterTableStatements.length > 0) {
       /**
        * Multiple commands cannot be executed from one $executeRaw. Since ALTER RENAME does not support multiple arguments,
        * each rename must be counted as a separate execution.
        */
       alterTableStatements.forEach((alterTableStatement) => {
         console.log(alterTableStatement.toString());
-        transactionArray.push(this.prisma.$executeRaw(`${alterTableStatement.toString()}`))
-      })
+        transactionArray.push(this.prisma.$executeRaw(`${alterTableStatement.toString()}`));
+      });
     }
-    if(updateResourceStatements.length > 0) {
-      transactionArray.push(...updateResourceStatements)
+    if (updateResourceStatements.length > 0) {
+      transactionArray.push(...updateResourceStatements);
     }
 
     console.log(transactionArray);
@@ -676,6 +622,7 @@ export class DataModelService {
   async deleteDataModel(userId: string, deleteDataModelDTO: DeleteDataModelDTO) {
     //step 0: validate inputs
     await this.repositoryService.validateRepositoryExistence(deleteDataModelDTO.repository);
+    await this.resourceService.validateResourceAccessFromRepository(deleteDataModelDTO.repository, deleteDataModelDTO.resourceName);
     await this.repositoryService.authenticateUserRequest(userId, deleteDataModelDTO.repository, RepositoryPermissions.REPOSITORY_OWNER);
 
 

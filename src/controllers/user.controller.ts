@@ -89,7 +89,7 @@ export class UserController {
         console.log(createRepositoryDTO.repositories);
         console.log(typeof(createRepositoryDTO.repositories));
 
-        return this.repositoryService.createRepositories(user['id'], createRepositoryDTO.repositories);
+        return this.repositoryService.createRepositories(user['id'], createRepositoryDTO);
     }
     //--------------------------------------------------------------------------------------------------------------
 

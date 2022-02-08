@@ -3,7 +3,8 @@ export const RepositoryBusinessErrors = {
     apiErrorCode: 'E_R_001',
     errorMessage: 'Repository not found',
     reason: 'Provided repository does not exist in DB.',
-    advice: 'Repo names are case sensitive and should be all caps'
+    advice: 'Repo names are case sensitive and should be all caps',
+    additionalInformation: '',
   },
 
   RepositoryAlreadyExists: {

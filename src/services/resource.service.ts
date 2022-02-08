@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { UserService } from "./user.service";
 import { Readable } from "stream";
@@ -307,17 +307,8 @@ export class ResourceService {
    * @param repositoryName
    * @param resourceName
    * @throws ForbiddenException if the resource exists, but is not accessible by the input repository
-   * @throws NotFoundException if the resource does not exist
    */
-  async validateResourceExistence(repositoryName: string, resourceName: string) {
-    const resourceFromTitle = await this.prisma.resource.findUnique({
-      where: {
-        title: resourceName
-      }
-    });
-    if (!resourceFromTitle) {
-      throw new NotFoundException(ResourceBusinessErrors.ResourceNotFound);
-    }
+  async validateResourceAccessFromRepository(repositoryName: string, resourceName: string) {
     const resourceOnRepository = await this.prisma.resourcesOnRepositories.findUnique({
       where: {
         resourceTitle_repositoryTitle: {
@@ -327,10 +318,35 @@ export class ResourceService {
       }
     });
     if (!resourceOnRepository) {
-      throw new ForbiddenException(ResourceBusinessErrors.ResourceNotInRepository);
+      const errorToThrow = ResourceBusinessErrors.ResourceNotInRepository;
+      errorToThrow.additionalInformation = resourceName + " is not accessible from " + repositoryName;
+      throw new ForbiddenException(errorToThrow);
     } else {
-      return resourceFromTitle;
+      return resourceOnRepository;
     }
+  }
+
+  //----------------------------------------------------------------------------------------
+
+
+  /**
+   *
+   * @param resourceName
+   * @param throwExceptionIfFound boolean flag, throws a 'NoDuplicateResourceNames' exception if flagged true
+   */
+  async validateResourceExistence(resourceName: string, throwExceptionIfFound: boolean) {
+    const resourceFromTitle = await this.prisma.resource.findUnique({
+      where: {
+        title: resourceName
+      }
+    });
+    if(resourceFromTitle && throwExceptionIfFound) {
+      throw new BadRequestException(ResourceBusinessErrors.ResourceAlreadyExists);
+    }
+    if (!resourceFromTitle) {
+      throw new NotFoundException(ResourceBusinessErrors.ResourceNotFound);
+    }
+    return resourceFromTitle;
   }
 
   //----------------------------------------------------------------------------------------

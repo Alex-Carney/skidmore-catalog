@@ -10,6 +10,7 @@ import { UpdateRepositoryPermissionsDTO } from "src/resolvers/user/dto/update-ad
 import { UserService } from "./user.service";
 import { RepositoryBusinessErrors } from "../errors/repository.error";
 import { RepositoryPermissions } from "../constants/permission-level-constants";
+import { UserCreateRepositoryDTO } from "../resolvers/user/dto/add-repositories.dto";
 
 
 @Injectable()
@@ -34,15 +35,15 @@ export class RepositoryService {
    * @method This method creates a new repository with a name based on the input 'title'. The user who is supplied in the params is automatically
    * the 'owner' of this repository, which can be updated with updateRepositoryPermissions.
    * @param userId The user who is creating this repository
-   * @param repositoriesToCreate the names of repositories to be created
+   * @param createRepositoryDTO data transfer object associated with this action. Check its file for more
 
    */
-  async createRepositories(userId: string, repositoriesToCreate: string[]) {
+  async createRepositories(userId: string, createRepositoryDTO: UserCreateRepositoryDTO) {
 
     /**
      * Access the user supplied in the params, create a new repository with them with the input title. Relations will be generated automatically
      */
-    const createArguments = repositoriesToCreate.map((title) => {
+    const createArguments = createRepositoryDTO.repositories.map((title) => {
         return {
           repository: {
             create: {
@@ -314,7 +315,9 @@ export class RepositoryService {
       }
     });
     if (!repo) {
-      throw new NotFoundException(RepositoryBusinessErrors.RepositoryNotFound);
+      const errorToThrow = RepositoryBusinessErrors.RepositoryNotFound;
+      errorToThrow.additionalInformation = repositoryTitle + " was an invalid repository title"
+      throw new NotFoundException(errorToThrow);
     }
     return repo;
   }
