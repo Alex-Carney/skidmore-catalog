@@ -23,18 +23,18 @@ export class ResourceService {
 
   /**
    *
+   *
    * @param file
    * @param seedResourceDto
    * @param userId
    */
   async seedResourceFromFile(file: Express.Multer.File, seedResourceDto: SeedDatabaseInputDTO, userId: string) {
 
-    //step 1: get the datamodel of the resource this user is looking to seed
-    //admin is required to read/write
-    const access = await this.repositoryService.authenticateUserRequest(userId, seedResourceDto.repository, 2);
-    if (access == false) {
-      return; // throw authentication error
-    }
+
+    await this.validateResourceExistence(seedResourceDto.resourceName);
+    await this.repositoryService.validateRepositoryExistence(seedResourceDto.repository);
+    await this.repositoryService.authenticateUserRequest(userId, seedResourceDto.repository, RepositoryPermissions.REPOSITORY_ADMIN);
+    await this.validateResourceAccessFromRepository(seedResourceDto.repository, seedResourceDto.resourceName);
 
     const dataModel = await this.prisma.resource.findUnique({
       where: {
@@ -330,23 +330,36 @@ export class ResourceService {
 
 
   /**
-   *
+   * Validate that a resource with this name already exists, throw an exception if it doesnt
    * @param resourceName
-   * @param throwExceptionIfFound boolean flag, throws a 'NoDuplicateResourceNames' exception if flagged true
+   * @throws NotFoundException
    */
-  async validateResourceExistence(resourceName: string, throwExceptionIfFound: boolean) {
+  async validateResourceExistence(resourceName: string) {
     const resourceFromTitle = await this.prisma.resource.findUnique({
       where: {
         title: resourceName
       }
     });
-    if(resourceFromTitle && throwExceptionIfFound) {
-      throw new BadRequestException(ResourceBusinessErrors.ResourceAlreadyExists);
-    }
     if (!resourceFromTitle) {
       throw new NotFoundException(ResourceBusinessErrors.ResourceNotFound);
     }
     return resourceFromTitle;
+  }
+
+  /**
+   * Validate that creating a new resource with this name WOULD NOT cause duplication
+   * @param resourceName
+   * @throws BadRequestException Resource with this name already exists
+   */
+  async validateResourceNameDoesNotAlreadyExist(resourceName: string) {
+    const resourceFromTitle = await this.prisma.resource.findUnique({
+      where: {
+        title: resourceName
+      }
+    });
+    if(resourceFromTitle) {
+      throw new BadRequestException(ResourceBusinessErrors.ResourceAlreadyExists)
+    }
   }
 
   //----------------------------------------------------------------------------------------

@@ -57,6 +57,11 @@ export class UserService {
     });
   }
 
+  /**
+   *
+   * @param userEmail
+   * @throws NotFoundException
+   */
   async getUserFromEmail(userEmail: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: {

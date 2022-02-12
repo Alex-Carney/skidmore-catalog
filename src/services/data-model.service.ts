@@ -54,13 +54,14 @@ export class DataModelService {
    * @throws BadRequestException if an error occurs while parsing input file
    */
   async generateDataModel(file: Express.Multer.File) {
+    console.log(file)
     const buf = file.buffer;
+
     try {
       const rl = readline.createInterface({
         input: Readable.from(buf),
         crlfDelay: Infinity
       });
-
       let lNum = 0;
       const fieldNames = new Array<string>();
       //Tracks the relationship between this field and its [datatype, localizedName <- added later]
@@ -68,20 +69,22 @@ export class DataModelService {
       for await (const line of rl) {
         //the first line must be the header -- containing the field names
         if (lNum == 0) {
-          line.split(",").forEach((field) => {
-            fieldNames.push(field);
-          });
+          // line.split(",").forEach((field) => {
+          //   fieldNames.push(field);
+          // });
+          await this.generateFieldNamesFromFirstFileLine(line, fieldNames);
         } else {
           //this could very well be a nested while instead, but i'd rather do it this way
           if (fieldToDataType.size < fieldNames.length) {
-            line.split(",").forEach((element, index) => {
-              //Three possibilities: Not a number, a number, or "".
-              //ignore null fields, but keep looping through the file until there are none left
-              if (element !== "") {
-                fieldToDataType.set(fieldNames[index], [Number.isNaN(Number(element)) ? "text" : "numeric"]);
-              }
-
-            });
+            // line.split(",").forEach((element, index) => {
+            //   //Three possibilities: Not a number, a number, or "".
+            //   //ignore null fields, but keep looping through the file until there are none left
+            //   if (element !== "") {
+            //     fieldToDataType.set(fieldNames[index], [Number.isNaN(Number(element)) ? "text" : "numeric"]);
+            //   }
+            //
+            // });
+            await this.handleFileBody(line, fieldToDataType, fieldNames);
           } else {
             //no need to read the entire file, stop once all data types are extracted
             break;
@@ -97,6 +100,22 @@ export class DataModelService {
       throw new BadRequestException(errorToThrow);
     }
 
+  }
+
+  private async generateFieldNamesFromFirstFileLine(line, fieldNames) {
+    line.split(",").forEach((field) => {
+      fieldNames.push(field);
+    });
+  }
+
+  private async handleFileBody(line, fieldToDataType, fieldNames) {
+    line.split(",").forEach((element, index) => {
+      //Three possibilities: Not a number, a number, or "".
+      //ignore null fields, but keep looping through the file until there are none left
+      if (element !== "") {
+        fieldToDataType.set(fieldNames[index], [Number.isNaN(Number(element)) ? "text" : "numeric"]);
+      }
+    });
   }
 
 
@@ -119,7 +138,7 @@ export class DataModelService {
       //if any user input repository is invalid, stop all execution
       await this.repositoryService.validateRepositoryExistence(repositoryToValidate);
     }
-    await this.resourceService.validateResourceExistence(dataModelPublishInputDto.resourceName, true);
+    await this.resourceService.validateResourceNameDoesNotAlreadyExist(dataModelPublishInputDto.resourceName)
 
     //step 1: modify incoming data model to include localized names
     this.addLocalizedNamesToFields(dataModelPublishInputDto.dataModel);

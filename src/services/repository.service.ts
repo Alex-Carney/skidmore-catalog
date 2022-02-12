@@ -38,8 +38,7 @@ export class RepositoryService {
    * @param createRepositoryDTO data transfer object associated with this action. Check its file for more
 
    */
-  async createRepositories(userId: string, createRepositoryDTO: UserCreateRepositoryDTO) {
-
+  public async createRepositories(userId: string, createRepositoryDTO: UserCreateRepositoryDTO) {
     /**
      * Access the user supplied in the params, create a new repository with them with the input title. Relations will be generated automatically
      */
@@ -72,8 +71,6 @@ export class RepositoryService {
       //TODO: Logger error
       throw new BadRequestException(RepositoryBusinessErrors.RepositoryAlreadyExists);
     }
-
-
   }
 
   //----------------------------------------------------------------------------------------
@@ -97,28 +94,6 @@ export class RepositoryService {
         permissionLevel: true,
       }
     })
-
-    // try {
-    //   const userRepositories = await this.prisma.user.findUnique({
-    //     where: {
-    //       id: user['id']
-    //     },
-    //     select: {
-    //       repositories: {
-    //         select: {
-    //           repository: {
-    //             select: {
-    //               title: true
-    //             }
-    //           }
-    //         }
-    //       }
-    //     }
-    //   });
-    //   return userRepositories;
-    // } catch (err) {
-    //   throw new NotFoundException(RepositoryBusinessErrors.UserNotFound);
-    // }
 
   }
 
