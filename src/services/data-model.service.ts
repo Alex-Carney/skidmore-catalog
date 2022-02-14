@@ -57,6 +57,8 @@ export class DataModelService {
     console.log(file)
     const buf = file.buffer;
 
+    console.log(buf)
+
     try {
       const rl = readline.createInterface({
         input: Readable.from(buf),
@@ -69,10 +71,19 @@ export class DataModelService {
       for await (const line of rl) {
         //the first line must be the header -- containing the field names
         if (lNum == 0) {
+
+          /**
+           * I was having an issue where a BOM (byte order mark) was showing up as the first char in my uploaded files.
+           * Therefore, we must explicitly remove that first character, otherwise it gets saved in the DB
+           */
+          const cleanFirstLine = line.replace(`\ufeff`, "");
+
+          console.log(cleanFirstLine)
+
           // line.split(",").forEach((field) => {
           //   fieldNames.push(field);
           // });
-          await this.generateFieldNamesFromFirstFileLine(line, fieldNames);
+          await this.generateFieldNamesFromFirstFileLine(cleanFirstLine, fieldNames);
         } else {
           //this could very well be a nested while instead, but i'd rather do it this way
           if (fieldToDataType.size < fieldNames.length) {

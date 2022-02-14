@@ -27,8 +27,8 @@ const config: Config = {
     bcryptSaltOrRound: 10,
   },
   throttler: {
-    throttleTTL: 60,
-    throttleLimit: 10,
+    throttleTTL: 30,
+    throttleLimit: 150,
   },
 };
 
