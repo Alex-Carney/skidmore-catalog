@@ -4,7 +4,6 @@ export const RepositoryBusinessErrors = {
     errorMessage: 'Repository not found',
     reason: 'Provided repository does not exist in DB.',
     advice: 'Repo names are case sensitive and should be all caps',
-    additionalInformation: '',
   },
 
   RepositoryAlreadyExists: {
@@ -25,7 +24,6 @@ export const RepositoryBusinessErrors = {
     apiErrorCode: 'E_R_004',
     errorMessage: 'Unauthorized',
     reason: 'You do not have the necessary access level to perform this operation on this repository',
-    additionalInformation: '',
   },
 
   RepositoryUserRelationError: {
@@ -39,7 +37,7 @@ export const RepositoryBusinessErrors = {
     apiErrorCode: 'E_R_006',
     errorMessage: 'Invalid request',
     reason: 'Permission level must be an integer between 0 and 3.',
-    additionalInformation: '0 means no access // 1 means user (read/write) // 2 means admin // 3 means owner'
+    advice: '0 means no access -- 1 means user (read and write) -- 2 means admin -- 3 means owner'
   }
 
 

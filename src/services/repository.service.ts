@@ -1,6 +1,6 @@
 import {
   BadRequestException,
-  ForbiddenException,
+  ForbiddenException, HttpStatus,
   Injectable,
   InternalServerErrorException,
   NotFoundException
@@ -11,6 +11,7 @@ import { UserService } from "./user.service";
 import { RepositoryBusinessErrors } from "../errors/repository.error";
 import { RepositoryPermissions } from "../constants/permission-level-constants";
 import { UserCreateRepositoryDTO } from "../resolvers/user/dto/add-repositories.dto";
+import { CustomException } from "../errors/custom.exception";
 
 
 @Injectable()
@@ -39,38 +40,33 @@ export class RepositoryService {
 
    */
   public async createRepositories(userId: string, createRepositoryDTO: UserCreateRepositoryDTO) {
+
+    for (const repository of createRepositoryDTO.repositories) {
+      await this.validateRepositoryNameDoesNotAlreadyExist(repository);
+    }
     /**
      * Access the user supplied in the params, create a new repository with them with the input title. Relations will be generated automatically
      */
     const createArguments = createRepositoryDTO.repositories.map((title) => {
-        return {
-          repository: {
-            create: {
-              title: title
-            }
-          },
-          permissionLevel: RepositoryPermissions.REPOSITORY_OWNER
-        };
-      });
-
-    try {
-      /**
-       * A small quirk I don't understand, returning update data directly (inlining this statement) does not throw the
-       * error properly.
-       */
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: {
-          repositories: {
-            create: createArguments
+      return {
+        repository: {
+          create: {
+            title: title
           }
+        },
+        permissionLevel: RepositoryPermissions.REPOSITORY_OWNER
+      };
+    });
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        repositories: {
+          create: createArguments
         }
-      });
-      return createArguments;
-    } catch (err) {
-      //TODO: Logger error
-      throw new BadRequestException(RepositoryBusinessErrors.RepositoryAlreadyExists);
-    }
+      }
+    });
+    return createArguments
   }
 
   //----------------------------------------------------------------------------------------
@@ -91,9 +87,9 @@ export class RepositoryService {
       },
       select: {
         repositoryTitle: true,
-        permissionLevel: true,
+        permissionLevel: true
       }
-    })
+    });
 
   }
 
@@ -120,14 +116,14 @@ export class RepositoryService {
      * but we must ensure input repository is valid. NotFoundError is thrown from validateRepositoryExistence
      */
     await this.validateRepositoryExistence(updateRepositoryPermissionsDTO.repository);
-    await this.validatePermissionLevelInput(updateRepositoryPermissionsDTO.targetNewPermissionLevel)
+    await this.validatePermissionLevelInput(updateRepositoryPermissionsDTO.targetNewPermissionLevel);
 
     //validate whether current permissions allow for this action to be executed - need information about requester and target
     const userToChangePerms = await this.userService.getUserFromEmail(updateRepositoryPermissionsDTO.receiverEmail);
     const permissionLevelOfTarget = await this.permissionLevelOfUserOnRepository(userToChangePerms["id"], updateRepositoryPermissionsDTO.repository);
     const permissionLevelOfRequester = await this.permissionLevelOfUserOnRepository(userId, updateRepositoryPermissionsDTO.repository);
 
-      //edge case: owner transferring ownership, must demote current owner to admin (there can only be 1 owner)
+    //edge case: owner transferring ownership, must demote current owner to admin (there can only be 1 owner)
     const ownerTransferringOwnershipEdgeCase: boolean =
       updateRepositoryPermissionsDTO.targetNewPermissionLevel == RepositoryPermissions.REPOSITORY_OWNER
       && permissionLevelOfRequester == RepositoryPermissions.REPOSITORY_OWNER;
@@ -136,7 +132,10 @@ export class RepositoryService {
     if (permissionLevelOfRequester < RepositoryPermissions.REPOSITORY_ADMIN
       || permissionLevelOfTarget >= permissionLevelOfRequester
       || (updateRepositoryPermissionsDTO.targetNewPermissionLevel >= permissionLevelOfRequester && !ownerTransferringOwnershipEdgeCase)) {
-      throw new ForbiddenException(RepositoryBusinessErrors.RepositoryAuthorizationError);
+
+      throw new CustomException(RepositoryBusinessErrors.RepositoryAuthorizationError,
+        "Your permission level is " + permissionLevelOfRequester + " compared to target's: " + permissionLevelOfTarget,
+        HttpStatus.FORBIDDEN);
     }
 
     //call is valid, update database record accordingly
@@ -228,7 +227,8 @@ export class RepositoryService {
       where: {
         repositoryTitle_userId: {
           userId: userId,
-          repositoryTitle: repositoryTitle }
+          repositoryTitle: repositoryTitle
+        }
       },
       select: {
         permissionLevel: true
@@ -268,9 +268,9 @@ export class RepositoryService {
     if (access >= requiredLevel) {
       return true;
     } else {
-      const errorResponse = RepositoryBusinessErrors.RepositoryAuthorizationError;
-      errorResponse.additionalInformation = "Requires access level " + requiredLevel + " of this repository. You have access level " + access;
-      throw new ForbiddenException(errorResponse);
+      throw new CustomException(RepositoryBusinessErrors.RepositoryAuthorizationError,
+        "Requires access level " + requiredLevel + " of this repository (" + repositoryTitle + "). You have access level " + access,
+        HttpStatus.FORBIDDEN);
     }
   }
 
@@ -290,9 +290,31 @@ export class RepositoryService {
       }
     });
     if (!repo) {
-      const errorToThrow = RepositoryBusinessErrors.RepositoryNotFound;
-      errorToThrow.additionalInformation = repositoryTitle + " was an invalid repository title"
-      throw new NotFoundException(errorToThrow);
+      throw new CustomException(RepositoryBusinessErrors.RepositoryNotFound,
+        repositoryTitle + " was an invalid repository title",
+        HttpStatus.NOT_FOUND);
+    }
+    return repo;
+  }
+
+  //----------------------------------------------------------------------------------------
+
+
+  /**
+   * @method ensures that there does not already exist a repository with this name
+   * @param repositoryTitle
+   * @throws RepositoryAlreadyExists
+   */
+  async validateRepositoryNameDoesNotAlreadyExist(repositoryTitle: string) {
+    const repo = await this.prisma.repository.findUnique({
+      where: {
+        title: repositoryTitle
+      }
+    });
+    if (repo) {
+      throw new CustomException(RepositoryBusinessErrors.RepositoryAlreadyExists,
+        "A repository with the name " + repositoryTitle + " already exists",
+        HttpStatus.BAD_REQUEST);
     }
     return repo;
   }
@@ -306,11 +328,10 @@ export class RepositoryService {
    * @throws BadRequestException
    */
   async validatePermissionLevelInput(permissionLevel: number) {
-      if(permissionLevel < 0 || permissionLevel > 3 || !Number.isInteger(permissionLevel)) {
-        throw new BadRequestException()
-      }
+    if (permissionLevel < 0 || permissionLevel > 3 || !Number.isInteger(permissionLevel)) {
+      throw new CustomException(RepositoryBusinessErrors.InvalidPermissionLevel,
+        "Can't have a permission level of " + permissionLevel,
+        HttpStatus.BAD_REQUEST);
+    }
   }
-
-
-
 }

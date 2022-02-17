@@ -148,6 +148,7 @@ export class DataModelService {
     for (const repositoryToValidate of dataModelPublishInputDto.repositories) {
       //if any user input repository is invalid, stop all execution
       await this.repositoryService.validateRepositoryExistence(repositoryToValidate);
+      await this.repositoryService.authenticateUserRequest(userId, repositoryToValidate, RepositoryPermissions.REPOSITORY_ADMIN);
     }
     await this.resourceService.validateResourceNameDoesNotAlreadyExist(dataModelPublishInputDto.resourceName)
 
