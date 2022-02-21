@@ -2,14 +2,14 @@ import { Module } from "@nestjs/common";
 import { ResourceController } from "src/controllers/resource.controller";
 import { PrismaModule } from "src/prisma/prisma.module";
 import { ResourceService } from "src/services/resource.service";
-import { UserModule } from "../user/user.module";
+import { RepositoryModule } from "../repository/repository.module";
 import { DataModelController } from "../../controllers/data-model.controller";
 import { DataModelService } from "../../services/data-model.service";
 import { AuthModule } from "../auth/auth.module";
 import { AuthService } from "../../services/auth.service";
 
 @Module({
-    imports: [PrismaModule, UserModule],
+    imports: [PrismaModule, RepositoryModule],
     controllers: [DataModelController, ResourceController],
     providers: [ResourceService, DataModelService],
 })

@@ -16,8 +16,10 @@ import { TullyEnvironmentModule } from './v1 code/resources/tully-environment/tu
 import { TullyCombinedModule } from './v1 code/resources/tully-combined/tully-combined.module';
 import { SdssOpticalModule } from './v1 code/resources/sdss-optical/sdss-optical.module';
 import { SdssDerivedModule } from './v1 code/resources/sdss-derived/sdss-derived.module';
-import { UserModule } from './resolvers/user/user.module';
+import { RepositoryModule } from './resolvers/repository/repository.module';
 import { ResourceModule } from './resolvers/resource/resource.module';
+import { useContainer, Validator } from 'class-validator';
+import { UserMiddleware } from "./middleware/user.middleware";
 
 declare const module: any
 
@@ -72,7 +74,7 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
   const v2Document = SwaggerModule.createDocument(app, v2Options, {
-    include: [UserModule, ResourceModule],
+    include: [RepositoryModule, ResourceModule],
   });
 
   const v2CustomOptions: SwaggerCustomOptions = {
@@ -96,6 +98,8 @@ async function bootstrap() {
   if (corsConfig.enabled) {
     app.enableCors();
   }
+
+
 
 
 

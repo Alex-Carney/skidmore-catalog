@@ -18,6 +18,7 @@ import { UpdateDataModelFieldsDTO } from "../resolvers/resource/dto/data-model-u
 import { DeleteDataModelDTO } from "../resolvers/resource/dto/delete-data-model.dto";
 import { UserService } from "../services/user.service";
 import { UpdateDataModelFieldNamesDTO } from "../resolvers/resource/dto/update-data-model-names.dto";
+import { Multer } from 'multer'
 
 @ApiBearerAuth()
 @ApiTags('Resource Model')
@@ -40,7 +41,7 @@ export class DataModelController {
     summary: "Creates a data model for review and publication",
     description: "Parses the file uploaded, recording column names and column data types. Possible data types are 'numeric' or 'text'. " +
       "Potential errors may occur if a column is entirely null (cannot define datatype). " +
-      "Additionally, the user may modify the generated data model before publication",
+      "Additionally, the repository may modify the generated data model before publication",
     // externalDocs
   })
   @ApiBadRequestResponse({

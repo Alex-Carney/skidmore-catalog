@@ -2,7 +2,7 @@ import * as request from "supertest";
 import { Test } from "@nestjs/testing";
 
 import { INestApplication } from "@nestjs/common";
-import { UserModule } from "../resolvers/user/user.module";
+import { RepositoryModule } from "../resolvers/repository/repository.module";
 import { RepositoryService } from "../services/repository.service";
 
 describe("Repositories", () => {
@@ -15,7 +15,7 @@ describe("Repositories", () => {
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [UserModule]
+      imports: [RepositoryModule]
     })
       .overrideProvider(RepositoryService)
       .useValue(repositoryService)

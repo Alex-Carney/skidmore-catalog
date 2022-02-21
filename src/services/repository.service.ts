@@ -6,11 +6,11 @@ import {
   NotFoundException
 } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
-import { UpdateRepositoryPermissionsDTO } from "src/resolvers/user/dto/update-admin.dto";
+import { UpdateRepositoryPermissionsDTO } from "src/resolvers/repository/dto/update-admin.dto";
 import { UserService } from "./user.service";
 import { RepositoryBusinessErrors } from "../errors/repository.error";
 import { RepositoryPermissions } from "../constants/permission-level-constants";
-import { UserCreateRepositoryDTO } from "../resolvers/user/dto/add-repositories.dto";
+import { UserCreateRepositoryDTO } from "../resolvers/repository/dto/add-repositories.dto";
 import { CustomException } from "../errors/custom.exception";
 
 
@@ -33,9 +33,9 @@ export class RepositoryService {
   //----------------------------------------------------------------------------------------
 
   /**
-   * @method This method creates a new repository with a name based on the input 'title'. The user who is supplied in the params is automatically
+   * @method This method creates a new repository with a name based on the input 'title'. The repository who is supplied in the params is automatically
    * the 'owner' of this repository, which can be updated with updateRepositoryPermissions.
-   * @param userId The user who is creating this repository
+   * @param userId The repository who is creating this repository
    * @param createRepositoryDTO data transfer object associated with this action. Check its file for more
 
    */
@@ -44,8 +44,9 @@ export class RepositoryService {
     for (const repository of createRepositoryDTO.repositories) {
       await this.validateRepositoryNameDoesNotAlreadyExist(repository);
     }
+
     /**
-     * Access the user supplied in the params, create a new repository with them with the input title. Relations will be generated automatically
+     * Access the repository supplied in the params, create a new repository with them with the input title. Relations will be generated automatically
      */
     const createArguments = createRepositoryDTO.repositories.map((title) => {
       return {
@@ -72,11 +73,11 @@ export class RepositoryService {
   //----------------------------------------------------------------------------------------
 
   /**
-   * @method Fetches repositories associated with user, along with the associated permission level
+   * @method Fetches repositories associated with repository, along with the associated permission level
    *
    * @param userId
    * @throws NotFoundException Invalid userId
-   * @returns userRepositories - repositories associated with user
+   * @returns userRepositories - repositories associated with repository
    */
   async getUserRepositories(userId: string) {
 
@@ -95,6 +96,14 @@ export class RepositoryService {
 
   //----------------------------------------------------------------------------------------
 
+  async getRepositoryByName(repositoryTitle: string) {
+    return await this.prisma.repository.findUnique({
+      where: {
+        title: repositoryTitle
+      }
+    });
+  }
+
 
   /**
    * @method The repositories on users relation keeps track of permission level. Certain actions involving modification
@@ -103,7 +112,7 @@ export class RepositoryService {
    *
    * Most of the logic in this method revolves around ensuring the requested transaction is valid.
    *
-   * @param userId current user logged in making changes, aimed at another user
+   * @param userId current repository logged in making changes, aimed at another repository
    * @param updateRepositoryPermissionsDTO Associated data transfer object. More information in the UpdateRepositoryPermissionsDTO file
    * @return updateResponse A body that contains the updated information
    */
@@ -115,7 +124,7 @@ export class RepositoryService {
      * Validate input repository. We already know that userId is legitimate because that was called from the controller,
      * but we must ensure input repository is valid. NotFoundError is thrown from validateRepositoryExistence
      */
-    await this.validateRepositoryExistence(updateRepositoryPermissionsDTO.repository);
+    // await this.validateRepositoryExistence(updateRepositoryPermissionsDTO.repository);
     await this.validatePermissionLevelInput(updateRepositoryPermissionsDTO.targetNewPermissionLevel);
 
     //validate whether current permissions allow for this action to be executed - need information about requester and target
@@ -133,7 +142,8 @@ export class RepositoryService {
       || permissionLevelOfTarget >= permissionLevelOfRequester
       || (updateRepositoryPermissionsDTO.targetNewPermissionLevel >= permissionLevelOfRequester && !ownerTransferringOwnershipEdgeCase)) {
 
-      throw new CustomException(RepositoryBusinessErrors.RepositoryAuthorizationError,
+      throw new CustomException(
+        RepositoryBusinessErrors.RepositoryAuthorizationError,
         "Your permission level is " + permissionLevelOfRequester + " compared to target's: " + permissionLevelOfTarget,
         HttpStatus.FORBIDDEN);
     }
@@ -177,13 +187,9 @@ export class RepositoryService {
    * @param userId
    * @param repositoryToDelete
    * @throws InternalServerErrorException if raw SQL is unable to execute
-   * @returns message A message notifying the user that the repository was successfully deleted
+   * @returns message A message notifying the repository that the repository was successfully deleted
    */
   async deleteRepository(userId: string, repositoryToDelete: string) {
-
-    //verify inputs
-    await this.validateRepositoryExistence(repositoryToDelete);
-    await this.authenticateUserRequest(userId, repositoryToDelete, RepositoryPermissions.REPOSITORY_OWNER);
 
     /**
      * Unfortunately, this is another example where I've encountered a bug with prisma. Currently, deleting the parent
@@ -204,8 +210,8 @@ export class RepositoryService {
   //----------------------------------------------------------------------------------------
 
   /**
-   * @private user authenticateUserRequest for outside access
-   * @method Gets the relation between this repository and the user, in order to verify permission level.
+   * @private use authenticateUserRequest for outside access
+   * @method Gets the relation between this repository and the repository, in order to verify permission level.
    *
    * NOTE: Do not call this method if the repository does not exist. This can be verified with
    * this.validateRepositoryExistence
@@ -242,7 +248,7 @@ export class RepositoryService {
       permissionResponse = await this.prisma.repositoriesOnUsers.create({
         data: {
           userId: userId,
-          repositoryTitle: repositoryTitle, //MUST EXIST
+          repositoryTitle: repositoryTitle,
           permissionLevel: RepositoryPermissions.REPOSITORY_NO_ACCESS
         }
       });

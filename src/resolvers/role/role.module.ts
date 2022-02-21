@@ -1,10 +1,10 @@
 // import { Module } from "@nestjs/common";
 // import { PrismaModule } from "src/prisma/prisma.module";
-// import { RepositoryService } from "src/services/role.service";
-// import { UserModule } from "../user/user.module";
-
+// import { RepositoryModule } from "../repository/repository.module";
+// import { RepositoryService } from "../../services/repository.service";
+//
 // @Module({
-//     imports: [PrismaModule, UserModule],
+//     imports: [PrismaModule, RepositoryModule],
 //     providers: [RepositoryService],
 //     exports: [RepositoryService],
 //   })

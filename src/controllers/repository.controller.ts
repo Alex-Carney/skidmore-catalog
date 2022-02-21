@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Patch, Post, Req } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Patch, Post, Req, UseGuards } from "@nestjs/common";
 import {
     ApiBadRequestResponse,
     ApiBearerAuth,
@@ -9,24 +9,29 @@ import {
 } from "@nestjs/swagger";
 import { User } from "@prisma/client";
 import { Request } from "express";
-import { UserCreateRepositoryDTO } from "src/resolvers/user/dto/add-repositories.dto";
-import { DeleteRepositoryDTO } from "src/resolvers/user/dto/delete-repository.dto";
-import { UpdateRepositoryPermissionsDTO } from "src/resolvers/user/dto/update-admin.dto";
+import { UserCreateRepositoryDTO } from "src/resolvers/repository/dto/add-repositories.dto";
+import { DeleteRepositoryDTO } from "src/resolvers/repository/dto/delete-repository.dto";
+import { UpdateRepositoryPermissionsDTO } from "src/resolvers/repository/dto/update-admin.dto";
 import { AuthService } from "src/services/auth.service";
 import { RepositoryService } from "src/services/repository.service";
 import { UserService } from "src/services/user.service";
+import { Validate } from "class-validator";
+import { RequestWithUserData } from "../middleware/user.middleware";
+import { RepositoryPermissions } from "../constants/permission-level-constants";
+import { RepositoryPermissionLevel } from "../decorators/repository-permissions.decorator";
+import { RepositoryPermissionGuard } from "../guards/repository-auth.guard";
 
 
     /**
-     * In the API V2 architecture, resources are not controlled based on the user that uploaded them, but rather the repository that they were assigned
+     * In the API V2 architecture, resources are not controlled based on the repository that uploaded them, but rather the repository that they were assigned
      * Therefore, the "users" themselves are not very important, they are just a way to login to access certain repositories -- the repositories provide access
      * to the actual resources.
      *
      * Therefore, the only functions for users are viewing their repositories + adding new repositories
      *
-     * The only function of the controller is to retrieve the associated user with the request, and call the correct
+     * The only function of the controller is to retrieve the associated repository with the request, and call the correct
      * service to handle the rest. Apparently it is bad practice to couple anything related to the web in the service
-     * layer, so the controller converts the request into the user id instead.
+     * layer, so the controller converts the request into the repository id instead.
      *
      */
 
@@ -34,14 +39,14 @@ import { UserService } from "src/services/user.service";
 @ApiTags("Repository Actions")
 @ApiBearerAuth()
 @Controller('repository')
-export class UserController {
+export class RepositoryController {
 
     constructor(private readonly userService: UserService, private readonly repositoryService: RepositoryService) {}
 
     //--------------------------------------------------------------------------------------------------------------
     @ApiOperation({
-        summary: "Returns a list of the user's repositories",
-        description: "Uses the bearer token associated with this call to authenticate the user, and return a list of their" +
+        summary: "Returns a list of the repository's repositories",
+        description: "Uses the bearer token associated with this call to authenticate the repository, and return a list of their" +
           "repositories, along with related permission levels"
     })
     @ApiInternalServerErrorResponse({
@@ -51,9 +56,9 @@ export class UserController {
         description: "Only users with accounts can use this route. You can create an account here"
     })
     @Get()
-    async getRepositories(@Req() req: Request): Promise<any> {
-        const user = await this.userService.getUserFromRequest(req);
-        return this.repositoryService.getUserRepositories(user['id']);
+    async getRepositories(@Req() req: RequestWithUserData): Promise<any> {
+        // const repository = await this.userService.getUserFromRequest(req);
+        return this.repositoryService.getUserRepositories(req.user['id']);
     }
 
     //--------------------------------------------------------------------------------------------------------------
@@ -82,14 +87,15 @@ export class UserController {
         description: "Only users with accounts can create repositories."
     })
     @Post('create-repositories')
-    async createRepositories(@Req() req: Request, @Body() createRepositoryDTO: UserCreateRepositoryDTO) {
+    async createRepositories(@Req() req: RequestWithUserData, @Body() createRepositoryDTO: UserCreateRepositoryDTO) {
 
-        const user = await this.userService.getUserFromRequest(req);
+        // const repository = await this.userService.getUserFromRequest(req);
 
-        console.log(createRepositoryDTO.repositories);
-        console.log(typeof(createRepositoryDTO.repositories));
+        if(!createRepositoryDTO.repositories) {
+            console.log("Empty")
+        }
 
-        return this.repositoryService.createRepositories(user['id'], createRepositoryDTO);
+        return this.repositoryService.createRepositories(req.user['id'], createRepositoryDTO);
     }
     //--------------------------------------------------------------------------------------------------------------
 
@@ -98,15 +104,15 @@ export class UserController {
     })
     @ApiBody({
         description: "repository: Repository title to update permissions. " +
-          "receiverEmail: Email of an existing user to update permissions for " +
-          "permissionLevel: New permission level for user. 0 = none, 1 = read+write, 2 = admin," +
+          "receiverEmail: Email of an existing repository to update permissions for " +
+          "permissionLevel: New permission level for repository. 0 = none, 1 = read+write, 2 = admin," +
           "3 = transfer ownership",
         type: UpdateRepositoryPermissionsDTO
     })
     @ApiOperation({
         summary: "Update repository permissions",
         description: "Permission Level 0: None // Permission Level 1: Read + write // Permission Level 2: Admin, can " +
-          "assign read + write to other users // Permission Level 3: Transfer ownership to another user",
+          "assign read + write to other users // Permission Level 3: Transfer ownership to another repository",
     })
     @ApiBadRequestResponse({
         description: "One of the input fields was not correctly written"
@@ -115,13 +121,13 @@ export class UserController {
         description: "An error occurred while modifying permissions."
     })
     @ApiForbiddenResponse({
-        description: "It is forbidden to change permissions of a user with a higher permission level than yourself, or to " +
+        description: "It is forbidden to change permissions of a repository with a higher permission level than yourself, or to " +
           "assign a permission level higher than the one you have. Additionally, only admins (level 2+) can change any permission"
     })
     @Patch('update-permissions')
-    async updateRepositoryPermissions(@Req() req: Request, @Body() updateAdminDto: UpdateRepositoryPermissionsDTO): Promise<any> {
-        const user = await this.userService.getUserFromRequest(req);
-        return this.repositoryService.updateRepositoryPermissions(user['id'], updateAdminDto)
+    async updateRepositoryPermissions(@Req() req: RequestWithUserData, @Body() updateAdminDto: UpdateRepositoryPermissionsDTO): Promise<any> {
+        // const repository = await this.userService.getUserFromRequest(req);
+        return this.repositoryService.updateRepositoryPermissions(req.user['id'], updateAdminDto)
     }
     //--------------------------------------------------------------------------------------------------------------
 
@@ -144,9 +150,11 @@ export class UserController {
         type: DeleteRepositoryDTO,
     })
     @Delete('delete-repositories')
-    async deleteRepository(@Req() req: Request, @Body() deleteRepositoryDTO: DeleteRepositoryDTO): Promise<any> {
-        const user = await this.userService.getUserFromRequest(req);
-        return this.repositoryService.deleteRepository(user['id'], deleteRepositoryDTO.repository);
+    @UseGuards(RepositoryPermissionGuard)
+    @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_OWNER)
+    async deleteRepository(@Req() req: RequestWithUserData, @Body() deleteRepositoryDTO: DeleteRepositoryDTO): Promise<any> {
+        // const repository = await this.userService.getUserFromRequest(req);
+        return this.repositoryService.deleteRepository(req.user['id'], deleteRepositoryDTO.repository);
     }
 }
 

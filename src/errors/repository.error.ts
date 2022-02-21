@@ -15,9 +15,9 @@ export const RepositoryBusinessErrors = {
 
   UserNotFound: {
     apiErrorCode: 'E_R_003',
-    errorMessage: 'Provided user not found',
-    reason: 'Provided user does not have the supplemented repository, so it cannot be removed',
-    advice: 'Set "remove = false" to add the repository to the supplemented user'
+    errorMessage: 'Provided repository not found',
+    reason: 'Provided repository does not have the supplemented repository, so it cannot be removed',
+    advice: 'Set "remove = false" to add the repository to the supplemented repository'
   },
 
   RepositoryAuthorizationError: {
@@ -29,15 +29,15 @@ export const RepositoryBusinessErrors = {
   RepositoryUserRelationError: {
     apiErrorCode: 'E_R_005',
     errorMessage: 'Relation does not exist',
-    reason: 'There is no relation between this user and this repository. This is a bug, and should not occur',
-    advice: 'Try making supplied user an admin (demoting them afterward if necessary) to instantiate this relation'
+    reason: 'There is no relation between this repository and this repository. This is a bug, and should not occur',
+    advice: 'Try making supplied repository an admin (demoting them afterward if necessary) to instantiate this relation'
   },
 
   InvalidPermissionLevel: {
     apiErrorCode: 'E_R_006',
     errorMessage: 'Invalid request',
     reason: 'Permission level must be an integer between 0 and 3.',
-    advice: '0 means no access -- 1 means user (read and write) -- 2 means admin -- 3 means owner'
+    advice: '0 means no access -- 1 means repository (read and write) -- 2 means admin -- 3 means owner'
   }
 
 

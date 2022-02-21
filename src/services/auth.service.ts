@@ -34,7 +34,7 @@ export class AuthService {
   //   );
 
   //   try {
-  //     const user = await this.prisma.user.create({
+  //     const repository = await this.prisma.repository.create({
   //       data: {
   //         ...payload,
   //         password: hashedPassword,
@@ -43,7 +43,7 @@ export class AuthService {
   //     });
 
   //     return this.generateTokens({
-  //       userId: user.id,
+  //       userId: repository.id,
   //     });
   //   } catch (e) {
   //     if (

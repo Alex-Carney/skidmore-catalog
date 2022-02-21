@@ -10,6 +10,7 @@ import { SeedDatabaseInputDTO } from "../resolvers/resource/dto/seed-database.dt
 import { RepositoryPermissions } from "../constants/permission-level-constants";
 import { ResourceBusinessErrors } from "../errors/resource.error";
 import { Resource, ResourceField } from "@prisma/client";
+import { Multer } from 'multer'
 
 
 @Injectable()
@@ -49,7 +50,7 @@ export class ResourceService {
     const buf = file.buffer;
     console.log(buf.toString());
 
-    //step 2: authenticate the request, does this user have WRITE priviledges for this resource under this repository?
+    //step 2: authenticate the request, does this repository have WRITE priviledges for this resource under this repository?
 
 
     console.log(dataModel);
@@ -76,7 +77,7 @@ export class ResourceService {
           /**
            * Here we must account for a potential discrepancy between the stored schema and the incoming seed data.
            * The schema should not require that the order of the columns in the incoming data is exactly the same.
-           * That is, if a user rearranges the location of their columns before uploading data, it should not
+           * That is, if a repository rearranges the location of their columns before uploading data, it should not
            * break the process. Therefore, we must account for the potential differences in the order of data
            */
 
@@ -222,7 +223,7 @@ export class ResourceService {
       //remove spaces
       let fieldNameFindArgs = sqlSelect.replace(/\s+/g, "").split(",");
       /**
-       * Accounting for edge case: What if the user doesn't include a field in their SELECT statement, but uses that field in thier
+       * Accounting for edge case: What if the repository doesn't include a field in their SELECT statement, but uses that field in thier
        * WHERE statement?
        */
       fieldNameFindArgs = fieldNameFindArgs.concat(sqlWhereFields.replace(/\s+/g, "").split(","));
@@ -244,7 +245,7 @@ export class ResourceService {
     //step 2: grab the datamodel associated with the resource
     /**
      * Although this query uses .findMany, it will only return a single resource.
-     * We want THE resource with the user input title, but ONLY IF that resource is in the user supplemented repository
+     * We want THE resource with the repository input title, but ONLY IF that resource is in the repository supplemented repository
      * Otherwise, the query fails
      * When the query succeeds, we only need the "fieldName" and "localizedName" attributes of each of the fields
      * Therefore, the map of relations is REPOSITORY -> RESOURCE -> RESOURCE_FIELD
@@ -259,7 +260,7 @@ export class ResourceService {
         ]
       },
       include: {
-        //include only the fields that are included in the user's SELECT statement, generated above
+        //include only the fields that are included in the repository's SELECT statement, generated above
         fields: includeFieldArgs
       }
     });

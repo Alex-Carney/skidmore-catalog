@@ -62,7 +62,7 @@ model User {
   password          String
   firstname         String?
   lastname          String?
-  resourcesUploaded Resource[] //resources that this user has uploaded, there can be many (1 user to many resources uploaded)
+  resourcesUploaded Resource[] //resources that this repository has uploaded, there can be many (1 repository to many resources uploaded)
   repositories             RepositoriesOnUsers[]
 }
 

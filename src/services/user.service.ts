@@ -7,8 +7,8 @@ import {
   ForbiddenException
 } from "@nestjs/common";
 import { PasswordService } from './password.service';
-import { ChangePasswordInput } from '../resolvers/user/dto/change-password.input';
-import { UpdateUserInput } from '../resolvers/user/dto/update-user.input';
+import { ChangePasswordInput } from '../resolvers/repository/dto/change-password.input';
+import { UpdateUserInput } from '../resolvers/repository/dto/update-user.input';
 import { Prisma, User } from '@prisma/client';
 import { Request } from "express";
 import { AuthService } from './auth.service';
@@ -70,7 +70,7 @@ export class UserService {
     })
     if(!user) {
       const exceptionToThrow = UserBusinessErrors.UserNotFound;
-      exceptionToThrow.additionalInformation = 'No user with email ' + userEmail + ' found'
+      exceptionToThrow.additionalInformation = 'No repository with email ' + userEmail + ' found'
       throw new NotFoundException(exceptionToThrow);
     }
     return user;
@@ -97,11 +97,11 @@ export class UserService {
   //   remove: boolean,
   // ){
   //   //first get the current list, then update it with the new version
-  //   const user = await this.prisma.user.findUnique({
+  //   const repository = await this.prisma.repository.findUnique({
   //      where: { id: userId }
   //   });
   //   //get the roles and add the array of new ones to it
-  //   const roles = user['roles'];
+  //   const roles = repository['roles'];
   //
   //   let idx: number;
   //   if(remove) {
@@ -113,7 +113,7 @@ export class UserService {
   //     newRoles.forEach((e) => roles.push(e));
   //   }
   //
-  //   return this.prisma.user.update({
+  //   return this.prisma.repository.update({
   //     data: {
   //       roles: roles
   //     },
@@ -122,7 +122,7 @@ export class UserService {
   // }
 
   // async getRoles(userWhereUniqueInput: Prisma.UserWhereUniqueInput) {
-  //   return this.prisma.user.findUnique({
+  //   return this.prisma.repository.findUnique({
   //     where: userWhereUniqueInput,
   //   })['roles']
 
