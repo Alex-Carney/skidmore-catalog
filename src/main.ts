@@ -1,4 +1,3 @@
-import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -20,6 +19,8 @@ import { RepositoryModule } from './resolvers/repository/repository.module';
 import { ResourceModule } from './resolvers/resource/resource.module';
 import { useContainer, Validator } from 'class-validator';
 import { UserMiddleware } from "./middleware/user.middleware";
+import { ValidationPipe } from "@nestjs/common";
+
 
 declare const module: any
 
@@ -29,8 +30,15 @@ async function bootstrap() {
     AppModule
     );
 
+
   // Validation
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe(),
+  );
+
+  useContainer(app.select(AppModule), { fallbackOnErrors: true})
+
+
 
   const configService = app.get(ConfigService);
   const nestConfig = configService.get<NestConfig>('nest');
@@ -112,6 +120,8 @@ async function bootstrap() {
   app.setViewEngine('ejs');
 
 //-----------------------------------------------------
+
+
 
 
 

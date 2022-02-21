@@ -12,7 +12,7 @@
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
-    "typeRoots": ["./types"]
+    "typeRoots": ["./types"],
 
   }
 }

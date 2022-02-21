@@ -6,7 +6,7 @@ import {
   NotFoundException
 } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
-import { UpdateRepositoryPermissionsDTO } from "src/resolvers/repository/dto/update-admin.dto";
+import { UpdateRepositoryPermissionsDTO } from "src/resolvers/repository/dto/update-permissions.dto";
 import { UserService } from "./user.service";
 import { RepositoryBusinessErrors } from "../errors/repository.error";
 import { RepositoryPermissions } from "../constants/permission-level-constants";
@@ -67,7 +67,7 @@ export class RepositoryService {
         }
       }
     });
-    return createArguments
+    return createArguments;
   }
 
   //----------------------------------------------------------------------------------------
@@ -117,8 +117,6 @@ export class RepositoryService {
    * @return updateResponse A body that contains the updated information
    */
   async updateRepositoryPermissions(userId: string, updateRepositoryPermissionsDTO: UpdateRepositoryPermissionsDTO): Promise<any> {
-
-    //TODO: Logger
 
     /**
      * Validate input repository. We already know that userId is legitimate because that was called from the controller,

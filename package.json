@@ -1,8 +1,8 @@
 {
-  "name": "nestjs-prisma-client-starter",
+  "name": "Skidmore DataHub",
   "version": "0.0.1",
-  "description": "NestJS Prisma Client Starter Project",
-  "author": "Marc Stammerjohann",
+  "description": "Data management system built for Skidmore College physics department.",
+  "author": "Alex",
   "license": "MIT",
   "keywords": [
     "NestJS",
@@ -65,8 +65,8 @@
     "@rauschma/stringio": "^1.4.0",
     "apollo-server-express": "2.25.1",
     "bcrypt": "5.0.1",
-    "class-transformer": "0.4.0",
-    "class-validator": "0.13.1",
+    "class-transformer": "^0.4.0",
+    "class-validator": "^0.13.2",
     "compression": "^1.7.4",
     "ejs": "^3.1.6",
     "graphql": "15.5.1",

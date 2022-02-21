@@ -8,13 +8,14 @@ import { RepositoryService } from 'src/services/repository.service';
 import { UserMiddleware } from "../../middleware/user.middleware";
 import { RepositoryExistsMiddleware } from "../../middleware/repository-exists.middleware";
 import { RepositoryValidation } from "../../validation/repository.validation";
+import { RepositoryExistsRule } from "../../validation/repositoryexists.rule";
 //import { RoleModule } from '../role/role.module';
 
 @Module({
   imports: [PrismaModule, AuthModule, /**RoleModule**/],
   controllers: [RepositoryController],
-  providers: [UserService, PasswordService, RepositoryService, RepositoryValidation],
-  exports: [UserService, RepositoryService],
+  providers: [UserService, PasswordService, RepositoryExistsRule, RepositoryService, RepositoryValidation],
+  exports: [UserService, RepositoryService, RepositoryExistsRule],
 })
 export class RepositoryModule implements NestModule {
   configure(consumer: MiddlewareConsumer): any {
@@ -22,6 +23,6 @@ export class RepositoryModule implements NestModule {
       .apply(UserMiddleware)
       .forRoutes('repository')
       .apply(RepositoryExistsMiddleware)
-      .forRoutes('repository/update-permissions', 'repository/delete-repositories')
+      .forRoutes('repository/update-permissions', /**'repository/delete-repositories'*/)
   }
 }

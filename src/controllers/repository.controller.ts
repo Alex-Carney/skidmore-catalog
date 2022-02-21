@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Patch, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Patch, Post, Req, UseGuards, UsePipes } from "@nestjs/common";
 import {
     ApiBadRequestResponse,
     ApiBearerAuth,
@@ -11,7 +11,7 @@ import { User } from "@prisma/client";
 import { Request } from "express";
 import { UserCreateRepositoryDTO } from "src/resolvers/repository/dto/add-repositories.dto";
 import { DeleteRepositoryDTO } from "src/resolvers/repository/dto/delete-repository.dto";
-import { UpdateRepositoryPermissionsDTO } from "src/resolvers/repository/dto/update-admin.dto";
+import { UpdateRepositoryPermissionsDTO } from "src/resolvers/repository/dto/update-permissions.dto";
 import { AuthService } from "src/services/auth.service";
 import { RepositoryService } from "src/services/repository.service";
 import { UserService } from "src/services/user.service";
@@ -20,6 +20,7 @@ import { RequestWithUserData } from "../middleware/user.middleware";
 import { RepositoryPermissions } from "../constants/permission-level-constants";
 import { RepositoryPermissionLevel } from "../decorators/repository-permissions.decorator";
 import { RepositoryPermissionGuard } from "../guards/repository-auth.guard";
+import { ValidationPipe } from "../pipes/validation.pipe";
 
 
     /**
@@ -56,7 +57,7 @@ export class RepositoryController {
         description: "Only users with accounts can use this route. You can create an account here"
     })
     @Get()
-    async getRepositories(@Req() req: RequestWithUserData): Promise<any> {
+    async getRepositories(@Req() req: Request): Promise<any> {
         // const repository = await this.userService.getUserFromRequest(req);
         return this.repositoryService.getUserRepositories(req.user['id']);
     }
@@ -87,7 +88,7 @@ export class RepositoryController {
         description: "Only users with accounts can create repositories."
     })
     @Post('create-repositories')
-    async createRepositories(@Req() req: RequestWithUserData, @Body() createRepositoryDTO: UserCreateRepositoryDTO) {
+    async createRepositories(@Req() req: Request, @Body() createRepositoryDTO: UserCreateRepositoryDTO) {
 
         // const repository = await this.userService.getUserFromRequest(req);
 
@@ -125,7 +126,7 @@ export class RepositoryController {
           "assign a permission level higher than the one you have. Additionally, only admins (level 2+) can change any permission"
     })
     @Patch('update-permissions')
-    async updateRepositoryPermissions(@Req() req: RequestWithUserData, @Body() updateAdminDto: UpdateRepositoryPermissionsDTO): Promise<any> {
+    async updateRepositoryPermissions(@Req() req: Request, @Body() updateAdminDto: UpdateRepositoryPermissionsDTO): Promise<any> {
         // const repository = await this.userService.getUserFromRequest(req);
         return this.repositoryService.updateRepositoryPermissions(req.user['id'], updateAdminDto)
     }
@@ -150,9 +151,9 @@ export class RepositoryController {
         type: DeleteRepositoryDTO,
     })
     @Delete('delete-repositories')
-    @UseGuards(RepositoryPermissionGuard)
-    @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_OWNER)
-    async deleteRepository(@Req() req: RequestWithUserData, @Body() deleteRepositoryDTO: DeleteRepositoryDTO): Promise<any> {
+    // @UseGuards(RepositoryPermissionGuard)
+    // @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_OWNER)
+    async deleteRepository(@Req() req: Request, @Body() deleteRepositoryDTO: DeleteRepositoryDTO): Promise<any> {
         // const repository = await this.userService.getUserFromRequest(req);
         return this.repositoryService.deleteRepository(req.user['id'], deleteRepositoryDTO.repository);
     }
