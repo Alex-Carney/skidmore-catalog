@@ -30,13 +30,13 @@ async function bootstrap() {
     AppModule
     );
 
-
+  useContainer(app.select(AppModule), { fallbackOnErrors: true})
   // Validation
   app.useGlobalPipes(
     new ValidationPipe(),
   );
 
-  useContainer(app.select(AppModule), { fallbackOnErrors: true})
+
 
 
 

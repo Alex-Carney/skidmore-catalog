@@ -70,7 +70,7 @@ export class UserService {
     })
     if(!user) {
       const exceptionToThrow = UserBusinessErrors.UserNotFound;
-      exceptionToThrow.additionalInformation = 'No repository with email ' + userEmail + ' found'
+      exceptionToThrow.additionalInformation = 'No user with email ' + userEmail + ' found'
       throw new NotFoundException(exceptionToThrow);
     }
     return user;

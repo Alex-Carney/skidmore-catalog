@@ -1,11 +1,12 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString, IsInt, Min, Max } from "class-validator";
+import { IsString, IsInt, Min, Max, Validate } from "class-validator";
+import { RepositoryExists, RepositoryExistsRule } from "../../../validation/repository-exists.rule";
 
 //This is the scaffold for the Swagger UI POST body for adding new roles to a repository
 export class UpdateRepositoryPermissionsDTO {
     @ApiProperty({
         description: 'title of repository to change permissions for',
-        default: 'REPOSITORY_NAME'
+        //default: 'REPOSITORY_NAME'
     })
     @IsString()
     repository: string //title of role == unique identifier
@@ -24,7 +25,7 @@ export class UpdateRepositoryPermissionsDTO {
         default: 0,
     })
     @IsInt()
-    @Min(1)
+    @Min(0)
     @Max(3)
     targetNewPermissionLevel: number //if true admin is revoked (does nothing if repository is not an admin already)
 }

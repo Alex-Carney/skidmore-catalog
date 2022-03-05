@@ -118,6 +118,8 @@ export class RepositoryService {
    */
   async updateRepositoryPermissions(userId: string, updateRepositoryPermissionsDTO: UpdateRepositoryPermissionsDTO): Promise<any> {
 
+    console.log("Made it into  update repository permissions service layer")
+
     /**
      * Validate input repository. We already know that userId is legitimate because that was called from the controller,
      * but we must ensure input repository is valid. NotFoundError is thrown from validateRepositoryExistence
