@@ -9,6 +9,7 @@ import { UserMiddleware } from "../../middleware/user.middleware";
 // import { RepositoryExistsMiddleware } from "../../middleware/repository-exists.middleware";
 import { RepositoryValidation } from "../../validation/repository.validation";
 import { RepositoryExistsRule } from "../../validation/repository-exists.rule";
+import { RepositoryExistsMiddleware } from "../../middleware/repository-exists.middleware";
 //import { RoleModule } from '../role/role.module';
 
 @Module({
@@ -22,7 +23,7 @@ export class RepositoryModule implements NestModule {
     consumer
       .apply(UserMiddleware)
       .forRoutes('repository')
-      // .apply(RepositoryExistsMiddleware)
-      // .forRoutes('repository/update-permissions', /**'repository/delete-repositories'*/)
+      .apply(RepositoryExistsMiddleware)
+      .forRoutes('repository/update-permissions', 'repository/delete-repositories')
   }
 }
