@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsString, IsInt, Min, Max, Validate } from "class-validator";
-import { RepositoryExists, RepositoryExistsRule } from "../../../validation/repository-exists.rule";
+import { RepositoryExists, RepositoryExistsRule } from "../validation/repository-exists.rule";
 
 //This is the scaffold for the Swagger UI POST body for adding new roles to a repository
 export class UpdateRepositoryPermissionsDTO {

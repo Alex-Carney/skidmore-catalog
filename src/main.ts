@@ -16,7 +16,7 @@ import { TullyCombinedModule } from './v1 code/resources/tully-combined/tully-co
 import { SdssOpticalModule } from './v1 code/resources/sdss-optical/sdss-optical.module';
 import { SdssDerivedModule } from './v1 code/resources/sdss-derived/sdss-derived.module';
 import { RepositoryModule } from './modules/repository/repository.module';
-import { ResourceModule } from './resolvers/resource/resource.module';
+import { ResourceModule } from './modules/resource/resource.module';
 import { useContainer, Validator } from 'class-validator';
 import { UserMiddleware } from "./middleware/user.middleware";
 import { ValidationPipe } from "@nestjs/common";

@@ -1,8 +1,8 @@
-import { RepositoryPermissions } from "../modules/repository/constants/permission-level-constants";
-import { CustomException } from "../errors/custom.exception";
-import { RepositoryBusinessErrors } from "../modules/repository/errors/repository.error";
+import { RepositoryPermissions } from "../constants/permission-level-constants";
+import { CustomException } from "../../../errors/custom.exception";
+import { RepositoryBusinessErrors } from "../errors/repository.error";
 import { HttpStatus, Injectable } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
+import { PrismaService } from "../../../prisma/prisma.service";
 
 @Injectable()
 export class RepositoryValidation {

@@ -5,7 +5,7 @@ export class DataModelPublishInputDTO {
     @ApiProperty()
     resourceName: string;
     @ApiProperty()
-    repositories: string[];
+    repository: string;
     @ApiProperty()
     dataModel: Record<string, Array<string>>;
 }

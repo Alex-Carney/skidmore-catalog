@@ -5,11 +5,11 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface
 } from "class-validator";
-import { RepositoryService } from "../modules/repository/services/repository.service";
-import { CustomException } from "../errors/custom.exception";
-import { RepositoryBusinessErrors } from "../modules/repository/errors/repository.error";
+import { RepositoryService } from "../services/repository.service";
+import { CustomException } from "../../../errors/custom.exception";
+import { RepositoryBusinessErrors } from "../errors/repository.error";
 import { RepositoryValidation } from "./repository.validation";
-import { PrismaService } from "../prisma/prisma.service";
+import { PrismaService } from "../../../prisma/prisma.service";
 
 @ValidatorConstraint({name: 'RepositoryExists', async: false})
 @Injectable()

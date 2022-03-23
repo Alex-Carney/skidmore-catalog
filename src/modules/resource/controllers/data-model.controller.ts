@@ -7,18 +7,33 @@ import {
   ApiOperation,
   ApiTags
 } from "@nestjs/swagger";
-import { Body, Controller, Delete, Get, Param, Post, Put, Req, UploadedFile, UseInterceptors } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Req,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors
+} from "@nestjs/common";
 import { DataModelService } from "../services/data-model.service";
-import { DataModelGenerateInputDTO } from "../resolvers/resource/dto/data-model-input.dto";
+import { DataModelGenerateInputDTO } from "../dto/data-model-input.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { DataModelPublishInputDTO } from "../resolvers/resource/dto/data-model-publish.dto";
+import { DataModelPublishInputDTO } from "../dto/data-model-publish.dto";
 import { Request } from "express";
-import { UpdateDataModelRepositoriesDTO } from "../resolvers/resource/dto/update-resource-repository.dto";
-import { UpdateDataModelFieldsDTO } from "../resolvers/resource/dto/data-model-update.dto";
-import { DeleteDataModelDTO } from "../resolvers/resource/dto/delete-data-model.dto";
-import { UserService } from "../services/user.service";
-import { UpdateDataModelFieldNamesDTO } from "../resolvers/resource/dto/update-data-model-names.dto";
+import { UpdateDataModelRepositoriesDTO } from "../dto/update-resource-repository.dto";
+import { UpdateDataModelFieldsDTO } from "../dto/data-model-update.dto";
+import { DeleteDataModelDTO } from "../dto/delete-data-model.dto";
+import { UserService } from "../../../services/user.service";
+import { UpdateDataModelFieldNamesDTO } from "../dto/update-data-model-names.dto";
 import { Multer } from 'multer'
+import { RepositoryPermissionGuard } from "../../repository/guards/repository-auth.guard";
+import { RepositoryPermissionLevel } from "../../repository/decorators/repository-permissions.decorator";
+import { RepositoryPermissions } from "../../repository/constants/permission-level-constants";
 
 @ApiBearerAuth()
 @ApiTags('Resource Model')
@@ -94,6 +109,8 @@ export class DataModelController {
     description: "Only users with accounts can publish data models. You can do so here" //TODO: insert link
   })
   @Post('publish-data-model')
+  @UseGuards(RepositoryPermissionGuard)
+  @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_ADMIN)
   async publishDataModel(@Req() req: Request, @Body() dataModelPublishInputDTO: DataModelPublishInputDTO) {
 
     console.log(dataModelPublishInputDTO)
@@ -218,7 +235,7 @@ export class DataModelController {
   @ApiForbiddenResponse({
     description: "Only users with accounts can publish data models. You can do so here" //TODO: insert link
   })
-  @Put('update-data-model')
+  @Put('update-resource')
   async updateDataModel(@Req() req: Request, @Body() updateDataModelFieldsDTO: UpdateDataModelFieldsDTO) {
     const user = await this.userService.getUserFromRequest(req);
     return this.dataModelService.updateDataModelFields(user['id'], updateDataModelFieldsDTO);
@@ -228,7 +245,7 @@ export class DataModelController {
     description: "Test",
     type: UpdateDataModelFieldNamesDTO
   })
-  @Put('rename-data-model-columns')
+  @Put('rename-resource-columns')
   async renameDataModelFields(@Req() req: Request, @Body() updateDataModelFieldNamesDTO: UpdateDataModelFieldNamesDTO) {
     const user = await this.userService.getUserFromRequest(req);
     return this.dataModelService.alterDataModelColumnNames(user['id'], updateDataModelFieldNamesDTO);

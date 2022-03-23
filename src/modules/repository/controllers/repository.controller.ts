@@ -31,8 +31,6 @@ import { RepositoryPermissionLevel } from "../decorators/repository-permissions.
      * layer, so the controller converts the request into the repository id instead.
      *
      */
-
-
 @ApiTags("Repository Actions")
 @ApiBearerAuth()
 @Controller('repository')

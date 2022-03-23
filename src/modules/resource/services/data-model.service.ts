@@ -1,19 +1,20 @@
 import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
-import { UserService } from "./user.service";
+import { UserService } from "../../../services/user.service";
 import { Readable } from "stream";
 import * as readline from "readline";
-import { RepositoryService } from "../modules/repository/services/repository.service";
+import { RepositoryService } from "../../repository/services/repository.service";
 import * as md5 from "md5";
 import { DataModelBusinessErrors } from "../errors/data-model.error";
-import { DataModelPublishInputDTO } from "../resolvers/resource/dto/data-model-publish.dto";
-import { RepositoryPermissions } from "../modules/repository/constants/permission-level-constants";
-import { DeleteDataModelDTO } from "../resolvers/resource/dto/delete-data-model.dto";
-import { UpdateDataModelFieldsDTO } from "../resolvers/resource/dto/data-model-update.dto";
-import { UpdateDataModelRepositoriesDTO } from "../resolvers/resource/dto/update-resource-repository.dto";
-import { UpdateDataModelFieldNamesDTO } from "../resolvers/resource/dto/update-data-model-names.dto";
+import { DataModelPublishInputDTO } from "../dto/data-model-publish.dto";
+import { RepositoryPermissions } from "../../repository/constants/permission-level-constants";
+import { DeleteDataModelDTO } from "../dto/delete-data-model.dto";
+import { UpdateDataModelFieldsDTO } from "../dto/data-model-update.dto";
+import { UpdateDataModelRepositoriesDTO } from "../dto/update-resource-repository.dto";
+import { UpdateDataModelFieldNamesDTO } from "../dto/update-data-model-names.dto";
 import { ResourceService } from "./resource.service";
-import { NonExistenceFlags } from "../constants/nonexistant-constants";
+import { NonExistenceFlags } from "../../../constants/nonexistant-constants";
+import { RepositoryValidation } from "../../repository/validation/repository.validation";
 
 
 @Injectable()
@@ -26,12 +27,14 @@ export class DataModelService {
    * @param userService
    * @param repositoryService
    * @param resourceService
+   * @param repositoryValidation
    */
   constructor(
     private prisma: PrismaService,
     private userService: UserService,
     private repositoryService: RepositoryService,
-    private resourceService: ResourceService
+    private resourceService: ResourceService,
+    private repositoryValidation: RepositoryValidation
   ) {
   }
 
@@ -145,11 +148,11 @@ export class DataModelService {
 
 
     //step 0: validate inputs
-    for (const repositoryToValidate of dataModelPublishInputDto.repositories) {
+    // for (const repositoryToValidate of dataModelPublishInputDto.repository) {
       //if any repository input repository is invalid, stop all execution
-      await this.repositoryService.validateRepositoryExistence(repositoryToValidate);
-      await this.repositoryService.authenticateUserRequest(userId, repositoryToValidate, RepositoryPermissions.REPOSITORY_ADMIN);
-    }
+      //await this.repositoryService.validateRepositoryExistence(repositoryToValidate);
+      //await this.repositoryService.authenticateUserRequest(userId, repositoryToValidate, RepositoryPermissions.REPOSITORY_ADMIN);
+    // }
     await this.resourceService.validateResourceNameDoesNotAlreadyExist(dataModelPublishInputDto.resourceName)
 
     //step 1: modify incoming data model to include localized names
@@ -173,11 +176,11 @@ export class DataModelService {
      * Similar to above, allows all of the entries in the "repositories" input to be handled at once in a single prisma query.
      * The repositories are added to the explicit ResourcesOnRepositories m-n relation in the transaction below
      */
-    const connectManyInput = dataModelPublishInputDto.repositories.map((repository) => {
-      return {
-        repositoryTitle: repository
-      };
-    });
+    // const connectManyInput = dataModelPublishInputDto.repository.map((repository) => {
+    //   return {
+    //     repositoryTitle: repository
+    //   };
+    // });
 
 
     /**
@@ -211,8 +214,8 @@ export class DataModelService {
               }
             },
             repositories: {
-              createMany: {
-                data: connectManyInput
+              create: {
+                repositoryTitle: dataModelPublishInputDto.repository
               }
             },
             fields: {

@@ -1,14 +1,14 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
-import { UserService } from "./user.service";
+import { UserService } from "../../../services/user.service";
 import { Readable } from "stream";
 import * as readline from "readline";
 import { performance } from "perf_hooks";
-import { RepositoryService } from "../modules/repository/services/repository.service";
+import { RepositoryService } from "../../repository/services/repository.service";
 import { parseAsync } from "json2csv";
-import { SeedDatabaseInputDTO } from "../resolvers/resource/dto/seed-database.dto";
-import { RepositoryPermissions } from "../modules/repository/constants/permission-level-constants";
-import { ResourceBusinessErrors } from "../errors/resource.error";
+import { SeedDatabaseInputDTO } from "../dto/seed-database.dto";
+import { RepositoryPermissions } from "../../repository/constants/permission-level-constants";
+import { ResourceBusinessErrors } from "../../../errors/resource.error";
 import { Resource, ResourceField } from "@prisma/client";
 import { Multer } from 'multer'
 

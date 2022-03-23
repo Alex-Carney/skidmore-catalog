@@ -1,12 +1,12 @@
 import { Body, Controller, Post, Put, Req, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ResourceService } from 'src/services/resource.service';
+import { ResourceService } from 'src/modules/resource/services/resource.service';
 import { Request } from "express";
-import { SeedDatabaseInputDTO } from 'src/resolvers/resource/dto/seed-database.dto';
-import { QueryDatabaseInputDTO } from 'src/resolvers/resource/dto/query-database.dto';
-import { AuthService } from "../services/auth.service";
-import { UserService } from "../services/user.service";
+import { SeedDatabaseInputDTO } from 'src/modules/resource/dto/seed-database.dto';
+import { QueryDatabaseInputDTO } from 'src/modules/resource/dto/query-database.dto';
+import { AuthService } from "../../../services/auth.service";
+import { UserService } from "../../../services/user.service";
 
 @ApiBearerAuth()
 @Controller('resources')

@@ -12,6 +12,7 @@ import { RepositoryBusinessErrors } from "../errors/repository.error";
 import { RepositoryPermissions } from "../constants/permission-level-constants";
 import { UserCreateRepositoryDTO } from "../dto/add-repositories.dto";
 import { CustomException } from "../../../errors/custom.exception";
+import { RepositoryValidation } from "../validation/repository.validation";
 
 
 @Injectable()
@@ -21,10 +22,12 @@ export class RepositoryService {
    *
    * @param prisma
    * @param userService
+   * @param repositoryValidation
    */
   constructor(
     private prisma: PrismaService,
-    private userService: UserService
+    private userService: UserService,
+    private repositoryValidation: RepositoryValidation
   ) {
   }
 
@@ -42,7 +45,7 @@ export class RepositoryService {
   public async createRepositories(userId: string, createRepositoryDTO: UserCreateRepositoryDTO) {
 
     for (const repository of createRepositoryDTO.repositories) {
-      await this.validateRepositoryNameDoesNotAlreadyExist(repository);
+      await this.repositoryValidation.validateRepositoryNameDoesNotAlreadyExist(repository);
     }
 
     /**
@@ -80,8 +83,6 @@ export class RepositoryService {
    * @returns userRepositories - repositories associated with repository
    */
   async getUserRepositories(userId: string) {
-
-
     return await this.prisma.repositoriesOnUsers.findMany({
       where: {
         userId: userId
@@ -118,14 +119,12 @@ export class RepositoryService {
    */
   async updateRepositoryPermissions(userId: string, updateRepositoryPermissionsDTO: UpdateRepositoryPermissionsDTO): Promise<any> {
 
-    console.log("Made it into  update repository permissions service layer")
-
     /**
      * Validate input repository. We already know that userId is legitimate because that was called from the controller,
      * but we must ensure input repository is valid. NotFoundError is thrown from validateRepositoryExistence
      */
     // await this.validateRepositoryExistence(updateRepositoryPermissionsDTO.repository);
-    await this.validatePermissionLevelInput(updateRepositoryPermissionsDTO.targetNewPermissionLevel);
+    await this.repositoryValidation.validatePermissionLevelInput(updateRepositoryPermissionsDTO.targetNewPermissionLevel);
 
     //validate whether current permissions allow for this action to be executed - need information about requester and target
     const userToChangePerms = await this.userService.getUserFromEmail(updateRepositoryPermissionsDTO.receiverEmail);

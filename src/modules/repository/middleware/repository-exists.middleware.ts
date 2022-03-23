@@ -4,7 +4,7 @@ import { NextFunction } from "express";
 import { Request } from "express";
 import { Repository, User } from "@prisma/client";
 import { RequestWithUserData } from "../../../middleware/user.middleware";
-import { RepositoryValidation } from "../../../validation/repository.validation";
+import { RepositoryValidation } from "../validation/repository.validation";
 import { CustomException } from "../../../errors/custom.exception";
 import { RepositoryBusinessErrors } from "../errors/repository.error";
 import { RepositoryService } from "../services/repository.service";
