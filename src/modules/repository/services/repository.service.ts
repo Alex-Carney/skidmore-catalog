@@ -6,12 +6,12 @@ import {
   NotFoundException
 } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
-import { UpdateRepositoryPermissionsDTO } from "src/resolvers/repository/dto/update-permissions.dto";
-import { UserService } from "./user.service";
+import { UpdateRepositoryPermissionsDTO } from "src/modules/repository/dto/update-permissions.dto";
+import { UserService } from "../../../services/user.service";
 import { RepositoryBusinessErrors } from "../errors/repository.error";
 import { RepositoryPermissions } from "../constants/permission-level-constants";
-import { UserCreateRepositoryDTO } from "../resolvers/repository/dto/add-repositories.dto";
-import { CustomException } from "../errors/custom.exception";
+import { UserCreateRepositoryDTO } from "../dto/add-repositories.dto";
+import { CustomException } from "../../../errors/custom.exception";
 
 
 @Injectable()

@@ -7,19 +7,15 @@ import {
     ApiOperation,
     ApiTags
 } from "@nestjs/swagger";
-import { User } from "@prisma/client";
 import { Request } from "express";
-import { UserCreateRepositoryDTO } from "src/resolvers/repository/dto/add-repositories.dto";
-import { DeleteRepositoryDTO } from "src/resolvers/repository/dto/delete-repository.dto";
-import { UpdateRepositoryPermissionsDTO } from "src/resolvers/repository/dto/update-permissions.dto";
-import { AuthService } from "src/services/auth.service";
-import { RepositoryService } from "src/services/repository.service";
+import { UserCreateRepositoryDTO } from "src/modules/repository/dto/add-repositories.dto";
+import { DeleteRepositoryDTO } from "src/modules/repository/dto/delete-repository.dto";
+import { UpdateRepositoryPermissionsDTO } from "src/modules/repository/dto/update-permissions.dto";
+import { RepositoryService } from "src/modules/repository/services/repository.service";
 import { UserService } from "src/services/user.service";
-import { Validate } from "class-validator";
-import { RequestWithUserData } from "../middleware/user.middleware";
 import { RepositoryPermissions } from "../constants/permission-level-constants";
-import { RepositoryPermissionLevel } from "../decorators/repository-permissions.decorator";
 import { RepositoryPermissionGuard } from "../guards/repository-auth.guard";
+import { RepositoryPermissionLevel } from "../decorators/repository-permissions.decorator";
 
 
 
@@ -151,8 +147,8 @@ export class RepositoryController {
         type: DeleteRepositoryDTO,
     })
     @Delete('delete-repositories')
-    // @UseGuards(RepositoryPermissionGuard)
-    // @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_OWNER)
+    @UseGuards(RepositoryPermissionGuard)
+    @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_OWNER)
     async deleteRepository(@Req() req: Request, @Body() deleteRepositoryDTO: DeleteRepositoryDTO): Promise<any> {
         // const repository = await this.userService.getUserFromRequest(req);
         return this.repositoryService.deleteRepository(req.user['id'], deleteRepositoryDTO.repository);

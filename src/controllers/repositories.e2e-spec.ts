@@ -2,8 +2,8 @@ import * as request from "supertest";
 import { Test } from "@nestjs/testing";
 
 import { INestApplication } from "@nestjs/common";
-import { RepositoryModule } from "../resolvers/repository/repository.module";
-import { RepositoryService } from "../services/repository.service";
+import { RepositoryModule } from "../modules/repository/repository.module";
+import { RepositoryService } from "../modules/repository/services/repository.service";
 
 describe("Repositories", () => {
   let app: INestApplication;

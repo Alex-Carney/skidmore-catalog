@@ -1,11 +1,11 @@
-import { HttpStatus, Injectable, NestMiddleware } from "@nestjs/common";
-import { UserService } from "../services/user.service";
+import { BadRequestException, HttpStatus, Injectable, NestMiddleware } from "@nestjs/common";
+import { UserService } from "../../../services/user.service";
 import { NextFunction } from "express";
 import { Request } from "express";
 import { Repository, User } from "@prisma/client";
-import { RequestWithUserData } from "./user.middleware";
-import { RepositoryValidation } from "../validation/repository.validation";
-import { CustomException } from "../errors/custom.exception";
+import { RequestWithUserData } from "../../../middleware/user.middleware";
+import { RepositoryValidation } from "../../../validation/repository.validation";
+import { CustomException } from "../../../errors/custom.exception";
 import { RepositoryBusinessErrors } from "../errors/repository.error";
 import { RepositoryService } from "../services/repository.service";
 
@@ -36,7 +36,13 @@ export class RepositoryExistsMiddleware implements NestMiddleware {
         HttpStatus.BAD_REQUEST);
     }
 
-    const repository: Repository = await this.repositoryService.getRepositoryByName(req.body.repository);
+    let repository: Repository;
+    try {
+      repository = await this.repositoryService.getRepositoryByName(req.body.repository);
+    } catch(e) {
+      throw new BadRequestException()
+    }
+
     if (!repository) {
       throw new CustomException(RepositoryBusinessErrors.RepositoryNotFound,
         req.body.repository + " was an invalid repository title",

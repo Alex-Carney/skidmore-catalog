@@ -5,9 +5,9 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface
 } from "class-validator";
-import { RepositoryService } from "../services/repository.service";
+import { RepositoryService } from "../modules/repository/services/repository.service";
 import { CustomException } from "../errors/custom.exception";
-import { RepositoryBusinessErrors } from "../errors/repository.error";
+import { RepositoryBusinessErrors } from "../modules/repository/errors/repository.error";
 import { RepositoryValidation } from "./repository.validation";
 import { PrismaService } from "../prisma/prisma.service";
 

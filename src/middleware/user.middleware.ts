@@ -3,6 +3,8 @@ import { UserService } from "../services/user.service";
 import { NextFunction } from "express";
 import { Request } from "express";
 import { User } from "@prisma/client";
+import { UserBusinessErrors } from "../errors/user.error";
+import { CustomException } from "../errors/custom.exception";
 
 export interface RequestWithUserData extends Request {
   user: User

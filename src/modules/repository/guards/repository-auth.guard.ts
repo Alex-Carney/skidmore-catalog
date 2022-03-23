@@ -1,8 +1,8 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
+import { PrismaService } from "../../../prisma/prisma.service";
 import { Reflector } from "@nestjs/core";
 import { Observable } from "rxjs";
-import { RepositoryValidation } from "../validation/repository.validation";
+import { RepositoryValidation } from "../../../validation/repository.validation";
 
 @Injectable()
 export class RepositoryPermissionGuard implements CanActivate {

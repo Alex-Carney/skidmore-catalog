@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './controllers/app.controller';
 import { AppService } from './services/app.service';
 import { AuthModule } from './resolvers/auth/auth.module';
-import { RepositoryModule } from './resolvers/repository/repository.module';
+import { RepositoryModule } from './modules/repository/repository.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import config from './configs/config';
 import { ThrottlerConfig } from './configs/config.interface';

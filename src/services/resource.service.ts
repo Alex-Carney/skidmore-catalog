@@ -4,10 +4,10 @@ import { UserService } from "./user.service";
 import { Readable } from "stream";
 import * as readline from "readline";
 import { performance } from "perf_hooks";
-import { RepositoryService } from "./repository.service";
+import { RepositoryService } from "../modules/repository/services/repository.service";
 import { parseAsync } from "json2csv";
 import { SeedDatabaseInputDTO } from "../resolvers/resource/dto/seed-database.dto";
-import { RepositoryPermissions } from "../constants/permission-level-constants";
+import { RepositoryPermissions } from "../modules/repository/constants/permission-level-constants";
 import { ResourceBusinessErrors } from "../errors/resource.error";
 import { Resource, ResourceField } from "@prisma/client";
 import { Multer } from 'multer'
