@@ -30,14 +30,14 @@ import { UpdateDataModelFieldsDTO } from "../dto/data-model-update.dto";
 import { DeleteDataModelDTO } from "../dto/delete-data-model.dto";
 import { UserService } from "../../../services/user.service";
 import { UpdateDataModelFieldNamesDTO } from "../dto/update-data-model-names.dto";
-import { Multer } from 'multer'
 import { RepositoryPermissionGuard } from "../../repository/guards/repository-auth.guard";
 import { RepositoryPermissionLevel } from "../../repository/decorators/repository-permissions.decorator";
 import { RepositoryPermissions } from "../../repository/constants/permission-level-constants";
+import { DataModelRouteNames } from "../constants/data-model-route-names";
 
 @ApiBearerAuth()
 @ApiTags('Resource Model')
-@Controller('data-model')
+@Controller(DataModelRouteNames.BASE_NAME)
 export class DataModelController {
   constructor(private readonly dataModelService: DataModelService, private readonly userService: UserService) {}
 
@@ -72,7 +72,7 @@ export class DataModelController {
   })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file')) //takes two arguments: fieldName which is the HTML field holding the file
-  @Post('generate-data-model')
+  @Post(DataModelRouteNames.GENERATE_DATA_MODEL)
   async generateDataModel(@UploadedFile() file: Express.Multer.File) {
     return this.dataModelService.generateDataModel(file);
   }
@@ -108,7 +108,7 @@ export class DataModelController {
   @ApiForbiddenResponse({
     description: "Only users with accounts can publish data models. You can do so here" //TODO: insert link
   })
-  @Post('publish-data-model')
+  @Post(DataModelRouteNames.PUBLISH_DATA_MODEL)
   @UseGuards(RepositoryPermissionGuard)
   @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_ADMIN)
   async publishDataModel(@Req() req: Request, @Body() dataModelPublishInputDTO: DataModelPublishInputDTO) {
@@ -116,8 +116,8 @@ export class DataModelController {
     console.log(dataModelPublishInputDTO)
     console.log(dataModelPublishInputDTO.dataModel)
 
-    const user = await this.userService.getUserFromRequest(req);
-    return this.dataModelService.publishDataModel(user['id'], dataModelPublishInputDTO);
+    // const user = await this.userService.getUserFromRequest(req);
+    return this.dataModelService.publishDataModel(req.user['id'], dataModelPublishInputDTO);
 
   }
 
@@ -138,7 +138,7 @@ export class DataModelController {
   @ApiForbiddenResponse({
     description: "Only users with accounts can use this route. You can do so here, or sign in here" //TODO: insert link
   })
-  @Get('/:repository')
+  @Get(DataModelRouteNames.GET_BY_REPOSITORY)
   async getDataModelByRepositories(@Param('repository') repository: string) {
     return this.dataModelService.returnDataModels(repository);
   }
@@ -160,7 +160,7 @@ export class DataModelController {
     description: "Only users with accounts can use this route. You can do so here, or sign in here" //TODO: insert link
   })
   //@ApiTags('Resource Model Exact')
-  @Get('/exact/:resourceName')
+  @Get(DataModelRouteNames.GET_BY_REPOSITORY_EXACT)
   async getDataModelExactByName(@Param('resourceName') resourceName: string) {
     return this.dataModelService.returnDataModelExact(resourceName, false, false);
   }
@@ -197,10 +197,12 @@ export class DataModelController {
   @ApiForbiddenResponse({
     description: "Only users with accounts can publish data models. You can do so here" //TODO: insert link
   })
-  @Put('update-resource-repositories')
+  @Put(DataModelRouteNames.UPDATE_DATA_MODEL_REPOSITORIES)
+  @UseGuards(RepositoryPermissionGuard)
+  @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_ADMIN)
   async updateDataModelRepositories(@Req() req: Request, @Body() updateDataModelRepositoriesDTO: UpdateDataModelRepositoriesDTO) {
-    const user = await this.userService.getUserFromRequest(req);
-    return this.dataModelService.updateDataModelRepositories(user['id'], updateDataModelRepositoriesDTO);
+    // const user = await this.userService.getUserFromRequest(req);
+    return this.dataModelService.updateDataModelRepositories(req.user['id'], updateDataModelRepositoriesDTO);
   }
 
   //------------------------------------------------------------------------
@@ -235,20 +237,24 @@ export class DataModelController {
   @ApiForbiddenResponse({
     description: "Only users with accounts can publish data models. You can do so here" //TODO: insert link
   })
-  @Put('update-resource')
+  @Put(DataModelRouteNames.UPDATE_DATA_MODEL)
+  @UseGuards(RepositoryPermissionGuard)
+  @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_ADMIN)
   async updateDataModel(@Req() req: Request, @Body() updateDataModelFieldsDTO: UpdateDataModelFieldsDTO) {
-    const user = await this.userService.getUserFromRequest(req);
-    return this.dataModelService.updateDataModelFields(user['id'], updateDataModelFieldsDTO);
+    // const user = await this.userService.getUserFromRequest(req);
+    return this.dataModelService.updateDataModelFields(req.user['id'], updateDataModelFieldsDTO);
   }
 
   @ApiBody({
     description: "Test",
     type: UpdateDataModelFieldNamesDTO
   })
-  @Put('rename-resource-columns')
+  @Put(DataModelRouteNames.UPDATE_DATA_MODEL_COLUMN_NAMES)
+  @UseGuards(RepositoryPermissionGuard)
+  @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_ADMIN)
   async renameDataModelFields(@Req() req: Request, @Body() updateDataModelFieldNamesDTO: UpdateDataModelFieldNamesDTO) {
-    const user = await this.userService.getUserFromRequest(req);
-    return this.dataModelService.alterDataModelColumnNames(user['id'], updateDataModelFieldNamesDTO);
+    // const user = await this.userService.getUserFromRequest(req);
+    return this.dataModelService.alterDataModelColumnNames(req.user['id'], updateDataModelFieldNamesDTO);
   }
 
 //------------------------------------------------------------------------------------
@@ -278,10 +284,12 @@ export class DataModelController {
   @ApiForbiddenResponse({
     description: "Deleting a data model requires ownership of the repository" //TODO: insert link
   })
-  @Delete('delete-data-model')
+  @Delete(DataModelRouteNames.DELETE_DATA_MODEL)
+  @UseGuards(RepositoryPermissionGuard)
+  @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_OWNER)
   async deleteDataModel(@Req() req: Request, @Body() deleteDataModelDTO: DeleteDataModelDTO) {
-    const user = await this.userService.getUserFromRequest(req);
-    return this.dataModelService.deleteDataModel(user['id'], deleteDataModelDTO);
+    // const user = await this.userService.getUserFromRequest(req);
+    return this.dataModelService.deleteDataModel(req.user['id'], deleteDataModelDTO);
   }
 
 }

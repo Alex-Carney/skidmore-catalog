@@ -10,6 +10,8 @@ import { AuthService } from "../../services/auth.service";
 import { UserMiddleware } from "../../middleware/user.middleware";
 import { RepositoryExistsMiddleware } from "../repository/middleware/repository-exists.middleware";
 import { RepositoryExistsRule } from "../repository/validation/repository-exists.rule";
+import { DataModelRouteNames } from "./constants/data-model-route-names";
+
 
 @Module({
     imports: [PrismaModule, RepositoryModule],
@@ -20,8 +22,14 @@ export class ResourceModule implements NestModule {
     configure(consumer: MiddlewareConsumer): any {
         consumer
           .apply(UserMiddleware)
-          .forRoutes('data-model')
+          .forRoutes(DataModelRouteNames.BASE_NAME)
           .apply(RepositoryExistsMiddleware)
-          .forRoutes('data-model/publish-data-model')
+          .forRoutes(
+            DataModelRouteNames.BASE_NAME+DataModelRouteNames.PUBLISH_DATA_MODEL,
+            DataModelRouteNames.BASE_NAME+DataModelRouteNames.UPDATE_DATA_MODEL,
+            DataModelRouteNames.BASE_NAME+DataModelRouteNames.UPDATE_DATA_MODEL_REPOSITORIES,
+            DataModelRouteNames.BASE_NAME+DataModelRouteNames.UPDATE_DATA_MODEL_COLUMN_NAMES,
+            DataModelRouteNames.BASE_NAME+DataModelRouteNames.DELETE_DATA_MODEL,
+            )
     }
 }

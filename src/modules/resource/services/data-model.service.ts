@@ -325,8 +325,8 @@ export class DataModelService {
    */
   async updateDataModelRepositories(userId: string, updateDataModelRepositoriesDTO: UpdateDataModelRepositoriesDTO) {
 
-    await this.repositoryService.validateRepositoryExistence(updateDataModelRepositoriesDTO.repository);
-    await this.repositoryService.authenticateUserRequest(userId, updateDataModelRepositoriesDTO.repository, RepositoryPermissions.REPOSITORY_ADMIN);
+    // await this.repositoryService.validateRepositoryExistence(updateDataModelRepositoriesDTO.repository);
+    // await this.repositoryService.authenticateUserRequest(userId, updateDataModelRepositoriesDTO.repository, RepositoryPermissions.REPOSITORY_ADMIN);
 
     const resourceTitle_repositoryTitle = {
       resourceTitle: updateDataModelRepositoriesDTO.resourceName,
@@ -367,11 +367,10 @@ export class DataModelService {
   async updateDataModelFields(userId: string, updateDataModelDTO: UpdateDataModelFieldsDTO) {
 
     //step 0: Only an ADMIN of this repository can update data model fields
-    await this.repositoryService.validateRepositoryExistence(updateDataModelDTO.repository);
+    // await this.repositoryService.validateRepositoryExistence(updateDataModelDTO.repository);
+    // await this.repositoryService.authenticateUserRequest(userId, updateDataModelDTO.repository, RepositoryPermissions.REPOSITORY_ADMIN);
+
     await this.resourceService.validateResourceAccessFromRepository(updateDataModelDTO.repository, updateDataModelDTO.resourceName);
-    await this.repositoryService.authenticateUserRequest(userId, updateDataModelDTO.repository, RepositoryPermissions.REPOSITORY_ADMIN);
-
-
     console.log("Name" + updateDataModelDTO.resourceName);
 
     //step 1: Grab the current data model to see what is different -- include the localized names
@@ -596,9 +595,10 @@ export class DataModelService {
    */
   async alterDataModelColumnNames(userId: string, updateDataModelFieldNamesDTO: UpdateDataModelFieldNamesDTO) {
     //step 0: validate inputs
-    await this.repositoryService.validateRepositoryExistence(updateDataModelFieldNamesDTO.repository);
+    // await this.repositoryService.validateRepositoryExistence(updateDataModelFieldNamesDTO.repository);
+    // await this.repositoryService.authenticateUserRequest(userId, updateDataModelFieldNamesDTO.repository, RepositoryPermissions.REPOSITORY_ADMIN);
+
     await this.resourceService.validateResourceAccessFromRepository(updateDataModelFieldNamesDTO.repository, updateDataModelFieldNamesDTO.resourceName);
-    await this.repositoryService.authenticateUserRequest(userId, updateDataModelFieldNamesDTO.repository, RepositoryPermissions.REPOSITORY_ADMIN);
 
     //step 1: generate a list of ALTER TABLE statements based on the requested name changes
     const alterTableStatements = [];
@@ -655,9 +655,10 @@ export class DataModelService {
    */
   async deleteDataModel(userId: string, deleteDataModelDTO: DeleteDataModelDTO) {
     //step 0: validate inputs
-    await this.repositoryService.validateRepositoryExistence(deleteDataModelDTO.repository);
+    // await this.repositoryService.validateRepositoryExistence(deleteDataModelDTO.repository);
+    // await this.repositoryService.authenticateUserRequest(userId, deleteDataModelDTO.repository, RepositoryPermissions.REPOSITORY_OWNER);
+
     await this.resourceService.validateResourceAccessFromRepository(deleteDataModelDTO.repository, deleteDataModelDTO.resourceName);
-    await this.repositoryService.authenticateUserRequest(userId, deleteDataModelDTO.repository, RepositoryPermissions.REPOSITORY_OWNER);
 
 
     //transaction steps: delete the data model record itself
