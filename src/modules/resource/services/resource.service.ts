@@ -15,9 +15,13 @@ import { Multer } from 'multer'
 
 @Injectable()
 export class ResourceService {
+  /**
+   *
+   * @param prisma
+   * @param repositoryService
+   */
   constructor(
     private prisma: PrismaService,
-    private userService: UserService,
     private repositoryService: RepositoryService
   ) {
   }
@@ -385,7 +389,10 @@ export class ResourceService {
         }
       }
     })
-    if(!resourceFieldFromResource) {
+
+    console.log(resourceFieldFromResource.fields)
+    console.log(resourceFieldFromResource.fields.length)
+    if(resourceFieldFromResource.fields.length === 0) {
       throw new NotFoundException(ResourceBusinessErrors.ResourceFieldNotFound)
     } else {
       return resourceFieldFromResource;
