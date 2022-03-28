@@ -3,6 +3,7 @@ declare namespace Express {
       user?: User;
       repository?: Repository;
       target_user?: User;
+      resource?: Resource;
 
 
     }

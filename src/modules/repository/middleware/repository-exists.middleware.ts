@@ -23,8 +23,7 @@ import { RepositoryService } from "../services/repository.service";
 export class RepositoryExistsMiddleware implements NestMiddleware {
   constructor(
     private readonly repositoryService: RepositoryService
-  ) {
-  }
+  ) {}
 
   async use(req: Request, res: Response, next: NextFunction) {
 

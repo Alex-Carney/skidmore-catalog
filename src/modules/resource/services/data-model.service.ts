@@ -336,7 +336,6 @@ export class DataModelService {
         data: resourceTitle_repositoryTitle
       });
     }
-
   }
 
   //--------------------------------------------------------------------
@@ -361,7 +360,7 @@ export class DataModelService {
     // await this.repositoryService.validateRepositoryExistence(updateDataModelDTO.repository);
     // await this.repositoryService.authenticateUserRequest(userId, updateDataModelDTO.repository, RepositoryPermissions.REPOSITORY_ADMIN);
 
-    await this.resourceService.validateResourceAccessFromRepository(updateDataModelDTO.repository, updateDataModelDTO.resourceName);
+    // await this.resourceService.validateResourceAccessFromRepository(updateDataModelDTO.repository, updateDataModelDTO.resourceName);
     console.log("Name" + updateDataModelDTO.resourceName);
 
     //step 1: Grab the current data model to see what is different -- include the localized names
@@ -597,7 +596,7 @@ export class DataModelService {
     // await this.repositoryService.validateRepositoryExistence(updateDataModelFieldNamesDTO.repository);
     // await this.repositoryService.authenticateUserRequest(userId, updateDataModelFieldNamesDTO.repository, RepositoryPermissions.REPOSITORY_ADMIN);
 
-    await this.resourceService.validateResourceAccessFromRepository(updateDataModelFieldNamesDTO.repository, updateDataModelFieldNamesDTO.resourceName);
+    // await this.resourceService.validateResourceAccessFromRepository(updateDataModelFieldNamesDTO.repository, updateDataModelFieldNamesDTO.resourceName);
 
     //step 1: generate a list of ALTER TABLE statements based on the requested name changes
     const alterTableStatements = [];
@@ -657,7 +656,7 @@ export class DataModelService {
     // await this.repositoryService.validateRepositoryExistence(deleteDataModelDTO.repository);
     // await this.repositoryService.authenticateUserRequest(userId, deleteDataModelDTO.repository, RepositoryPermissions.REPOSITORY_OWNER);
 
-    await this.resourceService.validateResourceAccessFromRepository(deleteDataModelDTO.repository, deleteDataModelDTO.resourceName);
+    // await this.resourceService.validateResourceAccessFromRepository(deleteDataModelDTO.repository, deleteDataModelDTO.resourceName);
 
 
     //transaction steps: delete the data model record itself

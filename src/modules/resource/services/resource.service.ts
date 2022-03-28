@@ -313,7 +313,7 @@ export class ResourceService {
    * @param resourceName
    * @throws ForbiddenException if the resource exists, but is not accessible by the input repository
    */
-  async validateResourceAccessFromRepository(repositoryName: string, resourceName: string) {
+  async validateResourceAccessFromRepository(repositoryName: string, resourceName: string): Promise<boolean> {
     const resourceOnRepository = await this.prisma.resourcesOnRepositories.findUnique({
       where: {
         resourceTitle_repositoryTitle: {
@@ -327,7 +327,8 @@ export class ResourceService {
       errorToThrow.additionalInformation = resourceName + " is not accessible from " + repositoryName;
       throw new ForbiddenException(errorToThrow);
     } else {
-      return resourceOnRepository;
+      // return resourceOnRepository;
+      return true;
     }
   }
 

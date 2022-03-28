@@ -11,6 +11,7 @@ import { UserMiddleware } from "../../middleware/user.middleware";
 import { RepositoryExistsMiddleware } from "../repository/middleware/repository-exists.middleware";
 import { RepositoryExistsRule } from "../repository/validation/repository-exists.rule";
 import { DataModelRouteNames } from "./constants/data-model-route-names";
+import { ResourceExistsMiddleware } from "./middleware/resource-exists.middleware";
 
 
 @Module({
@@ -31,5 +32,13 @@ export class ResourceModule implements NestModule {
             DataModelRouteNames.BASE_NAME+DataModelRouteNames.UPDATE_DATA_MODEL_COLUMN_NAMES,
             DataModelRouteNames.BASE_NAME+DataModelRouteNames.DELETE_DATA_MODEL,
             )
+          .apply(ResourceExistsMiddleware)
+          .forRoutes(
+            DataModelRouteNames.BASE_NAME+DataModelRouteNames.UPDATE_DATA_MODEL_COLUMN_NAMES,
+            DataModelRouteNames.BASE_NAME+DataModelRouteNames.DELETE_DATA_MODEL,
+            DataModelRouteNames.BASE_NAME+DataModelRouteNames.UPDATE_DATA_MODEL,
+            DataModelRouteNames.BASE_NAME+DataModelRouteNames.UPDATE_DATA_MODEL_REPOSITORIES
+
+          )
     }
 }

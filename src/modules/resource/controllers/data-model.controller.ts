@@ -34,6 +34,7 @@ import { RepositoryPermissionGuard } from "../../repository/guards/repository-au
 import { RepositoryPermissionLevel } from "../../repository/decorators/repository-permissions.decorator";
 import { RepositoryPermissions } from "../../repository/constants/permission-level-constants";
 import { DataModelRouteNames } from "../constants/data-model-route-names";
+import { ResourceAuthGuard } from "../guards/resource-auth.guard";
 
 @ApiBearerAuth()
 @ApiTags('Resource Model')
@@ -238,7 +239,7 @@ export class DataModelController {
     description: "Only users with accounts can publish data models. You can do so here" //TODO: insert link
   })
   @Put(DataModelRouteNames.UPDATE_DATA_MODEL)
-  @UseGuards(RepositoryPermissionGuard)
+  @UseGuards(RepositoryPermissionGuard, ResourceAuthGuard)
   @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_ADMIN)
   async updateDataModel(@Req() req: Request, @Body() updateDataModelFieldsDTO: UpdateDataModelFieldsDTO) {
     // const user = await this.userService.getUserFromRequest(req);
@@ -250,7 +251,7 @@ export class DataModelController {
     type: UpdateDataModelFieldNamesDTO
   })
   @Put(DataModelRouteNames.UPDATE_DATA_MODEL_COLUMN_NAMES)
-  @UseGuards(RepositoryPermissionGuard)
+  @UseGuards(RepositoryPermissionGuard, ResourceAuthGuard)
   @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_ADMIN)
   async renameDataModelFields(@Req() req: Request, @Body() updateDataModelFieldNamesDTO: UpdateDataModelFieldNamesDTO) {
     // const user = await this.userService.getUserFromRequest(req);
@@ -285,7 +286,7 @@ export class DataModelController {
     description: "Deleting a data model requires ownership of the repository" //TODO: insert link
   })
   @Delete(DataModelRouteNames.DELETE_DATA_MODEL)
-  @UseGuards(RepositoryPermissionGuard)
+  @UseGuards(RepositoryPermissionGuard, ResourceAuthGuard)
   @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_OWNER)
   async deleteDataModel(@Req() req: Request, @Body() deleteDataModelDTO: DeleteDataModelDTO) {
     // const user = await this.userService.getUserFromRequest(req);
