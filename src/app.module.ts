@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './controllers/app.controller';
 import { AppService } from './services/app.service';
 import { AuthModule } from './resolvers/auth/auth.module';
-import { UserModule } from './resolvers/user/user.module';
+import { RepositoryModule } from './modules/repository/repository.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import config from './configs/config';
 import { ThrottlerConfig } from './configs/config.interface';
@@ -13,7 +13,7 @@ import { SdssOpticalModule } from './v1 code/resources/sdss-optical/sdss-optical
 import { SdssDerivedModule } from './v1 code/resources/sdss-derived/sdss-derived.module';
 import { TullyEnvironmentModule } from './v1 code/resources/tully-environment/tully-environment.module';
 import { TullyCombinedModule } from './v1 code/resources/tully-combined/tully-combined.module';
-import { ResourceModule } from './resolvers/resource/resource.module';
+import { ResourceModule } from './modules/resource/resource.module';
 //import { RoleModule } from './resolvers/role/role.module';
 
 @Module({
@@ -30,7 +30,7 @@ import { ResourceModule } from './resolvers/resource/resource.module';
       inject: [ConfigService],
     }),
     AuthModule,
-    UserModule,
+    RepositoryModule,
     //RoleModule,
     ResourceModule,
     TullyGroupModule,

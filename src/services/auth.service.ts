@@ -4,8 +4,8 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
-  UnauthorizedException,
-} from '@nestjs/common';
+  UnauthorizedException, ForbiddenException
+} from "@nestjs/common";
 import { JwtService } from '@nestjs/jwt';
 import { PasswordService } from './password.service';
 import { SignupInput } from '../resolvers/auth/dto/signup.input';
@@ -13,6 +13,8 @@ import { Prisma, User } from '@prisma/client';
 import { Token } from '../models/token.model';
 import { ConfigService } from '@nestjs/config';
 import { SecurityConfig } from 'src/configs/config.interface';
+import { Request } from "express";
+import { UserBusinessErrors } from "../errors/user.error";
 
 @Injectable()
 export class AuthService {
@@ -32,7 +34,7 @@ export class AuthService {
   //   );
 
   //   try {
-  //     const user = await this.prisma.user.create({
+  //     const repository = await this.prisma.repository.create({
   //       data: {
   //         ...payload,
   //         password: hashedPassword,
@@ -41,7 +43,7 @@ export class AuthService {
   //     });
 
   //     return this.generateTokens({
-  //       userId: user.id,
+  //       userId: repository.id,
   //     });
   //   } catch (e) {
   //     if (
@@ -65,7 +67,7 @@ export class AuthService {
         data: {
           email: email,
           firstname: firstname,
-          lastname: lastname, 
+          lastname: lastname,
           password: hashedPassword,
           //role: [], //changed this from role: 'USER' which didn't do anything
         },
@@ -118,10 +120,27 @@ export class AuthService {
 
     //--------------------------------------------------------------------
 
+  /**
+   *
+   * @param token
+   * @throws NotFoundException
+   */
   getUserFromToken(token: string): Promise<User> {
-    const id = this.jwtService.decode(token)['userId'];
-    return this.prisma.user.findUnique({ where: { id } });
+    const decodedToken = this.jwtService.decode(token);
+    if(!decodedToken) {
+      throw new ForbiddenException(UserBusinessErrors.InvalidBearerToken)
+    }
+    const id = decodedToken['userId']
+    const foundUser = this.prisma.user.findUnique({ where: { id } });
+    if(!foundUser) {
+      throw new NotFoundException(UserBusinessErrors.UserNotFound);
+    }
+    return foundUser
   }
+
+    //--------------------------------------------------------------------
+
+
 
     //--------------------------------------------------------------------
 

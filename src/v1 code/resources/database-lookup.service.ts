@@ -46,7 +46,7 @@ export class DatabaseLookupService<Resource extends ResourceOptions> {
         //BEFORE: ' : Promise<Tully_Group[]> ' was in between ) {
         //function starts here
         //deconstruct the params object
-        //skip, take, cursor, where, orderBy are all parameters the user can query with?
+        //skip, take, cursor, where, orderBy are all parameters the repository can query with?
         const { skip, take, cursor, where, orderBy } = params;
         const selectSafe = new SelectHelpClass<Resource['SelectType']>().generateSelect(select)
         return this.resource.findMany({

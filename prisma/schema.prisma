@@ -62,17 +62,8 @@ model User {
   password          String
   firstname         String?
   lastname          String?
-  //posts     Post[]
-  //roles             Role[]     @relation(name: "RoleToPossessor") //roles that this user has, there can be many (many roles to many users)
-  resourcesUploaded Resource[] //resources that this user has uploaded, there can be many (1 user to many resources uploaded) 
-  //rolesAdminOf      Role[]     @relation(name: "RoleToAdmin") //roles that this user is an admin of, there can be many (1 user to many roles admin of)
-  //rolesCreated      Role[]
-  //Role      Role?    @relation(fields: [roleId], references: [id])
-  //roleId    String?
-  //Role              Role?      @relation("RolePossessors", fields: [roleId], references: [id])
-  //roleId            String?
-  //Role              Role[]
-  roles             RolesOnUsers[]
+  resourcesUploaded Resource[] //resources that this repository has uploaded, there can be many (1 repository to many resources uploaded)
+  repositories             RepositoriesOnUsers[]
 }
 
 //from the template -- a good example to keep around
@@ -87,28 +78,17 @@ model User {
 //   authorId  String?
 // }
 
-model Role {
+model Repository {
   id         String             @id @default(cuid())
-  //id        Int        @id @default(autoincrement())
   createdAt  DateTime           @default(now())
   title      String             @unique
-  //possessors User[]     @relation(name: "RoleToPossessor") //people who have this role, there can be many
-  resources  ResourcesOnRoles[] // edit: many-to-many relations dont need a relation scalar field
-  //authorIds String[] edit: many-to-many relations dont need a relation scalar field
-  //admin     User       @relation(name: "RoleAdmin", fields: [adminId], references: [id]) //person who grants Read/Write/Delete privilages, 1 (can be changed)
-  //adminId   String //relation scalar field (refers to RoleAdmin relation above)
-  //adminId   Int?
-  //admins     User[]     @relation(name: "RoleToAdmin") //update: it would make more sense if you can add multiple admins
-  //User      User?      @relation(fields: [userId], references: [id])
-  //userId    String?
-  //creator    User?      @relation(fields: [creatorId], references: [id])
-  //creatorId  String?
-  possessors RolesOnUsers[]
+  resources  ResourcesOnRepositories[] // edit: many-to-many relations dont need a relation scalar field
+  possessors RepositoriesOnUsers[]
 }
 
-model RolesOnUsers {
-  role      Role   @relation(fields: [roleTitle], references: [title])
-  roleTitle String //relation scalar field
+model RepositoriesOnUsers {
+  repository      Repository   @relation(fields: [repositoryTitle], references: [title])
+  repositoryTitle String //relation scalar field
   user      User   @relation(fields: [userId], references: [id])
   userId    String //relation scalar field
 
@@ -118,32 +98,29 @@ model RolesOnUsers {
 
 
 
-  @@id([roleTitle, userId])
+  @@id([repositoryTitle, userId])
 }
 
 model Resource {
   id        String             @id @default(cuid())
   //id        Int      @id @default(autoincrement())
   createdAt DateTime           @default(now())
-  createdBy User?              @relation(fields: [creatorId], references: [id]) //person who created this resource -- for logging mainly 
+  createdBy User?              @relation(fields: [creatorId], references: [id]) //person who created this resource -- for logging mainly
   title     String             @unique
-  roles     ResourcesOnRoles[] //edit: many-to-many relations dont need a relation scalar field
-  //roleIds   String[]
+  repositories     ResourcesOnRepositories[] //edit: many-to-many relations dont need a relation scalar field
   creatorId String? //relation scalar field (refers to createdBy relation above)
-  //creatorId Int?
   fields    ResourceField[]
 }
 
-model ResourcesOnRoles {
+model ResourcesOnRepositories {
   resource      Resource @relation(fields: [resourceTitle], references: [title])
   resourceTitle String
-  role          Role     @relation(fields: [roleTitle], references: [title])
-  roleTitle     String
-
-  //any other fields describing the relationship between resources and roles go here
+  repository          Repository     @relation(fields: [repositoryTitle], references: [title])
+  repositoryTitle     String
 
 
-  @@id([resourceTitle, roleTitle])
+
+  @@id([resourceTitle, repositoryTitle])
 }
 
 model ResourceField {
@@ -159,7 +136,7 @@ model ResourceField {
 model Tully_Group {
   nest        Int    @id @unique
   num_members Int
-  pcg_name    String @unique //pcg name of the most massive galaxy in the group 
+  pcg_name    String @unique //pcg name of the most massive galaxy in the group
   sg_lon      Float
   sg_lat      Float
   log_lk      Float
@@ -500,8 +477,3 @@ model Odekon_Catalog {
 
 }
 
-//no idea what this does
-// enum Role {
-//   ADMIN
-//   USER
-// }

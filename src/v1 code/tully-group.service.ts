@@ -29,7 +29,7 @@ export class TullyGroupService {
 
     //This is the logic for finding a SINGLE galaxy based on an arbitrary "where" argument.
     //INPUTS: Of the form {field: value}.
-    //EXAMPLE USAGE: Any time a user would want to query the form of SELECT * FROM Tully_Group WHERE { field: value }
+    //EXAMPLE USAGE: Any time a repository would want to query the form of SELECT * FROM Tully_Group WHERE { field: value }
     //RETURNS: A SINGLE galaxy, the first that satisfies the where result (best used for searching by ID)
     async tully_group(groupWhereUniqueInput: Prisma.Tully_GroupWhereUniqueInput): Promise<Tully_Group | null> {
         return this.prisma.tully_Group.findUnique({
@@ -57,7 +57,7 @@ export class TullyGroupService {
     //     //BEFORE: ' : Promise<Tully_Group[]> ' was in between ) {
     //     //function starts here
     //     //deconstruct the params object
-    //     //skip, take, cursor, where, orderBy are all parameters the user can query with?
+    //     //skip, take, cursor, where, orderBy are all parameters the repository can query with?
     //     const { skip, take, cursor, where, orderBy } = params;
     //     return this.prisma.tully_Group.findMany<
     //     { select : S } & Omit<Prisma.Tully_GroupFindManyArgs, 'select' | 'include'>
@@ -85,7 +85,7 @@ export class TullyGroupService {
         //BEFORE: ' : Promise<Tully_Group[]> ' was in between ) {
         //function starts here
         //deconstruct the params object
-        //skip, take, cursor, where, orderBy are all parameters the user can query with?
+        //skip, take, cursor, where, orderBy are all parameters the repository can query with?
         const { skip, take, cursor, where, orderBy } = params;
         const select0 = makeTully_GroupSelect(select)
         return this.prisma.tully_Group.findMany({

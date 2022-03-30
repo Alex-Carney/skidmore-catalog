@@ -1,4 +1,3 @@
-import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -16,8 +15,12 @@ import { TullyEnvironmentModule } from './v1 code/resources/tully-environment/tu
 import { TullyCombinedModule } from './v1 code/resources/tully-combined/tully-combined.module';
 import { SdssOpticalModule } from './v1 code/resources/sdss-optical/sdss-optical.module';
 import { SdssDerivedModule } from './v1 code/resources/sdss-derived/sdss-derived.module';
-import { UserModule } from './resolvers/user/user.module';
-import { ResourceModule } from './resolvers/resource/resource.module';
+import { RepositoryModule } from './modules/repository/repository.module';
+import { ResourceModule } from './modules/resource/resource.module';
+import { useContainer, Validator } from 'class-validator';
+import { UserMiddleware } from "./middleware/user.middleware";
+import { ValidationPipe } from "@nestjs/common";
+
 
 declare const module: any
 
@@ -27,8 +30,15 @@ async function bootstrap() {
     AppModule
     );
 
+  useContainer(app.select(AppModule), { fallbackOnErrors: true})
   // Validation
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe(),
+  );
+
+
+
+
 
   const configService = app.get(ConfigService);
   const nestConfig = configService.get<NestConfig>('nest');
@@ -72,7 +82,7 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
   const v2Document = SwaggerModule.createDocument(app, v2Options, {
-    include: [UserModule, ResourceModule],
+    include: [RepositoryModule, ResourceModule],
   });
 
   const v2CustomOptions: SwaggerCustomOptions = {
@@ -101,6 +111,8 @@ async function bootstrap() {
 
 
 
+
+
 //------------------- MIDDLEWARE ---------------------------//
   app.use(compression());
   app.useStaticAssets(join(__dirname, '..', 'public'));
@@ -108,6 +120,8 @@ async function bootstrap() {
   app.setViewEngine('ejs');
 
 //-----------------------------------------------------
+
+
 
 
 

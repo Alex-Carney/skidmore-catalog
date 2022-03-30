@@ -11,26 +11,26 @@ Table User {
   firstname String
   lastname String
   resourcesUploaded Resource [not null]
-  roles RolesOnUsers [not null]
+  repositories RepositoriesOnUsers [not null]
 }
 
-Table Role {
+Table Repository {
   id String [pk]
   createdAt DateTime [default: `now()`, not null]
   title String [unique, not null]
-  resources ResourcesOnRoles [not null]
-  possessors RolesOnUsers [not null]
+  resources ResourcesOnRepositories [not null]
+  possessors RepositoriesOnUsers [not null]
 }
 
-Table RolesOnUsers {
-  role Role [not null]
-  roleTitle String [not null]
+Table RepositoriesOnUsers {
+  repository Repository [not null]
+  repositoryTitle String [not null]
   user User [not null]
   userId String [not null]
   permissionLevel Int [not null]
 
   indexes {
-    (roleTitle, userId) [pk]
+    (repositoryTitle, userId) [pk]
   }
 }
 
@@ -39,19 +39,19 @@ Table Resource {
   createdAt DateTime [default: `now()`, not null]
   createdBy User
   title String [unique, not null]
-  roles ResourcesOnRoles [not null]
+  repositories ResourcesOnRepositories [not null]
   creatorId String
   fields ResourceField [not null]
 }
 
-Table ResourcesOnRoles {
+Table ResourcesOnRepositories {
   resource Resource [not null]
   resourceTitle String [not null]
-  role Role [not null]
-  roleTitle String [not null]
+  repository Repository [not null]
+  repositoryTitle String [not null]
 
   indexes {
-    (resourceTitle, roleTitle) [pk]
+    (resourceTitle, repositoryTitle) [pk]
   }
 }
 
@@ -379,14 +379,14 @@ Table Odekon_Catalog {
   zgroup Float
 }
 
-Ref: RolesOnUsers.roleTitle > Role.title
+Ref: RepositoriesOnUsers.repositoryTitle > Repository.title
 
-Ref: RolesOnUsers.userId > User.id
+Ref: RepositoriesOnUsers.userId > User.id
 
 Ref: Resource.creatorId > User.id
 
-Ref: ResourcesOnRoles.resourceTitle > Resource.title
+Ref: ResourcesOnRepositories.resourceTitle > Resource.title
 
-Ref: ResourcesOnRoles.roleTitle > Role.title
+Ref: ResourcesOnRepositories.repositoryTitle > Repository.title
 
 Ref: ResourceField.resourceTitle > Resource.title
