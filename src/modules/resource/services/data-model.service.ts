@@ -1,27 +1,22 @@
 import {
   BadRequestException,
-  ForbiddenException,
   HttpStatus,
   Injectable,
   InternalServerErrorException
 } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
-import { UserService } from "../../../services/user.service";
 import { Readable } from "stream";
 import * as readline from "readline";
-import { RepositoryService } from "../../repository/services/repository.service";
 import * as md5 from "md5";
 import { DataModelBusinessErrors } from "../errors/data-model.error";
 import { DataModelPublishInputDTO } from "../dto/data-model-publish.dto";
-import { RepositoryPermissions } from "../../repository/constants/permission-level-constants";
 import { DeleteDataModelDTO } from "../dto/delete-data-model.dto";
 import { UpdateDataModelFieldsDTO } from "../dto/data-model-update.dto";
 import { UpdateDataModelRepositoriesDTO } from "../dto/update-resource-repository.dto";
 import { UpdateDataModelFieldNamesDTO } from "../dto/update-data-model-names.dto";
-import { ResourceService } from "./resource.service";
-import { NonExistenceFlags } from "../../../constants/nonexistant-constants";
 import { RepositoryValidation } from "../../repository/validation/repository.validation";
 import { CustomException } from "../../../errors/custom.exception";
+import { ResourceValidation } from "../validation/resource.validation";
 
 
 @Injectable()
@@ -31,12 +26,12 @@ export class DataModelService {
    * UserService, and RepositoryService.
    *
    * @param prisma
-   * @param resourceService
+   * @param resourceValidation
    * @param repositoryValidation
    */
   constructor(
     private prisma: PrismaService,
-    private resourceService: ResourceService,
+    private resourceValidation: ResourceValidation,
     private repositoryValidation: RepositoryValidation
   ) {
   }
@@ -138,7 +133,7 @@ export class DataModelService {
       //await this.repositoryService.validateRepositoryExistence(repositoryToValidate);
       //await this.repositoryService.authenticateUserRequest(userId, repositoryToValidate, RepositoryPermissions.REPOSITORY_ADMIN);
     // }
-    await this.resourceService.validateResourceNameDoesNotAlreadyExist(dataModelPublishInputDto.resourceName)
+    await this.resourceValidation.validateResourceNameDoesNotAlreadyExist(dataModelPublishInputDto.resourceName)
 
     //step 1: modify incoming data model to include localized names
     this.addLocalizedNamesToFields(dataModelPublishInputDto.dataModel);
@@ -360,7 +355,7 @@ export class DataModelService {
     // await this.repositoryService.validateRepositoryExistence(updateDataModelDTO.repository);
     // await this.repositoryService.authenticateUserRequest(userId, updateDataModelDTO.repository, RepositoryPermissions.REPOSITORY_ADMIN);
 
-    // await this.resourceService.validateResourceAccessFromRepository(updateDataModelDTO.repository, updateDataModelDTO.resourceName);
+    // await this.resourceValidation.validateResourceAccessFromRepository(updateDataModelDTO.repository, updateDataModelDTO.resourceName);
     console.log("Name" + updateDataModelDTO.resourceName);
 
     //step 1: Grab the current data model to see what is different -- include the localized names
@@ -590,20 +585,21 @@ export class DataModelService {
    *
    * @param userId repository attempting operation
    * @param updateDataModelFieldNamesDTO Data transfer object for this operation. More information in its file
+   * @param resourceToUpdate
    */
   async alterDataModelColumnNames(userId: string, updateDataModelFieldNamesDTO: UpdateDataModelFieldNamesDTO) {
     //step 0: validate inputs
     // await this.repositoryService.validateRepositoryExistence(updateDataModelFieldNamesDTO.repository);
     // await this.repositoryService.authenticateUserRequest(userId, updateDataModelFieldNamesDTO.repository, RepositoryPermissions.REPOSITORY_ADMIN);
 
-    // await this.resourceService.validateResourceAccessFromRepository(updateDataModelFieldNamesDTO.repository, updateDataModelFieldNamesDTO.resourceName);
+    // await this.resourceValidation.validateResourceAccessFromRepository(updateDataModelFieldNamesDTO.repository, updateDataModelFieldNamesDTO.resourceName);
 
     //step 1: generate a list of ALTER TABLE statements based on the requested name changes
     const alterTableStatements = [];
     const updateResourceStatements = [];
     //parse repository's request
     for (const fieldNameToChange of Object.keys(updateDataModelFieldNamesDTO.fieldNameRemapping)) {
-      const validatedResourceField = await this.resourceService.validateResourceFieldExistence(updateDataModelFieldNamesDTO.resourceName, fieldNameToChange);
+      const validatedResourceField = await this.resourceValidation.validateResourceFieldExistence(updateDataModelFieldNamesDTO.resourceName, fieldNameToChange);
       const oldFieldLocalizedName = validatedResourceField.fields[0].localizedName;
       const newLocalizedName = "c" + md5(updateDataModelFieldNamesDTO.fieldNameRemapping[fieldNameToChange]);
       alterTableStatements.push(`ALTER TABLE datastore."${updateDataModelFieldNamesDTO.resourceName}" RENAME "${oldFieldLocalizedName}" TO "${newLocalizedName}";`);
@@ -656,7 +652,7 @@ export class DataModelService {
     // await this.repositoryService.validateRepositoryExistence(deleteDataModelDTO.repository);
     // await this.repositoryService.authenticateUserRequest(userId, deleteDataModelDTO.repository, RepositoryPermissions.REPOSITORY_OWNER);
 
-    // await this.resourceService.validateResourceAccessFromRepository(deleteDataModelDTO.repository, deleteDataModelDTO.resourceName);
+    // await this.resourceValidation.validateResourceAccessFromRepository(deleteDataModelDTO.repository, deleteDataModelDTO.resourceName);
 
 
     //transaction steps: delete the data model record itself

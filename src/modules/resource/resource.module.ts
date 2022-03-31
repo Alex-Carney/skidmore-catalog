@@ -12,12 +12,13 @@ import { RepositoryExistsMiddleware } from "../repository/middleware/repository-
 import { RepositoryExistsRule } from "../repository/validation/repository-exists.rule";
 import { DataModelRouteNames } from "./constants/data-model-route-names";
 import { ResourceExistsMiddleware } from "./middleware/resource-exists.middleware";
+import { ResourceValidation } from "./validation/resource.validation";
 
 
 @Module({
     imports: [PrismaModule, RepositoryModule],
     controllers: [DataModelController, ResourceController],
-    providers: [ResourceService, DataModelService],
+    providers: [ResourceService, DataModelService, ResourceValidation],
 })
 export class ResourceModule implements NestModule {
     configure(consumer: MiddlewareConsumer): any {

@@ -1,9 +1,9 @@
 import { HttpStatus, Injectable, NestMiddleware } from "@nestjs/common";
-import { ResourceService } from "../services/resource.service";
 import { NextFunction, Request } from "express";
 import { CustomException } from "../../../errors/custom.exception";
 import { ResourceBusinessErrors } from "../../../errors/resource.error";
 import { Resource } from "@prisma/client"
+import { ResourceValidation } from "../validation/resource.validation";
 
 
 /**
@@ -14,7 +14,7 @@ import { Resource } from "@prisma/client"
 @Injectable()
 export class ResourceExistsMiddleware implements NestMiddleware {
   constructor(
-    private readonly resourceService: ResourceService
+    private readonly resourceValidation: ResourceValidation
   ) {}
   async use(req: Request, res: Response, next: NextFunction) {
     console.log("RESOURCE MIDDLEWARE EXECUTED");
@@ -27,7 +27,7 @@ export class ResourceExistsMiddleware implements NestMiddleware {
       );
     }
     // validateResourceExistence throws exception for us
-    const resource: Resource = await this.resourceService.validateResourceExistence(req.body.resourceName)
+    const resource: Resource = await this.resourceValidation.validateResourceExistence(req.body.resourceName)
     req.resource = resource;
 
     next();
