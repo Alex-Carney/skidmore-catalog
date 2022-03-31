@@ -6,7 +6,7 @@
 
 import { ForbiddenException, Injectable, Type } from "@nestjs/common";
 import { prisma, Prisma } from "@prisma/client";
-import { PrismaService } from "src/prisma/prisma.service";
+import { PrismaService } from "src/modules/prisma/services/prisma.service";
 import { ResourceOptions, SdssOpticalOptions } from "./resource options/resource-options.interface";
 
 /**

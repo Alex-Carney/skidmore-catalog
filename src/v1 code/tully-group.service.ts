@@ -4,7 +4,7 @@ import {
     Prisma,
     prisma,
 } from '@prisma/client'
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from 'src/modules/prisma/services/prisma.service';
 import { parseAsync } from 'json2csv';
 import { TullyGroupFields } from 'src/v1 code/tully-group-resolvers/dto/tully-group.dto';
 

@@ -1,4 +1,4 @@
-import { PrismaService } from './../prisma/prisma.service';
+import { PrismaService } from '../../prisma/services/prisma.service';
 import {
   Injectable,
   NotFoundException,
@@ -8,13 +8,13 @@ import {
 } from "@nestjs/common";
 import { JwtService } from '@nestjs/jwt';
 import { PasswordService } from './password.service';
-import { SignupInput } from '../resolvers/auth/dto/signup.input';
+import { SignupInput } from '../dto/signup.input';
 import { Prisma, User } from '@prisma/client';
-import { Token } from '../models/token.model';
+import { Token } from '../../../models/token.model';
 import { ConfigService } from '@nestjs/config';
 import { SecurityConfig } from 'src/configs/config.interface';
 import { Request } from "express";
-import { UserBusinessErrors } from "../errors/user.error";
+import { UserBusinessErrors } from "../../../errors/user.error";
 
 @Injectable()
 export class AuthService {

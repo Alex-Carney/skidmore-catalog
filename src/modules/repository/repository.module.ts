@@ -1,9 +1,9 @@
-import { PrismaModule } from "../../prisma/prisma.module";
+import { PrismaModule } from "../prisma/prisma.module";
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { UserService } from '../../services/user.service';
-import { PasswordService } from '../../services/password.service';
+import { PasswordService } from '../authentication/services/password.service';
 import { RepositoryController } from 'src/modules/repository/controllers/repository.controller';
-import { AuthModule } from '../../resolvers/auth/auth.module';
+import { AuthModule } from '../authentication/auth.module';
 import { RepositoryService } from 'src/modules/repository/services/repository.service';
 import { UserMiddleware } from "../../middleware/user.middleware";
 // import { RepositoryExistsMiddleware } from "../../middleware/repository-exists.middleware";

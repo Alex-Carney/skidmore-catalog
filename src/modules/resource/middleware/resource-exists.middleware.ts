@@ -1,7 +1,7 @@
 import { HttpStatus, Injectable, NestMiddleware } from "@nestjs/common";
 import { NextFunction, Request } from "express";
 import { CustomException } from "../../../errors/custom.exception";
-import { ResourceBusinessErrors } from "../../../errors/resource.error";
+import { ResourceBusinessErrors } from "../errors/resource.error";
 import { Resource } from "@prisma/client"
 import { ResourceValidation } from "../validation/resource.validation";
 

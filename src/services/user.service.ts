@@ -1,4 +1,4 @@
-import { PrismaService } from './../prisma/prisma.service';
+import { PrismaService } from '../modules/prisma/services/prisma.service';
 import {
   Injectable,
   BadRequestException,
@@ -6,12 +6,12 @@ import {
   UnauthorizedException,
   ForbiddenException
 } from "@nestjs/common";
-import { PasswordService } from './password.service';
-import { ChangePasswordInput } from '../resolvers/repository/dto/change-password.input';
-import { UpdateUserInput } from '../resolvers/repository/dto/update-user.input';
+import { PasswordService } from '../modules/authentication/services/password.service';
+// import { ChangePasswordInput } from '../resolvers/repository/dto/change-password.input';
+// import { UpdateUserInput } from '../resolvers/repository/dto/update-user.input';
 import { Prisma, User } from '@prisma/client';
 import { Request } from "express";
-import { AuthService } from './auth.service';
+import { AuthService } from '../modules/authentication/services/auth.service';
 import { UserBusinessErrors } from "../errors/user.error";
 
 @Injectable()
@@ -22,40 +22,40 @@ export class UserService {
     private authService: AuthService,
   ) {}
 
- async updateUser(userId: string, newUserData: UpdateUserInput) {
-    return this.prisma.user.update({
-      data: newUserData,
-      where: {
-        id: userId,
-      },
-    });
-  }
+ // async updateUser(userId: string, newUserData: UpdateUserInput) {
+ //    return this.prisma.user.update({
+ //      data: newUserData,
+ //      where: {
+ //        id: userId,
+ //      },
+ //    });
+ //  }
 
-  async changePassword(
-    userId: string,
-    userPassword: string,
-    changePassword: ChangePasswordInput
-  ) {
-    const passwordValid = await this.passwordService.validatePassword(
-      changePassword.oldPassword,
-      userPassword
-    );
-
-    if (!passwordValid) {
-      throw new BadRequestException('Invalid password');
-    }
-
-    const hashedPassword = await this.passwordService.hashPassword(
-      changePassword.newPassword
-    );
-
-    return this.prisma.user.update({
-      data: {
-        password: hashedPassword,
-      },
-      where: { id: userId },
-    });
-  }
+  // async changePassword(
+  //   userId: string,
+  //   userPassword: string,
+  //   changePassword: ChangePasswordInput
+  // ) {
+  //   const passwordValid = await this.passwordService.validatePassword(
+  //     changePassword.oldPassword,
+  //     userPassword
+  //   );
+  //
+  //   if (!passwordValid) {
+  //     throw new BadRequestException('Invalid password');
+  //   }
+  //
+  //   const hashedPassword = await this.passwordService.hashPassword(
+  //     changePassword.newPassword
+  //   );
+  //
+  //   return this.prisma.user.update({
+  //     data: {
+  //       password: hashedPassword,
+  //     },
+  //     where: { id: userId },
+  //   });
+  // }
 
   /**
    *

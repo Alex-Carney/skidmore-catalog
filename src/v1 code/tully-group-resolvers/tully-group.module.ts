@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TullyGroupController } from 'src/v1 code/tully-group/tully-group.controller';
-import { PrismaModule } from 'src/prisma/prisma.module';
+import { PrismaModule } from 'src/modules/prisma/prisma.module';
 import { TullyGroupService } from 'src/v1 code/tully-group.service';
 
 @Module({

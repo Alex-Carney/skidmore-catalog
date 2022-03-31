@@ -2,7 +2,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { Module } from '@nestjs/common';
 import { AppController } from './controllers/app.controller';
 import { AppService } from './services/app.service';
-import { AuthModule } from './resolvers/auth/auth.module';
+import { AuthModule } from './modules/authentication/auth.module';
 import { RepositoryModule } from './modules/repository/repository.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import config from './configs/config';

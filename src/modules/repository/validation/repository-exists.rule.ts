@@ -9,7 +9,7 @@ import { RepositoryService } from "../services/repository.service";
 import { CustomException } from "../../../errors/custom.exception";
 import { RepositoryBusinessErrors } from "../errors/repository.error";
 import { RepositoryValidation } from "./repository.validation";
-import { PrismaService } from "../../../prisma/prisma.service";
+import { PrismaService } from "../../prisma/services/prisma.service";
 
 @ValidatorConstraint({name: 'RepositoryExists', async: false})
 @Injectable()

@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "../../../prisma/prisma.service";
-import { ResourceBusinessErrors } from "../../../errors/resource.error";
+import { PrismaService } from "../../prisma/services/prisma.service";
+import { ResourceBusinessErrors } from "../errors/resource.error";
 import { Resource, ResourceField } from "@prisma/client";
 
 @Injectable()

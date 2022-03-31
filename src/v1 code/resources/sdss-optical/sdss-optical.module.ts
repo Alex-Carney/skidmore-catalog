@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { PrismaModule } from 'src/prisma/prisma.module';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaModule } from 'src/modules/prisma/prisma.module';
+import { PrismaService } from 'src/modules/prisma/services/prisma.service';
 import { DatabaseLookupService } from '../database-lookup.service';
 import { SDSS_OPTICAL_LOOKUP } from '../resource options/resource-constants';
 import { SdssOpticalOptions } from '../resource options/resource-options.interface';

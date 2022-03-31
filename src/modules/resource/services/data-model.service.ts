@@ -4,7 +4,7 @@ import {
   Injectable,
   InternalServerErrorException
 } from "@nestjs/common";
-import { PrismaService } from "src/prisma/prisma.service";
+import { PrismaService } from "src/modules/prisma/services/prisma.service";
 import { Readable } from "stream";
 import * as readline from "readline";
 import * as md5 from "md5";

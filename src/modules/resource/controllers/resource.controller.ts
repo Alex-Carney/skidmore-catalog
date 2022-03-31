@@ -5,7 +5,7 @@ import { ResourceService } from 'src/modules/resource/services/resource.service'
 import { Request } from "express";
 import { SeedDatabaseInputDTO } from 'src/modules/resource/dto/seed-database.dto';
 import { QueryDatabaseInputDTO } from 'src/modules/resource/dto/query-database.dto';
-import { AuthService } from "../../../services/auth.service";
+import { AuthService } from "../../authentication/services/auth.service";
 import { UserService } from "../../../services/user.service";
 
 @ApiBearerAuth()

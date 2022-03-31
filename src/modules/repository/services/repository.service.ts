@@ -5,7 +5,7 @@ import {
   InternalServerErrorException,
   NotFoundException
 } from "@nestjs/common";
-import { PrismaService } from "src/prisma/prisma.service";
+import { PrismaService } from "src/modules/prisma/services/prisma.service";
 import { UpdateRepositoryPermissionsDTO } from "src/modules/repository/dto/update-permissions.dto";
 import { UserService } from "../../../services/user.service";
 import { RepositoryBusinessErrors } from "../errors/repository.error";
