@@ -7,7 +7,7 @@ import { ResourceValidation } from "../validation/resource.validation";
  * @UseGuards(ResourcePermissionGuard) and @Re
  */
 @Injectable()
-export class ResourceAuthGuard implements CanActivate {
+export class ResourceAccessAuthGuard implements CanActivate {
   constructor(private reflector: Reflector, private resourceValidation: ResourceValidation) {}
 
   canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {

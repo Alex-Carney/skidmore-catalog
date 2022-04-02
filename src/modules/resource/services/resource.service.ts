@@ -1,16 +1,17 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { ForbiddenException, HttpStatus, Injectable } from "@nestjs/common";
 import { PrismaService } from "src/modules/prisma/services/prisma.service";
-import { UserService } from "../../../services/user.service";
+import { Response } from 'express';
 import { Readable } from "stream";
 import * as readline from "readline";
 import { performance } from "perf_hooks";
-import { RepositoryService } from "../../repository/services/repository.service";
 import { parseAsync } from "json2csv";
 import { SeedDatabaseInputDTO } from "../dto/seed-database.dto";
 import { RepositoryPermissions } from "../../repository/constants/permission-level-constants";
 import { ResourceBusinessErrors } from "../errors/resource.error";
-import { Resource, ResourceField } from "@prisma/client";
-import { Multer } from 'multer'
+import { Multer } from 'multer' // THIS IS NOT ACTUALLY UNUSED. DO NOT DELETE.
+import { RepositoryValidation } from "../../repository/validation/repository.validation";
+import { ResourceValidation } from "../validation/resource.validation";
+import { CustomException } from "../../../errors/custom.exception";
 
 
 @Injectable()
@@ -18,11 +19,13 @@ export class ResourceService {
   /**
    *
    * @param prisma
-   * @param repositoryService
+   * @param repositoryValidation
+   * @param resourceValidation
    */
   constructor(
     private prisma: PrismaService,
-    private repositoryService: RepositoryService
+    private repositoryValidation: RepositoryValidation,
+    private resourceValidation: ResourceValidation,
   ) {
   }
 
@@ -32,14 +35,27 @@ export class ResourceService {
    * @param file
    * @param seedResourceDto
    * @param userId
+   * @param res
    */
-  async seedResourceFromFile(file: Express.Multer.File, seedResourceDto: SeedDatabaseInputDTO, userId: string) {
+  async seedResourceFromFile(file: Express.Multer.File, seedResourceDto: SeedDatabaseInputDTO, userId: string, res: Response) {
 
 
-    await this.validateResourceExistence(seedResourceDto.resourceName);
-    await this.repositoryService.validateRepositoryExistence(seedResourceDto.repository);
-    await this.repositoryService.authenticateUserRequest(userId, seedResourceDto.repository, RepositoryPermissions.REPOSITORY_ADMIN);
-    await this.validateResourceAccessFromRepository(seedResourceDto.repository, seedResourceDto.resourceName);
+    /**
+     * All 4 of these validation calls were supposed to be replaced with middleware and
+     * guards. This worked for every other method in the API. Unfortunately, it doesn't work
+     * here because the API route uses form-data instead of json in its body.
+     */
+    await this.resourceValidation.validateResourceExistence(seedResourceDto.resourceName);
+    await this.repositoryValidation.validateRepositoryExistenceError(seedResourceDto.repository);
+    await this.repositoryValidation.authenticateUserRequest(userId, seedResourceDto.repository, RepositoryPermissions.REPOSITORY_ADMIN);
+    await this.resourceValidation.validateResourceAccessFromRepository(seedResourceDto.repository, seedResourceDto.resourceName);
+
+    /**
+     * These validation calls would be better with the type transformer package,
+     * but that isn't working with NestJs as of 4/1/2022
+     */
+    await this.resourceValidation.validateBufferSizeInput(seedResourceDto.maxBufferSize);
+    await this.resourceValidation.validateDelimiterInput(seedResourceDto.delimiter);
 
     const dataModel = await this.prisma.resource.findUnique({
       where: {
@@ -53,6 +69,11 @@ export class ResourceService {
 
     const buf = file.buffer;
     console.log(buf.toString());
+
+    // fail early: if the file is of the wrong encoding, immediately throw exception
+    await this.resourceValidation.validateFiletype(file.mimetype);
+
+
 
     //step 2: authenticate the request, does this repository have WRITE priviledges for this resource under this repository?
 
@@ -78,6 +99,9 @@ export class ResourceService {
       for await (const line of rl) {
         if (lNum == 0) {
 
+          // Remove extra BOM character
+          const cleanedLine = line.replace(`\ufeff`, "");
+
           /**
            * Here we must account for a potential discrepancy between the stored schema and the incoming seed data.
            * The schema should not require that the order of the columns in the incoming data is exactly the same.
@@ -85,7 +109,7 @@ export class ResourceService {
            * break the process. Therefore, we must account for the potential differences in the order of data
            */
 
-          line.split(seedResourceDto.delimiter).forEach((field) => {
+          cleanedLine.split(seedResourceDto.delimiter).forEach((field) => {
             console.log("LINE SPLIT" + field);
             fieldNames.push(field);
           });
@@ -96,6 +120,11 @@ export class ResourceService {
             const fieldIdx = dataModel.fields.findIndex((obj) => {
               return obj.fieldName == field;
             });
+            if(fieldIdx == -1) {
+              throw new CustomException(ResourceBusinessErrors.InvalidInputFile,
+                `Invalid field: ${field != "" ? field : "EMPTY FILE"} did not match data model.`,
+                HttpStatus.BAD_REQUEST)
+            }
             inputColumnOrderIndex.push(fieldIdx);
             console.log(fieldIdx);
             //console.log(dataModel.fields[fieldIdx].fieldName + " with ln " + dataModel.fields[fieldIdx].localizedName);
@@ -172,13 +201,19 @@ export class ResourceService {
       console.log("Total time: " + (eet - sst) / 1000);
 
     } catch (err) {
+
+      if(err instanceof CustomException) {
+        res.status(HttpStatus.BAD_REQUEST).send(err.getResponse());
+      }
+
       console.log(err);
       console.log(lNum);
       const msg = err.message + ". This error occurred while reading lines between " + (lNum - seedResourceDto.maxBufferSize) + " and " + lNum + " of the seed file";
       console.log(msg);
       return msg;
     }
-    return;
+    res.status(HttpStatus.OK).send("success")
+    return "success";
 
 
   }
@@ -207,7 +242,7 @@ export class ResourceService {
 
 
     //step 1: authenticate this request
-    await this.repositoryService.authenticateUserRequest(userId, repository, RepositoryPermissions.REPOSITORY_USER);
+    // await this.repositoryService.authenticateUserRequest(userId, repository, RepositoryPermissions.REPOSITORY_USER);
 
 
     /**
@@ -302,106 +337,6 @@ export class ResourceService {
   }
 
   //----------------------------------------------------------------------------------------
-  // OTHER FUNCTIONALITY
-  //----------------------------------------------------------------------------------------
-
-  /**
-   * @method Returns the requested resource, or throws an exception either if the resource doesn't exist, or if it is not
-   * accessible from the input repository.
-   *
-   * @param repositoryName
-   * @param resourceName
-   * @throws ForbiddenException if the resource exists, but is not accessible by the input repository
-   */
-  async validateResourceAccessFromRepository(repositoryName: string, resourceName: string): Promise<boolean> {
-    const resourceOnRepository = await this.prisma.resourcesOnRepositories.findUnique({
-      where: {
-        resourceTitle_repositoryTitle: {
-          repositoryTitle: repositoryName,
-          resourceTitle: resourceName
-        }
-      }
-    });
-    if (!resourceOnRepository) {
-      const errorToThrow = ResourceBusinessErrors.ResourceNotInRepository;
-      errorToThrow.additionalInformation = resourceName + " is not accessible from " + repositoryName;
-      throw new ForbiddenException(errorToThrow);
-    } else {
-      // return resourceOnRepository;
-      return true;
-    }
-  }
-
-  //----------------------------------------------------------------------------------------
-
-
-  /**
-   * Validate that a resource with this name already exists, throw an exception if it doesnt
-   * @param resourceName
-   * @throws NotFoundException
-   */
-  async validateResourceExistence(resourceName: string) {
-    const resourceFromTitle = await this.prisma.resource.findUnique({
-      where: {
-        title: resourceName
-      }
-    });
-    if (!resourceFromTitle) {
-      throw new NotFoundException(ResourceBusinessErrors.ResourceNotFound);
-    }
-    return resourceFromTitle;
-  }
-
-  /**
-   * Validate that creating a new resource with this name WOULD NOT cause duplication
-   * @param resourceName
-   * @throws BadRequestException Resource with this name already exists
-   */
-  async validateResourceNameDoesNotAlreadyExist(resourceName: string) {
-    const resourceFromTitle = await this.prisma.resource.findUnique({
-      where: {
-        title: resourceName
-      }
-    });
-    if(resourceFromTitle) {
-      throw new BadRequestException(ResourceBusinessErrors.ResourceAlreadyExists)
-    }
-  }
-
-  //----------------------------------------------------------------------------------------
-
-  /**
-   * @method returns the requested resource field. Throws an exception if it does not exist within the supplied resource
-   *
-   * @param resourceName
-   * @param resourceFieldName
-   * @throws NotFoundException the resource field may exist, but not within the supplied resource.
-   */
-  async validateResourceFieldExistence(resourceName: string, resourceFieldName: string): Promise<Resource & {fields: ResourceField[]}> {
-    const resourceFieldFromResource = await this.prisma.resource.findUnique({
-      where: {
-        title: resourceName,
-      },
-      include: {
-        fields: {
-          where: {
-            fieldName: resourceFieldName
-          }
-        }
-      }
-    })
-
-    console.log(resourceFieldFromResource.fields)
-    console.log(resourceFieldFromResource.fields.length)
-    if(resourceFieldFromResource.fields.length === 0) {
-      throw new NotFoundException(ResourceBusinessErrors.ResourceFieldNotFound)
-    } else {
-      return resourceFieldFromResource;
-    }
-
-  }
-
-
 }
 
 

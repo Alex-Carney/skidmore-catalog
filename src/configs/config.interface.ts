@@ -5,6 +5,7 @@ export interface Config {
   v2_swagger: SwaggerConfig;
   security: SecurityConfig;
   throttler: ThrottlerConfig;
+  api_config: ApiConfig;
 }
 
 export interface NestConfig {
@@ -32,4 +33,9 @@ export interface SecurityConfig {
 export interface ThrottlerConfig {
   throttleTTL: number;
   throttleLimit: number;
+}
+
+export interface ApiConfig {
+  supportedDelimiters: Array<string>;
+  supportedFileTypes: Array<string>;
 }

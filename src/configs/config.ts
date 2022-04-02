@@ -30,6 +30,10 @@ const config: Config = {
     throttleTTL: 30,
     throttleLimit: 150,
   },
+  api_config: {
+    supportedDelimiters: [",", "  ", "%09", "%20"],
+    supportedFileTypes: ["text/csv"]
+  },
 };
 
 export default (): Config => config;

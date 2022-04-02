@@ -1,11 +1,17 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, HttpStatus, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../../prisma/services/prisma.service";
 import { ResourceBusinessErrors } from "../errors/resource.error";
 import { Resource, ResourceField } from "@prisma/client";
+import { CustomException } from "../../../errors/custom.exception";
+import { ConfigService } from "@nestjs/config";
+import { ApiConfig } from "../../../configs/config.interface";
 
 @Injectable()
 export class ResourceValidation {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private configService: ConfigService) {
+  }
 
   /**
    * @method Returns the requested resource, or throws an exception either if the resource doesn't exist, or if it is not
@@ -65,8 +71,8 @@ export class ResourceValidation {
         title: resourceName
       }
     });
-    if(resourceFromTitle) {
-      throw new BadRequestException(ResourceBusinessErrors.ResourceAlreadyExists)
+    if (resourceFromTitle) {
+      throw new BadRequestException(ResourceBusinessErrors.ResourceAlreadyExists);
     }
   }
 
@@ -79,10 +85,10 @@ export class ResourceValidation {
    * @param resourceFieldName
    * @throws NotFoundException the resource field may exist, but not within the supplied resource.
    */
-  async validateResourceFieldExistence(resourceName: string, resourceFieldName: string): Promise<Resource & {fields: ResourceField[]}> {
+  async validateResourceFieldExistence(resourceName: string, resourceFieldName: string): Promise<Resource & { fields: ResourceField[] }> {
     const resourceFieldFromResource = await this.prisma.resource.findUnique({
       where: {
-        title: resourceName,
+        title: resourceName
       },
       include: {
         fields: {
@@ -91,23 +97,66 @@ export class ResourceValidation {
           }
         }
       }
-    })
+    });
 
-    console.log(resourceFieldFromResource.fields)
-    console.log(resourceFieldFromResource.fields.length)
-    if(resourceFieldFromResource.fields.length === 0) {
-      throw new NotFoundException(ResourceBusinessErrors.ResourceFieldNotFound)
+    console.log(resourceFieldFromResource.fields);
+    console.log(resourceFieldFromResource.fields.length);
+    if (resourceFieldFromResource.fields.length === 0) {
+      throw new NotFoundException(ResourceBusinessErrors.ResourceFieldNotFound);
     } else {
       return resourceFieldFromResource;
     }
   }
 
+  /**
+   * Returns true if buffer size is within allowed input. Otherwise throws
+   * an exception
+   * @param bufferSize
+   * @throws InvalidBufferSize exception
+   */
+  async validateBufferSizeInput(bufferSize: number) {
+    const validation = bufferSize <= 600 && bufferSize >= 10;
+    if (!validation) {
+      throw new CustomException(ResourceBusinessErrors.InvalidBufferSize,
+        `Input of ${bufferSize} is invalid`,
+        HttpStatus.BAD_REQUEST);
+    }
+    return true;
+  }
+
+  /**
+   * Returns true if delimiter is one of allowed values. Otherwise throws
+   * an exception
+   * @param delimiter Must be included in 'supportedDelimiters' list in global config
+   * @throws InvalidDelimiter exception
+   */
+  async validateDelimiterInput(delimiter: string) {
+    const apiConfig = this.configService.get<ApiConfig>('api_config');
+    const validation = apiConfig.supportedDelimiters.includes(delimiter);
+    if (!validation) {
+      throw new CustomException(ResourceBusinessErrors.InvalidDelimiter,
+        `Input of ${delimiter} is invalid`,
+        HttpStatus.BAD_REQUEST);
+    }
+    return true;
+  }
 
 
-
-
-
-
+  /**
+   * Returns true if file type is one of the allowed values. Otherwise throws
+   * an exception
+   * @param fileType Must be excluded in 'supportedFileTypes' list in global config
+   * @throws InvalidFileType exception
+   */
+  async validateFiletype(fileType: string) {
+    const apiConfig = this.configService.get<ApiConfig>('api_config');
+    const validation = apiConfig.supportedFileTypes.includes(fileType);
+    if (!validation) {
+      throw new CustomException(ResourceBusinessErrors.InvalidFileType,
+        `Input filetype of ${fileType} is invalid`,
+        HttpStatus.BAD_REQUEST)
+    }
+  }
 
 
 }

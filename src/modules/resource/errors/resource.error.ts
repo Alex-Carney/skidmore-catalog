@@ -28,6 +28,34 @@ export const ResourceBusinessErrors = {
     advice: "Resource field names are case sensitive. Use 'getDataModelExact' to ensure you spelled each field name correctly",
   },
 
+  InvalidBufferSize: {
+    apiErrorCode: "E_RS_003",
+    errorMessage: "Invalid buffer size supplied in request",
+    reason: "Buffer size either didn't exist or is out of bounds",
+    advice: "Buffer size must be between 10 and 600 (inclusive). 500 is the default value",
+  },
+
+  InvalidDelimiter: {
+    apiErrorCode: "E_RS_004",
+    errorMessage: "Invalid delimiter supplied in request",
+    reason: "Delimiter was not an allowed value",
+    advice: "Delimiters supported are commas, spaces, and tabs. Use %09 for tab, %20 for space, and , (with no quotations) for comma"
+  },
+
+  InvalidInputFile: {
+    apiErrorCode: "E_RS_005",
+    errorMessage: "Input seed file does not match corresponding data model",
+    advice: "Ensure no columns in seed file are completely empty. Manual tailoring of data model may be " +
+      "required, use update-data-model route to do so"
+  },
+
+  InvalidFileType: {
+    apiErrorCode: "E_RS_006",
+    errorMessage: "Unsupported file type",
+    advice: "Convert file to text/csv",
+
+  }
+
 
 
 };

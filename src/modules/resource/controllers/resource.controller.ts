@@ -1,12 +1,16 @@
-import { Body, Controller, Post, Put, Req, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Post, Put, Req, Res, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ResourceService } from 'src/modules/resource/services/resource.service';
-import { Request } from "express";
+import { Request, Response } from "express";
 import { SeedDatabaseInputDTO } from 'src/modules/resource/dto/seed-database.dto';
 import { QueryDatabaseInputDTO } from 'src/modules/resource/dto/query-database.dto';
 import { AuthService } from "../../authentication/services/auth.service";
 import { UserService } from "../../../services/user.service";
+import { RepositoryPermissions } from "../../repository/constants/permission-level-constants";
+import { RepositoryPermissionGuard } from "../../repository/guards/repository-auth.guard";
+import { RepositoryPermissionLevel } from "../../repository/decorators/repository-permissions.decorator";
+import { ResourceAccessAuthGuard } from "../guards/resource-access-auth-guard.service";
 
 @ApiBearerAuth()
 @Controller('resources')
@@ -26,13 +30,9 @@ export class ResourceController {
     @UseInterceptors(FileInterceptor('file')) //takes two arguments: fieldName which is the HTML field holding the file
     @ApiTags('Resource Data')
     @Put('seed-database')
-    async seedDatabase(@UploadedFile() file: Express.Multer.File, @Req() req: Request, @Body() seedDatabaseInputDto: SeedDatabaseInputDTO) {
-        try {
-            const user = await this.userService.getUserFromRequest(req);
-            return this.resourceService.seedResourceFromFile(file, seedDatabaseInputDto, user['id']);
-        } catch(err) {
-            console.log(err);
-        }
+    async seedDatabase(@UploadedFile() file: Express.Multer.File, @Req() req: Request, @Body()
+      seedDatabaseInputDto: SeedDatabaseInputDTO, @Res() res: Response) {
+        return this.resourceService.seedResourceFromFile(file, seedDatabaseInputDto, req.user['id'], res);
     }
 
 
@@ -46,6 +46,8 @@ export class ResourceController {
     @ApiOperation({summary: "query a resource using SQL"})
     @ApiTags('Resource Data')
     @Post('query-database')
+    @UseGuards(RepositoryPermissionGuard, ResourceAccessAuthGuard)
+    @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_USER)
     async queryDatabase(@Req() req: Request, @Body() queryDatabaseInputDto: QueryDatabaseInputDTO) {
         try {
             const user = await this.userService.getUserFromRequest(req);

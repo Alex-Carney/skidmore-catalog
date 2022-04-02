@@ -85,20 +85,33 @@ export class RepositoryValidation {
    * @method Validates that the input title refers to a repository in the DB.
    *
    * @param repositoryTitle
-   * @throws NotFoundException Repository Not found
    * @returns repo The validated repository
    */
   async validateRepositoryExistence(repositoryTitle: string) {
-    // if (!repo) {
-    //   throw new CustomException(RepositoryBusinessErrors.RepositoryNotFound,
-    //     repositoryTitle + " was an invalid repository title",
-    //     HttpStatus.NOT_FOUND);
-    // }
     return await this.prisma.repository.findUnique({
       where: {
         title: repositoryTitle
       }
     });
+  }
+
+
+  /**
+   * Validates that repository exists, throws an error if not
+   * @param repositoryTitle
+   * @throws NotFoundException
+   */
+  async validateRepositoryExistenceError(repositoryTitle: string) {
+    const repo = await this.prisma.repository.findUnique({
+      where: {
+        title: repositoryTitle
+      }
+    });
+    if (!repo) {
+      throw new CustomException(RepositoryBusinessErrors.RepositoryNotFound,
+        repositoryTitle + " was an invalid repository title",
+        HttpStatus.NOT_FOUND);
+    }
   }
 
   //----------------------------------------------------------------------------------------
