@@ -8,15 +8,15 @@ import { RepositoryService } from 'src/modules/repository/services/repository.se
 import { UserMiddleware } from "../../middleware/user.middleware";
 // import { RepositoryExistsMiddleware } from "../../middleware/repository-exists.middleware";
 import { RepositoryValidation } from "./validation/repository.validation";
-import { RepositoryExistsRule } from "./validation/repository-exists.rule";
+// import { RepositoryExistsRule } from "./validation/repository-exists.rule";
 import { RepositoryExistsMiddleware } from "./middleware/repository-exists.middleware";
 //import { RoleModule } from '../role/role.module';
 
 @Module({
   imports: [PrismaModule, AuthModule, /**RoleModule**/],
   controllers: [RepositoryController],
-  providers: [UserService, PasswordService, RepositoryExistsRule, RepositoryService, RepositoryValidation],
-  exports: [UserService, RepositoryService, RepositoryExistsRule, RepositoryValidation],
+  providers: [UserService, PasswordService, /**RepositoryExistsRule**/ RepositoryService, RepositoryValidation],
+  exports: [UserService, RepositoryService, /**RepositoryExistsRule**/ RepositoryValidation],
 })
 export class RepositoryModule implements NestModule {
   configure(consumer: MiddlewareConsumer): any {

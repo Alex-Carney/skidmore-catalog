@@ -8,7 +8,7 @@ import {
 } from "@nestjs/common";
 import { JwtService } from '@nestjs/jwt';
 import { PasswordService } from './password.service';
-import { SignupInput } from '../dto/signup.input';
+// import { SignupInput } from '../dto/signup.input';
 import { Prisma, User } from '@prisma/client';
 import { Token } from '../../../models/token.model';
 import { ConfigService } from '@nestjs/config';

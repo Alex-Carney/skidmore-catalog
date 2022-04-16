@@ -17,9 +17,6 @@ import { SdssOpticalModule } from './v1 code/resources/sdss-optical/sdss-optical
 import { SdssDerivedModule } from './v1 code/resources/sdss-derived/sdss-derived.module';
 import { RepositoryModule } from './modules/repository/repository.module';
 import { ResourceModule } from './modules/resource/resource.module';
-import { useContainer, Validator } from 'class-validator';
-import { UserMiddleware } from "./middleware/user.middleware";
-import { ValidationPipe } from "@nestjs/common";
 
 
 declare const module: any
@@ -30,11 +27,11 @@ async function bootstrap() {
     AppModule
     );
 
-  useContainer(app.select(AppModule), { fallbackOnErrors: true})
-  // Validation
-  app.useGlobalPipes(
-    new ValidationPipe(),
-  );
+  // useContainer(app.select(AppModule), { fallbackOnErrors: true})
+  // // Validation
+  // app.useGlobalPipes(
+  //   new ValidationPipe(),
+  // );
 
 
 

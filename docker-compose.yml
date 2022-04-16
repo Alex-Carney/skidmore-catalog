@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   nest-api:
-    container_name: nest-api
+    container_name: skidmore-datahub
     build:
       context: .
       dockerfile: Dockerfile

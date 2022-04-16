@@ -8,8 +8,7 @@
 //will have to be updated accordingly
 
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+
 import {
   Tully_Group,
   Prisma,
