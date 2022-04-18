@@ -17,15 +17,17 @@ import { SdssOpticalModule } from './v1 code/resources/sdss-optical/sdss-optical
 import { SdssDerivedModule } from './v1 code/resources/sdss-derived/sdss-derived.module';
 import { RepositoryModule } from './modules/repository/repository.module';
 import { ResourceModule } from './modules/resource/resource.module';
+import { Logger } from "@nestjs/common";
 
 
 declare const module: any
 
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication> (
-    AppModule
-    );
+  const app = await NestFactory.create<NestExpressApplication> (AppModule, {
+      bufferLogs: true,
+    });
+  // app.useLogger(app.get(Logger))
 
 
 

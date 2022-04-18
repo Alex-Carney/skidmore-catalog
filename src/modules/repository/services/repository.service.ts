@@ -2,7 +2,7 @@ import {
   BadRequestException,
   ForbiddenException, HttpStatus,
   Injectable,
-  InternalServerErrorException,
+  InternalServerErrorException, Logger,
   NotFoundException
 } from "@nestjs/common";
 import { PrismaService } from "src/modules/prisma/services/prisma.service";
@@ -27,9 +27,11 @@ export class RepositoryService {
   constructor(
     private prisma: PrismaService,
     private userService: UserService,
-    private repositoryValidation: RepositoryValidation
+    private repositoryValidation: RepositoryValidation,
   ) {
   }
+
+  private readonly logger = new Logger(RepositoryService.name)
 
   //----------------------------------------------------------------------------------------
   // CRUD OPERATIONS
@@ -46,6 +48,7 @@ export class RepositoryService {
 
     for (const repository of createRepositoryDTO.repositories) {
       await this.repositoryValidation.validateRepositoryNameDoesNotAlreadyExist(repository);
+      this.logger.log("Successfully validated repository " + repository);
     }
 
     /**
@@ -70,6 +73,7 @@ export class RepositoryService {
         }
       }
     });
+    this.logger.log("updated user " + userId + " with new repositories");
     return createArguments;
   }
 
@@ -131,10 +135,18 @@ export class RepositoryService {
     const permissionLevelOfTarget = await this.permissionLevelOfUserOnRepository(userToChangePerms["id"], updateRepositoryPermissionsDTO.repository);
     const permissionLevelOfRequester = await this.permissionLevelOfUserOnRepository(userId, updateRepositoryPermissionsDTO.repository);
 
+
     //edge case: owner transferring ownership, must demote current owner to admin (there can only be 1 owner)
     const ownerTransferringOwnershipEdgeCase: boolean =
       updateRepositoryPermissionsDTO.targetNewPermissionLevel == RepositoryPermissions.REPOSITORY_OWNER
       && permissionLevelOfRequester == RepositoryPermissions.REPOSITORY_OWNER;
+
+    if(ownerTransferringOwnershipEdgeCase) {
+      this.logger.log("User " + userId +
+        " transferred ownership of repository " +
+        updateRepositoryPermissionsDTO.repository + " to " +
+        updateRepositoryPermissionsDTO.receiverEmail);
+    }
 
     //handle unauthorized requests
     if (permissionLevelOfRequester < RepositoryPermissions.REPOSITORY_ADMIN
@@ -146,6 +158,8 @@ export class RepositoryService {
         "Your permission level is " + permissionLevelOfRequester + " compared to target's: " + permissionLevelOfTarget,
         HttpStatus.FORBIDDEN);
     }
+
+    this.logger.log("An update permissions request with permission level of target " + permissionLevelOfTarget + " and permission level of requester " + permissionLevelOfRequester + " passed")
 
     //call is valid, update database record accordingly
     const updateResponse = await this.prisma.repositoriesOnUsers.update({
@@ -197,6 +211,7 @@ export class RepositoryService {
      */
     try {
       await this.prisma.$executeRaw`DELETE FROM universe."Repository" WHERE title = ${repositoryToDelete}`;
+      this.logger.log("Repository deleted" + repositoryToDelete + " by user " + userId);
       return { message: "Successfully deleted the " + repositoryToDelete + " repository" };
     } catch (err) {
       throw new InternalServerErrorException(err.message);
@@ -255,88 +270,5 @@ export class RepositoryService {
     return permissionResponse["permissionLevel"];
 
   }
-
   //----------------------------------------------------------------------------------------
-
-  /**
-   * @method Public version for authenticating repository actions.
-   *
-   * @param userId
-   * @param repositoryTitle
-   * @param requiredLevel of the form RepositoryPermissions.VALUE
-   * @throws ForbiddenException Unauthorized action
-   * @returns true or exception
-   */
-  async authenticateUserRequest(userId: string, repositoryTitle: string, requiredLevel: number): Promise<boolean> {
-    const access = await this.permissionLevelOfUserOnRepository(userId, repositoryTitle);
-    console.log(access);
-    if (access >= requiredLevel) {
-      return true;
-    } else {
-      throw new CustomException(RepositoryBusinessErrors.RepositoryAuthorizationError,
-        "Requires access level " + requiredLevel + " of this repository (" + repositoryTitle + "). You have access level " + access,
-        HttpStatus.FORBIDDEN);
-    }
-  }
-
-  //----------------------------------------------------------------------------------------
-
-  /**
-   * @method Validates that the input title refers to a repository in the DB.
-   *
-   * @param repositoryTitle
-   * @throws NotFoundException Repository Not found
-   * @returns repo The validated repository
-   */
-  async validateRepositoryExistence(repositoryTitle: string) {
-    const repo = await this.prisma.repository.findUnique({
-      where: {
-        title: repositoryTitle
-      }
-    });
-    if (!repo) {
-      throw new CustomException(RepositoryBusinessErrors.RepositoryNotFound,
-        repositoryTitle + " was an invalid repository title",
-        HttpStatus.NOT_FOUND);
-    }
-    return repo;
-  }
-
-  //----------------------------------------------------------------------------------------
-
-
-  /**
-   * @method ensures that there does not already exist a repository with this name
-   * @param repositoryTitle
-   * @throws RepositoryAlreadyExists
-   */
-  async validateRepositoryNameDoesNotAlreadyExist(repositoryTitle: string) {
-    const repo = await this.prisma.repository.findUnique({
-      where: {
-        title: repositoryTitle
-      }
-    });
-    if (repo) {
-      throw new CustomException(RepositoryBusinessErrors.RepositoryAlreadyExists,
-        "A repository with the name " + repositoryTitle + " already exists",
-        HttpStatus.BAD_REQUEST);
-    }
-    return repo;
-  }
-
-  //----------------------------------------------------------------------------------------
-
-  /**
-   * @method Throws an exception if the input permission level is outside the allowed range [0 3] or a non-integer
-   *
-   * @param permissionLevel
-   * @throws BadRequestException
-   */
-  async validatePermissionLevelInput(permissionLevel: number) {
-    if (permissionLevel < 0 || permissionLevel > 3 || !Number.isInteger(permissionLevel)) {
-      throw new CustomException(RepositoryBusinessErrors.InvalidPermissionLevel,
-        "Can't have a permission level of " + permissionLevel,
-        HttpStatus.BAD_REQUEST);
-    }
-  }
 }
