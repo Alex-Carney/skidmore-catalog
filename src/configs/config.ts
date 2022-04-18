@@ -31,8 +31,8 @@ const config: Config = {
     throttleLimit: 150,
   },
   api_config: {
-    supportedDelimiters: [",", "  ", "%09", "%20"],
-    supportedFileTypes: ["text/csv"]
+    supportedDelimiters: [",", "  ", "%09", "%20", "\t"],
+    bannedFileTypes: []
   },
 };
 

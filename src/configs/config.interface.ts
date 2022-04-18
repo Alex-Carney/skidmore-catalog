@@ -37,5 +37,5 @@ export interface ThrottlerConfig {
 
 export interface ApiConfig {
   supportedDelimiters: Array<string>;
-  supportedFileTypes: Array<string>;
+  bannedFileTypes: Array<string>;
 }

@@ -27,14 +27,6 @@ async function bootstrap() {
     AppModule
     );
 
-  // useContainer(app.select(AppModule), { fallbackOnErrors: true})
-  // // Validation
-  // app.useGlobalPipes(
-  //   new ValidationPipe(),
-  // );
-
-
-
 
 
   const configService = app.get(ConfigService);

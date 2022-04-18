@@ -74,8 +74,8 @@ export class DataModelController {
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file')) //takes two arguments: fieldName which is the HTML field holding the file
   @Post(DataModelRouteNames.GENERATE_DATA_MODEL)
-  async generateDataModel(@UploadedFile() file: Express.Multer.File) {
-    return this.dataModelService.generateDataModel(file);
+  async generateDataModel(@UploadedFile() file: Express.Multer.File, @Body() dataModelGenerateInputDto: DataModelGenerateInputDTO) {
+    return this.dataModelService.generateDataModel(file, dataModelGenerateInputDto);
   }
 
 //------------------------------------------------------------------------------------------------------------------

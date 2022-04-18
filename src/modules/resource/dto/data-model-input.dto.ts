@@ -4,4 +4,6 @@ import { ApiProperty } from "@nestjs/swagger";
 export class DataModelGenerateInputDTO {
     @ApiProperty({type: 'string', format: 'binary'})
     file: any;
+    @ApiProperty()
+    delimiter: string;
 }

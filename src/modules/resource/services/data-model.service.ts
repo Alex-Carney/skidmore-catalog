@@ -17,6 +17,7 @@ import { UpdateDataModelFieldNamesDTO } from "../dto/update-data-model-names.dto
 import { RepositoryValidation } from "../../repository/validation/repository.validation";
 import { CustomException } from "../../../errors/custom.exception";
 import { ResourceValidation } from "../validation/resource.validation";
+import { DataModelGenerateInputDTO } from "../dto/data-model-input.dto";
 
 
 @Injectable()
@@ -50,11 +51,12 @@ export class DataModelService {
    * completed from a single input row
    *
    * @param file binary file from controller
+   * @param dataModelInputDTO
    * @throws BadRequestException An error describing what went wrong while parsing input file
    * @returns DataModel An object representing a data model that can be copy and pasted for future calls
    * @throws BadRequestException if an error occurs while parsing input file
    */
-  async generateDataModel(file: Express.Multer.File) {
+  async generateDataModel(file: Express.Multer.File, dataModelInputDTO: DataModelGenerateInputDTO) {
     const buf = file.buffer;
     try {
       const rl = readline.createInterface({
@@ -74,11 +76,11 @@ export class DataModelService {
            */
           const cleanFirstLine = line.replace(`\ufeff`, "");
           console.log(cleanFirstLine)
-          await this.generateFieldNamesFromFirstFileLine(cleanFirstLine, fieldNames);
+          await this.generateFieldNamesFromFirstFileLine(cleanFirstLine, fieldNames, dataModelInputDTO.delimiter);
         } else {
           //this could very well be a nested while instead, but i'd rather do it this way
           if (fieldToDataType.size < fieldNames.length) {
-            await this.handleFileBody(line, fieldToDataType, fieldNames);
+            await this.handleFileBody(line, fieldToDataType, fieldNames, dataModelInputDTO.delimiter);
           } else {
             //no need to read the entire file, stop once all data types are extracted
             break;
@@ -96,14 +98,14 @@ export class DataModelService {
 
   }
 
-  private async generateFieldNamesFromFirstFileLine(line, fieldNames) {
-    line.split(",").forEach((field) => {
+  private async generateFieldNamesFromFirstFileLine(line, fieldNames, delimiter) {
+    line.split(delimiter).forEach((field) => {
       fieldNames.push(field);
     });
   }
 
-  private async handleFileBody(line, fieldToDataType, fieldNames) {
-    line.split(",").forEach((element, index) => {
+  private async handleFileBody(line, fieldToDataType, fieldNames, delimiter) {
+    line.split(delimiter).forEach((element, index) => {
       //Three possibilities: Not a number, a number, or "".
       //ignore null fields, but keep looping through the file until there are none left
       if (element !== "") {
