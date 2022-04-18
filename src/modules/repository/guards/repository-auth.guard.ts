@@ -1,5 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
-import { PrismaService } from "../../prisma/services/prisma.service";
+import { CanActivate, ExecutionContext, Injectable, Logger } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { Observable } from "rxjs";
 import { RepositoryValidation } from "../validation/repository.validation";
@@ -18,16 +17,19 @@ import { RepositoryValidation } from "../validation/repository.validation";
  */
 @Injectable()
 export class RepositoryPermissionGuard implements CanActivate {
+  private readonly logger = new Logger(RepositoryPermissionGuard.name);
   constructor(private reflector: Reflector, private repositoryValidation: RepositoryValidation) {}
 
   canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
     console.log("REPOSITORY AUTH GUARD EXECUTED")
+
     const requiredLevel = this.reflector.get<number>('permissionLevel', context.getHandler())
     console.log(requiredLevel)
     if(!requiredLevel) {
       return true;
     }
     const request = context.switchToHttp().getRequest();
+    this.logger.log("Repository auth guard executed on user " + request.user['id'] + " on repo " + request.repository.title + " against required level " + requiredLevel)
     return this.repositoryValidation.authenticateUserRequest(request.user['id'], request.repository.title, requiredLevel);
   }
 }

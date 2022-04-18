@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  ForbiddenException, HttpStatus,
-  Injectable,
-  InternalServerErrorException, Logger,
-  NotFoundException
-} from "@nestjs/common";
+import { HttpStatus, Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
 import { PrismaService } from "src/modules/prisma/services/prisma.service";
 import { UpdateRepositoryPermissionsDTO } from "src/modules/repository/dto/update-permissions.dto";
 import { UserService } from "../../../services/user.service";
@@ -27,11 +21,11 @@ export class RepositoryService {
   constructor(
     private prisma: PrismaService,
     private userService: UserService,
-    private repositoryValidation: RepositoryValidation,
+    private repositoryValidation: RepositoryValidation
   ) {
   }
 
-  private readonly logger = new Logger(RepositoryService.name)
+  private readonly logger = new Logger(RepositoryService.name);
 
   //----------------------------------------------------------------------------------------
   // CRUD OPERATIONS
@@ -141,8 +135,8 @@ export class RepositoryService {
       updateRepositoryPermissionsDTO.targetNewPermissionLevel == RepositoryPermissions.REPOSITORY_OWNER
       && permissionLevelOfRequester == RepositoryPermissions.REPOSITORY_OWNER;
 
-    if(ownerTransferringOwnershipEdgeCase) {
-      this.logger.log("User " + userId +
+    if (ownerTransferringOwnershipEdgeCase) {
+      this.logger.warn("User " + userId +
         " transferred ownership of repository " +
         updateRepositoryPermissionsDTO.repository + " to " +
         updateRepositoryPermissionsDTO.receiverEmail);
@@ -159,7 +153,7 @@ export class RepositoryService {
         HttpStatus.FORBIDDEN);
     }
 
-    this.logger.log("An update permissions request with permission level of target " + permissionLevelOfTarget + " and permission level of requester " + permissionLevelOfRequester + " passed")
+    this.logger.log("An update permissions request with permission level of target " + permissionLevelOfTarget + " and permission level of requester " + permissionLevelOfRequester + " passed");
 
     //call is valid, update database record accordingly
     const updateResponse = await this.prisma.repositoriesOnUsers.update({
@@ -211,7 +205,7 @@ export class RepositoryService {
      */
     try {
       await this.prisma.$executeRaw`DELETE FROM universe."Repository" WHERE title = ${repositoryToDelete}`;
-      this.logger.log("Repository deleted" + repositoryToDelete + " by user " + userId);
+      this.logger.warn("Repository deleted" + repositoryToDelete + " by user " + userId);
       return { message: "Successfully deleted the " + repositoryToDelete + " repository" };
     } catch (err) {
       throw new InternalServerErrorException(err.message);
@@ -270,5 +264,6 @@ export class RepositoryService {
     return permissionResponse["permissionLevel"];
 
   }
+
   //----------------------------------------------------------------------------------------
 }

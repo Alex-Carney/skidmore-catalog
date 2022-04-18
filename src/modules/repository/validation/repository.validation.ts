@@ -1,11 +1,14 @@
 import { RepositoryPermissions } from "../constants/permission-level-constants";
 import { CustomException } from "../../../errors/custom.exception";
 import { RepositoryBusinessErrors } from "../errors/repository.error";
-import { HttpStatus, Injectable } from "@nestjs/common";
+import { HttpStatus, Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../../prisma/services/prisma.service";
 
 @Injectable()
 export class RepositoryValidation {
+
+  private readonly logger = new Logger(RepositoryValidation.name);
+
   constructor(
     private prisma: PrismaService,
   ) {
@@ -71,12 +74,14 @@ export class RepositoryValidation {
     const access = await this.permissionLevelOfUserOnRepository(userId, repositoryTitle);
     console.log(access);
     if (access >= requiredLevel) {
+      this.logger.log("Validated user request on the basis that " + userId + " has an access level " + access + " greater than required level of " + requiredLevel);
       return true;
     } else {
       throw new CustomException(RepositoryBusinessErrors.RepositoryAuthorizationError,
         "Requires access level " + requiredLevel + " of this repository (" + repositoryTitle + "). You have access level " + access,
         HttpStatus.FORBIDDEN);
     }
+
   }
 
   //----------------------------------------------------------------------------------------
@@ -112,6 +117,7 @@ export class RepositoryValidation {
         repositoryTitle + " was an invalid repository title",
         HttpStatus.NOT_FOUND);
     }
+    this.logger.log("Invalidated repository title " + repositoryTitle + " since it does NOT EXIST (validateRepositoryExistenceError)");
   }
 
   //----------------------------------------------------------------------------------------
@@ -133,6 +139,7 @@ export class RepositoryValidation {
         "A repository with the name " + repositoryTitle + " already exists",
         HttpStatus.BAD_REQUEST);
     }
+    this.logger.log("Validated that " + repositoryTitle + " does NOT already exist");
     return repo;
   }
 
@@ -150,6 +157,7 @@ export class RepositoryValidation {
         "Can't have a permission level of " + permissionLevel,
         HttpStatus.BAD_REQUEST);
     }
+    this.logger.log("Validated that " + permissionLevel + " is a valid permission level");
   }
 
 

@@ -1,10 +1,6 @@
-import { BadRequestException, HttpStatus, Injectable, NestMiddleware } from "@nestjs/common";
-import { UserService } from "../../../services/user.service";
-import { NextFunction } from "express";
-import { Request } from "express";
-import { Repository, User } from "@prisma/client";
-import { RequestWithUserData } from "../../../middleware/user.middleware";
-import { RepositoryValidation } from "../validation/repository.validation";
+import { BadRequestException, HttpStatus, Injectable, Logger, NestMiddleware } from "@nestjs/common";
+import { NextFunction, Request } from "express";
+import { Repository } from "@prisma/client";
 import { CustomException } from "../../../errors/custom.exception";
 import { RepositoryBusinessErrors } from "../errors/repository.error";
 import { RepositoryService } from "../services/repository.service";
@@ -21,13 +17,16 @@ import { RepositoryService } from "../services/repository.service";
  */
 @Injectable()
 export class RepositoryExistsMiddleware implements NestMiddleware {
+
+  private readonly logger = new Logger(RepositoryExistsMiddleware.name);
+
   constructor(
     private readonly repositoryService: RepositoryService
-  ) {}
+  ) {
+  }
 
   async use(req: Request, res: Response, next: NextFunction) {
 
-    console.log("REPOSITORY MIDDLEWARE EXECUTED")
 
     if (!req.body.repository) {
       throw new CustomException(RepositoryBusinessErrors.RepositoryNotFound,
@@ -38,8 +37,8 @@ export class RepositoryExistsMiddleware implements NestMiddleware {
     let repository: Repository;
     try {
       repository = await this.repositoryService.getRepositoryByName(req.body.repository);
-    } catch(e) {
-      throw new BadRequestException()
+    } catch (e) {
+      throw new BadRequestException();
     }
 
     if (!repository) {
@@ -48,7 +47,8 @@ export class RepositoryExistsMiddleware implements NestMiddleware {
         HttpStatus.NOT_FOUND);
     }
 
-    req.repository = repository
+    this.logger.log("Repository exists middleware fired, adding repository " + repository + " to request");
+    req.repository = repository;
 
     next();
   }
