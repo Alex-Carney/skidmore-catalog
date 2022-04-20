@@ -2,6 +2,7 @@ version: '3.7'
 services:
   nest-api:
     container_name: skidmore-datahub
+    restart: unless-stopped
     build:
       context: .
       dockerfile: Dockerfile
@@ -15,7 +16,7 @@ services:
   postgres:
     image: postgres:13
     container_name: postgres
-    restart: always
+    restart: unless-stopped
     ports:
       - 5432:5432
     env_file:
