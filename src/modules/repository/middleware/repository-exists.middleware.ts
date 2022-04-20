@@ -47,7 +47,7 @@ export class RepositoryExistsMiddleware implements NestMiddleware {
         HttpStatus.NOT_FOUND);
     }
 
-    this.logger.log("Repository exists middleware fired, adding repository " + repository + " to request");
+    this.logger.log("Repository exists middleware fired, adding repository " + repository.title + " to request");
     req.repository = repository;
 
     next();

@@ -32,7 +32,7 @@ const config: Config = {
   },
   api_config: {
     supportedDelimiters: [",", "  ", "%09", "%20", "\t"],
-    bannedFileTypes: []
+    bannedFileTypes: ["text/csv"]
   },
 };
 
