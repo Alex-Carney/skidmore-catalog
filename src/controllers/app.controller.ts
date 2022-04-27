@@ -1,29 +1,28 @@
-import { Controller, Get, Request, Post, Render, Res } from '@nestjs/common';
-import { ApiExcludeEndpoint } from '@nestjs/swagger';
-import { SkipThrottle } from '@nestjs/throttler';
-import { Token } from 'src/models/token.model';
-import { AuthService } from 'src/modules/authentication/services/auth.service';
-import { AppService } from '../services/app.service';
-import { response, Response } from 'express';
+import { Controller, Get, Post, Render, Request, Res } from "@nestjs/common";
+import { ApiExcludeEndpoint } from "@nestjs/swagger";
+import { SkipThrottle } from "@nestjs/throttler";
+import { Token } from "src/models/token.model";
+import { AuthService } from "src/modules/authentication/services/auth.service";
+import { Response } from "express";
 
 @SkipThrottle()
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService, //appService is useless, we dont need it here!
-    private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {
+  }
 
   @Get()
-  @Render('home')
+  @Render("home")
   @ApiExcludeEndpoint()
   root() {
-    return
+    return;
   }
 
   @Get("/signin")
-  @Render('signin')
+  @Render("signin")
   @ApiExcludeEndpoint()
   signin() {
-    return {status: "Please Sign In"}
+    return { status: "Please Sign In" };
   }
 
   @Post("/signin")
@@ -36,14 +35,14 @@ export class AppController {
      */
     await this.authService.login(req.body.email, req.body.password).then((token) => {
       return res.render(
-        'token',
-        {token: token}
-      )
+        "token",
+        { token: token }
+      );
     }).catch((err) => {
       return res.render(
-        'signin',
-        {status: err}
-      )
+        "signin",
+        { status: err }
+      );
     });
 
   } //end
@@ -56,36 +55,29 @@ export class AppController {
 
 
   @Get("/contact")
-  @Render('contact')
+  @Render("contact")
   @ApiExcludeEndpoint()
   contact() {
-    return
+    return;
   }
 
   @Post("/contact")
   @ApiExcludeEndpoint()
   async createAccount(@Request() req: any): Promise<Token> {
-    return this.authService.createUser(req.body.email, req.body.password, req.body.fname, req.body.lname)
+    return this.authService.createUser(req.body.email, req.body.password, req.body.fname, req.body.lname);
   }
 
   @Get("/tendril")
-  @Render('tendril')
+  @Render("tendril")
   @ApiExcludeEndpoint()
   tendril() {
-    return
+    return;
   }
 
   @Get("/documentation")
-  @Render('documentation')
+  @Render("documentation")
   @ApiExcludeEndpoint()
   docs() {
-    return
-  }
-
-
-  @Get("/test")
-  @ApiExcludeEndpoint()
-  test() {
-    return this.appService.getHello();
+    return;
   }
 }

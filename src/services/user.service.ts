@@ -53,7 +53,7 @@ export class UserService {
   // }
 
   /**
-   *
+   * Returns a user object from just an email, we assume the email is unique.
    * @param userEmail
    * @throws NotFoundException
    */
@@ -73,7 +73,7 @@ export class UserService {
   }
 
   /**
-   *
+   * Returns a user object when supplied a request object directly.
    * @param req
    * @throws NotFoundException through call to getUserFromToken
    */
@@ -85,43 +85,4 @@ export class UserService {
     const token = authHeader.split(" ")[1];
     return this.authService.getUserFromToken(token);
   }
-
-  // async updateRoles(
-  //   userId: string,
-  //   newRoles: string[],
-  //   remove: boolean,
-  // ){
-  //   //first get the current list, then update it with the new version
-  //   const repository = await this.prisma.repository.findUnique({
-  //      where: { id: userId }
-  //   });
-  //   //get the roles and add the array of new ones to it
-  //   const roles = repository['roles'];
-  //
-  //   let idx: number;
-  //   if(remove) {
-  //     newRoles.forEach((e) => {
-  //       idx = roles.indexOf(e);
-  //       if(idx > -1) {roles.splice(idx, 1);}
-  //     })
-  //   } else {
-  //     newRoles.forEach((e) => roles.push(e));
-  //   }
-  //
-  //   return this.prisma.repository.update({
-  //     data: {
-  //       roles: roles
-  //     },
-  //   where: { id: userId },
-  //   });
-  // }
-
-  // async getRoles(userWhereUniqueInput: Prisma.UserWhereUniqueInput) {
-  //   return this.prisma.repository.findUnique({
-  //     where: userWhereUniqueInput,
-  //   })['roles']
-
-  // }
-
-
 }
