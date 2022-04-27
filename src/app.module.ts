@@ -8,6 +8,7 @@ import config from './configs/config';
 import { ThrottlerConfig } from './configs/config.interface';
 import { APP_GUARD } from '@nestjs/core';
 import { ResourceModule } from './modules/resource/resource.module';
+import { AccountModule } from "./modules/account/account.module";
 
 /**
  * App Module wraps all sub modules together, along with Configuration and Throttling.
@@ -29,6 +30,7 @@ import { ResourceModule } from './modules/resource/resource.module';
     AuthModule,
     RepositoryModule,
     ResourceModule,
+    AccountModule
   ],
   controllers: [AppController],
   providers: [

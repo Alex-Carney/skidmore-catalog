@@ -1,5 +1,5 @@
 import { Injectable, NestMiddleware } from "@nestjs/common";
-import { UserService } from "../services/user.service";
+import { UserService } from "../modules/account/services/user.service";
 import { NextFunction, Request } from "express";
 import { User } from "@prisma/client";
 

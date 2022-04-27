@@ -15,7 +15,7 @@ import { UserCreateRepositoryDTO } from "src/modules/repository/dto/add-reposito
 import { DeleteRepositoryDTO } from "src/modules/repository/dto/delete-repository.dto";
 import { UpdateRepositoryPermissionsDTO } from "src/modules/repository/dto/update-permissions.dto";
 import { RepositoryService } from "src/modules/repository/services/repository.service";
-import { UserService } from "src/services/user.service";
+import { UserService } from "src/modules/account/services/user.service";
 import { RepositoryPermissions } from "../constants/permission-level-constants";
 import { RepositoryPermissionGuard } from "../guards/repository-auth.guard";
 import { RepositoryPermissionLevel } from "../decorators/repository-permissions.decorator";

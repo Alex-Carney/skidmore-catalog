@@ -2,7 +2,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { PasswordService } from './services/password.service';
 import { AuthService } from './services/auth.service';
 import { Module } from '@nestjs/common';
-import { JwtModule, JwtService } from "@nestjs/jwt";
+import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
 import { ConfigModule, ConfigService } from "@nestjs/config";
@@ -13,6 +13,7 @@ import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
+      imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
         const securityConfig = configService.get<SecurityConfig>('security');
         return {
@@ -32,6 +33,6 @@ import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
     JwtAuthGuard,
     PasswordService,
   ],
-  exports: [JwtAuthGuard, AuthService],
+  exports: [JwtAuthGuard, AuthService, JwtModule],
 })
 export class AuthModule {}

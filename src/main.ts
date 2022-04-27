@@ -13,6 +13,7 @@ import * as compression from "compression"
 import { RepositoryModule } from './modules/repository/repository.module';
 import { ResourceModule } from './modules/resource/resource.module';
 import { Logger } from "@nestjs/common";
+import { AccountModule } from "./modules/account/account.module";
 
 
 declare const module: any
@@ -40,7 +41,7 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
   const v2Document = SwaggerModule.createDocument(app, v2Options, {
-    include: [RepositoryModule, ResourceModule],
+    include: [AccountModule, RepositoryModule, ResourceModule],
   });
 
   const v2CustomOptions: SwaggerCustomOptions = {

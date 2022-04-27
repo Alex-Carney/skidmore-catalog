@@ -3,6 +3,11 @@ import { hash, compare } from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { SecurityConfig } from 'src/configs/config.interface';
 
+/**
+ * The service for handling hashing, salting, and validation of passwords.
+ *
+ * From the starter project, Alex did not write this
+ */
 @Injectable()
 export class PasswordService {
   get bcryptSaltRounds(): string | number {

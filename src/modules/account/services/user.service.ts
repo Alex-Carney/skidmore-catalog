@@ -1,12 +1,13 @@
-import { PrismaService } from "../modules/prisma/services/prisma.service";
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { PasswordService } from "../modules/authentication/services/password.service";
+import { PrismaService } from "../../prisma/services/prisma.service";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { PasswordService } from "../../authentication/services/password.service";
 // import { ChangePasswordInput } from '../resolvers/repository/dto/change-password.input';
 // import { UpdateUserInput } from '../resolvers/repository/dto/update-user.input';
 import { User } from "@prisma/client";
 import { Request } from "express";
-import { AuthService } from "../modules/authentication/services/auth.service";
-import { UserBusinessErrors } from "../errors/user.error";
+import { AuthService } from "../../authentication/services/auth.service";
+import { UserBusinessErrors } from "../../../errors/user.error";
+import { ChangePasswordDTO } from "../dto/change-password.dto";
 
 @Injectable()
 export class UserService {
@@ -26,31 +27,43 @@ export class UserService {
   //    });
   //  }
 
-  // async changePassword(
-  //   userId: string,
-  //   userPassword: string,
-  //   changePassword: ChangePasswordInput
-  // ) {
-  //   const passwordValid = await this.passwordService.validatePassword(
-  //     changePassword.oldPassword,
-  //     userPassword
-  //   );
-  //
-  //   if (!passwordValid) {
-  //     throw new BadRequestException('Invalid password');
-  //   }
-  //
-  //   const hashedPassword = await this.passwordService.hashPassword(
-  //     changePassword.newPassword
-  //   );
-  //
-  //   return this.prisma.user.update({
-  //     data: {
-  //       password: hashedPassword,
-  //     },
-  //     where: { id: userId },
-  //   });
-  // }
+  /**
+   * Logic to change a user's password
+   * @param userId ID of user performing action
+   * @param changePassword contains user's input for their old password (to validate
+   * against userPassword), along with newPassword
+   */
+  async changePassword(
+    userId: string,
+    changePassword: ChangePasswordDTO
+  ) {
+
+    const validUser: User = await this.prisma.user.findUnique({
+      where: {
+        id: userId
+      }
+    })
+
+    const passwordValid = await this.passwordService.validatePassword(
+      changePassword.oldPassword,
+      validUser.password
+    );
+
+    if (!passwordValid) {
+      throw new BadRequestException('Invalid password');
+    }
+
+    const hashedPassword = await this.passwordService.hashPassword(
+      changePassword.newPassword
+    );
+
+    return this.prisma.user.update({
+      data: {
+        password: hashedPassword,
+      },
+      where: { id: userId },
+    });
+  }
 
   /**
    * Returns a user object from just an email, we assume the email is unique.

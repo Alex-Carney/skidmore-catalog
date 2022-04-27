@@ -2,7 +2,10 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
-  ApiConsumes, ApiCreatedResponse, ApiForbiddenResponse, ApiInternalServerErrorResponse,
+  ApiConsumes,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags
@@ -28,7 +31,6 @@ import { Request } from "express";
 import { UpdateDataModelRepositoriesDTO } from "../dto/update-resource-repository.dto";
 import { UpdateDataModelFieldsDTO } from "../dto/data-model-update.dto";
 import { DeleteDataModelDTO } from "../dto/delete-data-model.dto";
-import { UserService } from "../../../services/user.service";
 import { UpdateDataModelFieldNamesDTO } from "../dto/update-data-model-names.dto";
 import { RepositoryPermissionGuard } from "../../repository/guards/repository-auth.guard";
 import { RepositoryPermissionLevel } from "../../repository/decorators/repository-permissions.decorator";
@@ -37,19 +39,20 @@ import { DataModelRouteNames } from "../constants/data-model-route-names";
 import { ResourceAccessAuthGuard } from "../guards/resource-access-auth-guard.service";
 
 @ApiBearerAuth()
-@ApiTags('Resource Model')
+@ApiTags("Resource Model")
 @Controller(DataModelRouteNames.BASE_NAME)
 export class DataModelController {
-  constructor(private readonly dataModelService: DataModelService, private readonly userService: UserService) {}
+  constructor(private readonly dataModelService: DataModelService) {
+  }
 
   //---------------------------------------------------------------------------------------------------------
 
   @ApiOkResponse({
-    description: 'JSON Data model to copy and use in subsequent API calls',
-    status: 200,
+    description: "JSON Data model to copy and use in subsequent API calls",
+    status: 200
   })
   @ApiBody({
-    description: 'File containing delimited data you wish to store. Ensure headers are present, and no column is completely null',
+    description: "File containing delimited data you wish to store. Ensure headers are present, and no column is completely null",
     required: true,
     type: DataModelGenerateInputDTO
   })
@@ -57,22 +60,22 @@ export class DataModelController {
     summary: "Creates a data model for review and publication",
     description: "Parses the file uploaded, recording column names and column data types. Possible data types are 'numeric' or 'text'. " +
       "Potential errors may occur if a column is entirely null (cannot define datatype). " +
-      "Additionally, the repository may modify the generated data model before publication",
+      "Additionally, the repository may modify the generated data model before publication"
     // externalDocs
   })
   @ApiBadRequestResponse({
-    description: "File was not uploaded to the API correctly",
+    description: "File was not uploaded to the API correctly"
     // status:
   })
   @ApiInternalServerErrorResponse({
-    description: "An error occurred while parsing the file and generating the data model. More information in response body",
+    description: "An error occurred while parsing the file and generating the data model. More information in response body"
     // status:
   })
   @ApiForbiddenResponse({
     description: "Only users with accounts can generate data models. You can do so here" //TODO: insert link
   })
-  @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('file')) //takes two arguments: fieldName which is the HTML field holding the file
+  @ApiConsumes("multipart/form-data")
+  @UseInterceptors(FileInterceptor("file")) //takes two arguments: fieldName which is the HTML field holding the file
   @Post(DataModelRouteNames.GENERATE_DATA_MODEL)
   async generateDataModel(@UploadedFile() file: Express.Multer.File, @Body() dataModelGenerateInputDto: DataModelGenerateInputDTO) {
     return this.dataModelService.generateDataModel(file, dataModelGenerateInputDto);
@@ -81,29 +84,29 @@ export class DataModelController {
 //------------------------------------------------------------------------------------------------------------------
 
   @ApiCreatedResponse({
-    description: 'A data model representing this resource has been created'
+    description: "A data model representing this resource has been created"
   })
   @ApiBody({
-    description: 'resourceName: The name you wish to refer to this resource by. IMPORTANT: Duplicate names across the entire ' +
-      'application are not allowed. It is recommended to use the convention lastname_tablename in order to prevent collision with' +
-      'other users\' data \n' +
-      'repositories: The repositories this data model will be added to. Input can be a single repository or a comma separated list \n' +
-      'dataModel: The data model generated from \'generate data model API route\'. Copy and paste into the data model field',
+    description: "resourceName: The name you wish to refer to this resource by. IMPORTANT: Duplicate names across the entire " +
+      "application are not allowed. It is recommended to use the convention lastname_tablename in order to prevent collision with" +
+      "other users' data \n" +
+      "repositories: The repositories this data model will be added to. Input can be a single repository or a comma separated list \n" +
+      "dataModel: The data model generated from 'generate data model API route'. Copy and paste into the data model field",
     required: true,
     type: DataModelPublishInputDTO
   })
   @ApiOperation({
     summary: "Publishes the data model to support future data management",
     description: "Creates a \'resource\' object that represents the table, as well as an empty table that will eventually hold the raw" +
-      "incoming data",
+      "incoming data"
     // externalDocs
   })
   @ApiBadRequestResponse({
-    description: "One of the input fields was not correctly written",
+    description: "One of the input fields was not correctly written"
     // status:
   })
   @ApiInternalServerErrorResponse({
-    description: "An error occurred while publishing. Table name may not have been unique, repository may not be correct, table name may be invalid",
+    description: "An error occurred while publishing. Table name may not have been unique, repository may not be correct, table name may be invalid"
     // status:
   })
   @ApiForbiddenResponse({
@@ -114,18 +117,18 @@ export class DataModelController {
   @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_ADMIN)
   async publishDataModel(@Req() req: Request, @Body() dataModelPublishInputDTO: DataModelPublishInputDTO) {
 
-    console.log(dataModelPublishInputDTO)
-    console.log(dataModelPublishInputDTO.dataModel)
+    console.log(dataModelPublishInputDTO);
+    console.log(dataModelPublishInputDTO.dataModel);
 
     // const user = await this.userService.getUserFromRequest(req);
-    return this.dataModelService.publishDataModel(req.user['id'], dataModelPublishInputDTO);
+    return this.dataModelService.publishDataModel(req.user["id"], dataModelPublishInputDTO);
 
   }
 
   //-----------------------------------------------------------------------
 
   @ApiOkResponse({
-    description: 'Information about all the resources stored in a repository'
+    description: "Information about all the resources stored in a repository"
   })
   @ApiOperation({
     summary: "View detailed information about all resources in a repository",
@@ -133,14 +136,14 @@ export class DataModelController {
     // externalDocs
   })
   @ApiInternalServerErrorResponse({
-    description: "An error occurred while fetching this repository's data. It may not exist",
+    description: "An error occurred while fetching this repository's data. It may not exist"
     // status:
   })
   @ApiForbiddenResponse({
     description: "Only users with accounts can use this route. You can do so here, or sign in here" //TODO: insert link
   })
   @Get(DataModelRouteNames.GET_BY_REPOSITORY)
-  async getDataModelByRepositories(@Param('repository') repository: string) {
+  async getDataModelByRepositories(@Param("repository") repository: string) {
     return this.dataModelService.returnDataModels(repository);
   }
 
@@ -150,7 +153,7 @@ export class DataModelController {
   @ApiOperation({
     summary: "Returns a data model in exact format, ready to be used for other routes",
     description: "Returns the exact data model for a resource. This data model can be copy and pasted " +
-      "and used in other routes, such as publish or update",
+      "and used in other routes, such as publish or update"
     // externalDocs
   })
   @ApiInternalServerErrorResponse({
@@ -162,19 +165,19 @@ export class DataModelController {
   })
   //@ApiTags('Resource Model Exact')
   @Get(DataModelRouteNames.GET_BY_REPOSITORY_EXACT)
-  async getDataModelExactByName(@Param('resourceName') resourceName: string) {
+  async getDataModelExactByName(@Param("resourceName") resourceName: string) {
     return this.dataModelService.returnDataModelExact(resourceName, false, false);
   }
 
   //---------------------------------------------------------------------------
 
   @ApiCreatedResponse({
-    description: ''
+    description: ""
   })
   @ApiBody({
-    description: 'resourceName: The resource whose data model is to be updated \n' +
-      'repository: The repository to access this model with. Requires admin privileges \n' +
-      'dataModel: The NEW data model, containing all changes to be updated. It is recommended to paste a generated data model first, then update accordingly',
+    description: "resourceName: The resource whose data model is to be updated \n" +
+      "repository: The repository to access this model with. Requires admin privileges \n" +
+      "dataModel: The NEW data model, containing all changes to be updated. It is recommended to paste a generated data model first, then update accordingly",
     required: true,
     type: UpdateDataModelRepositoriesDTO
   })
@@ -188,7 +191,7 @@ export class DataModelController {
     // externalDocs
   })
   @ApiBadRequestResponse({
-    description: "One of the input fields was not correctly written",
+    description: "One of the input fields was not correctly written"
     // status:
   })
   @ApiInternalServerErrorResponse({
@@ -203,18 +206,18 @@ export class DataModelController {
   @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_ADMIN)
   async updateDataModelRepositories(@Req() req: Request, @Body() updateDataModelRepositoriesDTO: UpdateDataModelRepositoriesDTO) {
     // const user = await this.userService.getUserFromRequest(req);
-    return this.dataModelService.updateDataModelRepositories(req.user['id'], updateDataModelRepositoriesDTO);
+    return this.dataModelService.updateDataModelRepositories(req.user["id"], updateDataModelRepositoriesDTO);
   }
 
   //------------------------------------------------------------------------
 
   @ApiCreatedResponse({
-    description: 'Data has been successfully modified. This can be confirmed with /exact/resourceName'
+    description: "Data has been successfully modified. This can be confirmed with /exact/resourceName"
   })
   @ApiBody({
-    description: 'resourceName: The resource whose data model is to be updated \n' +
-      'repository: The repository to access this model with. Requires admin privileges \n' +
-      'dataModel: The NEW data model, containing all changes to be updated. It is recommended to paste a generated data model first, then update accordingly',
+    description: "resourceName: The resource whose data model is to be updated \n" +
+      "repository: The repository to access this model with. Requires admin privileges \n" +
+      "dataModel: The NEW data model, containing all changes to be updated. It is recommended to paste a generated data model first, then update accordingly",
     required: true,
     type: UpdateDataModelFieldsDTO
   })
@@ -228,7 +231,7 @@ export class DataModelController {
     // externalDocs
   })
   @ApiBadRequestResponse({
-    description: "One of the input fields was not correctly written",
+    description: "One of the input fields was not correctly written"
     // status:
   })
   @ApiInternalServerErrorResponse({
@@ -243,7 +246,7 @@ export class DataModelController {
   @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_ADMIN)
   async updateDataModel(@Req() req: Request, @Body() updateDataModelFieldsDTO: UpdateDataModelFieldsDTO) {
     // const user = await this.userService.getUserFromRequest(req);
-    return this.dataModelService.updateDataModelFields(req.user['id'], updateDataModelFieldsDTO);
+    return this.dataModelService.updateDataModelFields(req.user["id"], updateDataModelFieldsDTO);
   }
 
   @ApiBody({
@@ -255,17 +258,17 @@ export class DataModelController {
   @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_ADMIN)
   async renameDataModelFields(@Req() req: Request, @Body() updateDataModelFieldNamesDTO: UpdateDataModelFieldNamesDTO) {
     // const user = await this.userService.getUserFromRequest(req);
-    return this.dataModelService.alterDataModelColumnNames(req.user['id'], updateDataModelFieldNamesDTO);
+    return this.dataModelService.alterDataModelColumnNames(req.user["id"], updateDataModelFieldNamesDTO);
   }
 
 //------------------------------------------------------------------------------------
 
   @ApiCreatedResponse({
-    description: 'Data has been successfully modified. This can be confirmed with /exact/resourceName'
+    description: "Data has been successfully modified. This can be confirmed with /exact/resourceName"
   })
   @ApiBody({
-    description: 'resourceName: The resource to be deleted \n' +
-      'repository: The repository to access this model with. Requires OWNERSHIP privileges \n',
+    description: "resourceName: The resource to be deleted \n" +
+      "repository: The repository to access this model with. Requires OWNERSHIP privileges \n",
     required: true,
     type: DeleteDataModelDTO
   })
@@ -275,11 +278,11 @@ export class DataModelController {
     // externalDocs
   })
   @ApiBadRequestResponse({
-    description: "One of the input fields was not correctly written",
+    description: "One of the input fields was not correctly written"
     // status:
   })
   @ApiInternalServerErrorResponse({
-    description: "An error occurred while deleting. An input field may be incorrect",
+    description: "An error occurred while deleting. An input field may be incorrect"
     // status:
   })
   @ApiForbiddenResponse({
@@ -290,7 +293,7 @@ export class DataModelController {
   @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_OWNER)
   async deleteDataModel(@Req() req: Request, @Body() deleteDataModelDTO: DeleteDataModelDTO) {
     // const user = await this.userService.getUserFromRequest(req);
-    return this.dataModelService.deleteDataModel(req.user['id'], deleteDataModelDTO);
+    return this.dataModelService.deleteDataModel(req.user["id"], deleteDataModelDTO);
   }
 
 }

@@ -1,6 +1,6 @@
 import { PrismaModule } from "../prisma/prisma.module";
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
-import { UserService } from '../../services/user.service';
+import { UserService } from '../account/services/user.service';
 import { PasswordService } from '../authentication/services/password.service';
 import { RepositoryController } from 'src/modules/repository/controllers/repository.controller';
 import { AuthModule } from '../authentication/auth.module';

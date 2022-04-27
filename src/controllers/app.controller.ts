@@ -47,11 +47,16 @@ export class AppController {
 
   } //end
 
-  @Post("/authorize")
-  @ApiExcludeEndpoint()
-  async loginRemote(@Request() req: any): Promise<Token> {
-    return this.authService.login(req.body.email, req.body.password);
-  }
+  // /**
+  //  * Route for signing in from external source, not from browser.
+  //  * Returns nothing but the authorization token.
+  //  * @param req
+  //  */
+  // @Post("/authorize")
+  // @ApiExcludeEndpoint()
+  // async loginRemote(@Request() req: any): Promise<Token> {
+  //   return this.authService.login(req.body.email, req.body.password);
+  // }
 
 
   @Get("/contact")
