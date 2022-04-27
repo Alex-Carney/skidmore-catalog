@@ -66,18 +66,6 @@ model User {
   repositories             RepositoriesOnUsers[]
 }
 
-//from the template -- a good example to keep around
-// model Post {
-//   id        String   @id @default(cuid())
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-//   published Boolean
-//   title     String
-//   content   String?
-//   author    User?    @relation(fields: [authorId], references: [id])
-//   authorId  String?
-// }
-
 model Repository {
   id         String             @id @default(cuid())
   createdAt  DateTime           @default(now())
