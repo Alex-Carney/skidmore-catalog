@@ -6,7 +6,12 @@ Check out the actual website at http://skidmore-datahub.us.reclaim.cloud/
 
 Check out the video demo here: 
 
-NOTE: As of 5/13/2022, the site may not be online 24/7, I'm still working on a few issues. When the site is online, it will be up according to a time table (to reduce resource usage during nighttime, etc.) 
+NOTE: This site is not online 24/7. Uptime is according to this table:
+
+| 0:00 EST - 8:00 EST | 8:00 EST - 23:59 EST | HOURLY **:00 |
+|---------------------|----------------------|--------------|
+| OFFLINE             | ONLINE               | RESTART      |
+
 
 
 # Overview
