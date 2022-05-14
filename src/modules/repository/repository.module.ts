@@ -6,17 +6,19 @@ import { RepositoryController } from 'src/modules/repository/controllers/reposit
 import { AuthModule } from '../authentication/auth.module';
 import { RepositoryService } from 'src/modules/repository/services/repository.service';
 import { UserMiddleware } from "../../middleware/user.middleware";
-// import { RepositoryExistsMiddleware } from "../../middleware/repository-exists.middleware";
 import { RepositoryValidation } from "./validation/repository.validation";
-// import { RepositoryExistsRule } from "./validation/repository-exists.rule";
 import { RepositoryExistsMiddleware } from "./middleware/repository-exists.middleware";
-//import { RoleModule } from '../role/role.module';
 
+/**
+ * Packages all subsystems of the repository module into an export/importable module
+ * @see module.info.txt for more information
+ * @author Alex Carney
+ */
 @Module({
-  imports: [PrismaModule, AuthModule, /**RoleModule**/],
+  imports: [PrismaModule, AuthModule],
   controllers: [RepositoryController],
-  providers: [UserService, PasswordService, /**RepositoryExistsRule**/ RepositoryService, RepositoryValidation],
-  exports: [UserService, RepositoryService, /**RepositoryExistsRule**/ RepositoryValidation],
+  providers: [UserService, PasswordService, RepositoryService, RepositoryValidation],
+  exports: [UserService, RepositoryService, RepositoryValidation],
 })
 export class RepositoryModule implements NestModule {
   configure(consumer: MiddlewareConsumer): any {

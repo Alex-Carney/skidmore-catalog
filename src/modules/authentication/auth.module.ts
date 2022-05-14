@@ -7,11 +7,12 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { SecurityConfig } from 'src/configs/config.interface';
-import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/modules/authentication/guards/jwt-auth.guard';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
+    // Inject the secret string from the JWT access
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
@@ -33,6 +34,7 @@ import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
     JwtAuthGuard,
     PasswordService,
   ],
+  // Exports for other modules to use
   exports: [JwtAuthGuard, AuthService, JwtModule],
 })
 export class AuthModule {}

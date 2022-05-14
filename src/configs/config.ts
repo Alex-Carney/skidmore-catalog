@@ -1,5 +1,9 @@
 import { Config } from './config.interface';
 
+/**
+ * Configuration file
+ * @author Starter Project, edited by Alex Carney
+ */
 const config: Config = {
   nest: {
     port: 3000,

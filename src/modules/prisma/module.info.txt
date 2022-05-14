@@ -1,0 +1,10 @@
+Prisma Module
+
+Wraps the Prisma ORM into a module that can be imported as a dependency into required modules
+
+Prisma handles the connection and object relational mapping to our PostgreSQL database
+
+This module solely exists to wrap the prisma service into an injectable dependency
+
+@see prisma.service.ts for the service that connects to the database
+

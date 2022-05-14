@@ -14,6 +14,7 @@ import { RepositoryValidation } from "../validation/repository.validation";
  *
  * Also requires repository object to be attached to the request, required validate
  * repository existence middleware to fire first
+ * @author Alex Carney
  */
 @Injectable()
 export class RepositoryPermissionGuard implements CanActivate {
@@ -21,10 +22,10 @@ export class RepositoryPermissionGuard implements CanActivate {
   constructor(private reflector: Reflector, private repositoryValidation: RepositoryValidation) {}
 
   canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
-    console.log("REPOSITORY AUTH GUARD EXECUTED")
+    this.logger.log("REPOSITORY AUTH GUARD EXECUTED")
 
     const requiredLevel = this.reflector.get<number>('permissionLevel', context.getHandler())
-    console.log(requiredLevel)
+    this.logger.log("Required level for this guard request " + requiredLevel)
     if(!requiredLevel) {
       return true;
     }

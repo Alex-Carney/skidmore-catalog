@@ -8,6 +8,11 @@ import { Response } from "express";
 @SkipThrottle()
 @Controller()
 export class AppController {
+  /**
+   * Top level controller, handles the front end GUI routes for logging in and static pages
+   * @param authService
+   * @author Starter Project, edited by Alex Carney
+   */
   constructor(private readonly authService: AuthService) {
   }
 
@@ -27,7 +32,6 @@ export class AppController {
 
   @Post("/signin")
   @ApiExcludeEndpoint()
-  // async login(@Request() req: {email: string, password: string}): Promise<Token> {
   async login(@Request() req: any, @Res() res: Response) { //formerly : Promise<Token>
 
     /**
@@ -45,19 +49,7 @@ export class AppController {
       );
     });
 
-  } //end
-
-  // /**
-  //  * Route for signing in from external source, not from browser.
-  //  * Returns nothing but the authorization token.
-  //  * @param req
-  //  */
-  // @Post("/authorize")
-  // @ApiExcludeEndpoint()
-  // async loginRemote(@Request() req: any): Promise<Token> {
-  //   return this.authService.login(req.body.email, req.body.password);
-  // }
-
+  }
 
   @Get("/contact")
   @Render("contact")

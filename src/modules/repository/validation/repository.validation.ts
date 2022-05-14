@@ -9,6 +9,13 @@ export class RepositoryValidation {
 
   private readonly logger = new Logger(RepositoryValidation.name);
 
+  /**
+   * RepositoryValidation is an injectable service that can be used by other modules to determine whether certain
+   * actions are valid or not, such as an un-authorized user trying to access someone else's repository, or a user
+   * inputting an invalid repository into their API call.
+   * @param prisma dependency
+   * @author Alex Carney
+   */
   constructor(
     private prisma: PrismaService,
   ) {
@@ -102,7 +109,7 @@ export class RepositoryValidation {
 
 
   /**
-   * Validates that repository exists, throws an error if not
+   * @method Validates that repository exists, throws an error if not
    * @param repositoryTitle
    * @throws NotFoundException
    */

@@ -1,3 +1,7 @@
+/**
+ * Base error messages for errors relating to user actions
+ * @author Alex Carney
+ */
 export const UserBusinessErrors = {
   UserNotFound: {
     apiErrorCode: "E_U_001",

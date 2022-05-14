@@ -1,3 +1,9 @@
+/**
+ * The base messages for errors pertaining to users using the repository system. Additional information is
+ * added at run time, containing more details about what was wrong.
+ *
+ * @author Alex Carney
+ */
 export const RepositoryBusinessErrors = {
   RepositoryNotFound: {
     apiErrorCode: 'E_R_001',

@@ -1,0 +1,12 @@
+Authentication Module
+
+This module has no controller, therefore no explicit exposed routes. Instead, this
+module stores the guards and services pertaining to authentication.
+
+Note that the majority of this module was included in the starter project, and
+not written by Alex
+
+@see auth.service.ts for exported, injectable service for authentication
+@see jwt-auth.guard.ts for an injectable guard that can be applied to API routes (to make
+them require JWT authentication)
+

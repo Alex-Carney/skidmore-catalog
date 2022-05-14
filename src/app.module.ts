@@ -13,11 +13,13 @@ import { AccountModule } from "./modules/account/account.module";
 /**
  * App Module wraps all sub modules together, along with Configuration and Throttling.
  * App Module also handles the App Controller, which controls routes outside the general API (logging in etc)
+ * @author Starter Project, edited by Alex Carney
  */
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [config] }),
     ThrottlerModule.forRootAsync({
+      //fetch throttler settings from config
       useFactory: async (configService: ConfigService) => {
         const throttlerConfig = configService.get<ThrottlerConfig>('throttler');
         return {
@@ -27,6 +29,7 @@ import { AccountModule } from "./modules/account/account.module";
       },
       inject: [ConfigService],
     }),
+    //Wrap all submodules together. All new modules have to be added here
     AuthModule,
     RepositoryModule,
     ResourceModule,

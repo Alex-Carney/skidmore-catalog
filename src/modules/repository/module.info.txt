@@ -1,0 +1,20 @@
+RepositoryModule
+
+This module wraps all functionality pertaining to Repositories, which are a major component of the application.
+
+A repository is essentially a folder to store data models, where operations pertaining to those data models are
+only possible based on role based authentication control handled by the repository.
+
+A user first creates a repository before uploading any data, and can configure the permissions of their data models
+to other users by changing their permission level within the repository.
+
+This module was completely designed and implemented by Alex
+
+@see repository.controller.ts for all API routes pertaining to repository actions
+@see repository.validation.ts for an injectable service that can be used by other modules to ensure that
+input repositories are valid
+@see repository.service.ts for the internal provider that updates the database based on user repository actions
+@see repository-exists.middleware.ts for an injectable middleware to validate that an input repository exists (easier
+than using repository validation everywhere)
+@see repository-auth.guard.ts for a decorator that can be applied to API routes to ensure that the operation is allowed,
+based on repository permission levels. Throws a 403 if it fails

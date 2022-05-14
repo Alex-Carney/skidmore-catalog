@@ -5,15 +5,12 @@ import { CustomException } from "../../../errors/custom.exception";
 import { RepositoryBusinessErrors } from "../errors/repository.error";
 import { RepositoryService } from "../services/repository.service";
 
-// export interface RequestWithUserData extends Request {
-//   repository: User
-// }
 
 /**
  * @middleware Checks the existence of a valid repository within the request body. If the repository is invalid,
  * throws an exception. Otherwise, appends the found repository to the request object to be used later.
  *
- *
+ * @author Alex Carney
  */
 @Injectable()
 export class RepositoryExistsMiddleware implements NestMiddleware {

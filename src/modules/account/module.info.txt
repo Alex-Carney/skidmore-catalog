@@ -1,0 +1,10 @@
+Account Module
+
+Handles routes relating to certain user account actions, namely logging in
+and changing password.
+
+Also houses user service, which is a dependency in other modules for handling user
+validation
+
+@see user.controller.ts for exposed account API routes
+@see user.service.ts for an injectable provider that can support user validation

@@ -1,11 +1,9 @@
 import { ApiProperty } from "@nestjs/swagger";
-// import { IsString, IsInt, Min, Max, Validate } from "class-validator";
 
 //This is the scaffold for the Swagger UI POST body for adding new roles to a repository
 export class UpdateRepositoryPermissionsDTO {
     @ApiProperty({
         description: 'title of repository to change permissions for',
-        //default: 'REPOSITORY_NAME'
     })
 
     repository: string //title of role == unique identifier

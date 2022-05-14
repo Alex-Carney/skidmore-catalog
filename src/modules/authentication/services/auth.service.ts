@@ -8,15 +8,17 @@ import {
 } from "@nestjs/common";
 import { JwtService } from '@nestjs/jwt';
 import { PasswordService } from './password.service';
-// import { SignupInput } from '../dto/signup.input';
 import { Prisma, User } from '@prisma/client';
 import { Token } from '../../../models/token.model';
 import { ConfigService } from '@nestjs/config';
 import { SecurityConfig } from 'src/configs/config.interface';
-import { Request } from "express";
 import { UserBusinessErrors } from "../../../errors/user.error";
 
 @Injectable()
+/**
+ * An injectable class to handle authentication services
+ * @author Starter project, edited by Alex Carney
+ */
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
@@ -27,36 +29,13 @@ export class AuthService {
 
 
   //--------------------------------------------------------------------
-
-  // async createUser(payload: SignupInput): Promise<Token> {
-  //   const hashedPassword = await this.passwordService.hashPassword(
-  //     payload.password
-  //   );
-
-  //   try {
-  //     const repository = await this.prisma.repository.create({
-  //       data: {
-  //         ...payload,
-  //         password: hashedPassword,
-  //         //role: [], //changed this from role: 'USER' which didn't do anything
-  //       },
-  //     });
-
-  //     return this.generateTokens({
-  //       userId: repository.id,
-  //     });
-  //   } catch (e) {
-  //     if (
-  //       e instanceof Prisma.PrismaClientKnownRequestError &&
-  //       e.code === 'P2002'
-  //     ) {
-  //       throw new ConflictException(`Email ${payload.email} already used.`);
-  //     } else {
-  //       throw new Error(e);
-  //     }
-  //   }
-  // }
-
+  /**
+   * Create a new user in the database
+   * @param email
+   * @param password
+   * @param firstname
+   * @param lastname
+   */
  async createUser(email: string, password: string, firstname: string, lastname: string): Promise<Token> {
     const hashedPassword = await this.passwordService.hashPassword(
       password
@@ -68,8 +47,7 @@ export class AuthService {
           email: email,
           firstname: firstname,
           lastname: lastname,
-          password: hashedPassword,
-          //role: [], //changed this from role: 'USER' which didn't do anything
+          password: hashedPassword
         },
       });
 
@@ -90,6 +68,11 @@ export class AuthService {
 
   //--------------------------------------------------------------------
 
+  /**
+   * Login functionality
+   * @param email
+   * @param password
+   */
   async login(email: string, password: string): Promise<Token> {
     const user = await this.prisma.user.findUnique({ where: { email } });
 
@@ -114,6 +97,10 @@ export class AuthService {
     //--------------------------------------------------------------------
 
 
+  /**
+   * Returns a user object if they exist
+   * @param userId ID to search for user by
+   */
   validateUser(userId: string): Promise<User> {
     return this.prisma.user.findUnique({ where: { id: userId } });
   }
@@ -121,7 +108,7 @@ export class AuthService {
     //--------------------------------------------------------------------
 
   /**
-   *
+   * Returns a user object just from a JWT authentication token
    * @param token
    * @throws NotFoundException
    */
@@ -138,12 +125,7 @@ export class AuthService {
     return foundUser
   }
 
-    //--------------------------------------------------------------------
-
-
-
-    //--------------------------------------------------------------------
-
+    // JWT TOKEN MANAGEMENT
   generateTokens(payload: { userId: string }): Token {
     return {
       accessToken: this.generateAccessToken(payload),

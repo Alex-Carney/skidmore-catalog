@@ -5,8 +5,7 @@ import { SecurityConfig } from 'src/configs/config.interface';
 
 /**
  * The service for handling hashing, salting, and validation of passwords.
- *
- * From the starter project, Alex did not write this
+ * @author Starter Project
  */
 @Injectable()
 export class PasswordService {

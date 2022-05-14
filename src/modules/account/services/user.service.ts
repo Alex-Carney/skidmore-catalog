@@ -1,8 +1,6 @@
 import { PrismaService } from "../../prisma/services/prisma.service";
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { PasswordService } from "../../authentication/services/password.service";
-// import { ChangePasswordInput } from '../resolvers/repository/dto/change-password.input';
-// import { UpdateUserInput } from '../resolvers/repository/dto/update-user.input';
 import { User } from "@prisma/client";
 import { Request } from "express";
 import { AuthService } from "../../authentication/services/auth.service";
@@ -11,21 +9,18 @@ import { ChangePasswordDTO } from "../dto/change-password.dto";
 
 @Injectable()
 export class UserService {
+  /**
+   * An injectable service for user actions and validation
+   * @param prisma dependency
+   * @param passwordService dependency
+   * @param authService dependency
+   */
   constructor(
     private prisma: PrismaService,
     private passwordService: PasswordService,
     private authService: AuthService
   ) {
   }
-
-  // async updateUser(userId: string, newUserData: UpdateUserInput) {
-  //    return this.prisma.user.update({
-  //      data: newUserData,
-  //      where: {
-  //        id: userId,
-  //      },
-  //    });
-  //  }
 
   /**
    * Logic to change a user's password

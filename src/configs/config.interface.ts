@@ -1,3 +1,7 @@
+/**
+ * Provides all interfaces for each module configuration
+ * @author Starter project, edited by Alex Carney
+ */
 export interface Config {
   nest: NestConfig;
   cors: CorsConfig;

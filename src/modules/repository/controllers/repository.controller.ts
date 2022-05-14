@@ -22,8 +22,11 @@ import { RepositoryPermissionLevel } from "../decorators/repository-permissions.
 
 
 /**
- * In the API V2 architecture, resources are not controlled based on the repository that uploaded them, but rather the repository that they were assigned
- * Therefore, the "users" themselves are not very important, they are just a way to login to access certain repositories -- the repositories provide access
+ * In the API V2 architecture, resources are not controlled based on the repository that uploaded them,
+ * but rather the repository that they were assigned
+ *
+ * Therefore, the "users" themselves are not very important,
+ * they are just a way to login to access certain repositories -- the repositories provide access
  * to the actual resources.
  *
  * Therefore, the only functions for users are viewing their repositories + adding new repositories
@@ -32,6 +35,7 @@ import { RepositoryPermissionLevel } from "../decorators/repository-permissions.
  * service to handle the rest. Apparently it is bad practice to couple anything related to the web in the service
  * layer, so the controller converts the request into the repository id instead.
  *
+ * @author Alex Carney
  */
 @ApiTags("Repository Actions")
 @ApiBearerAuth()

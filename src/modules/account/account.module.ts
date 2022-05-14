@@ -8,6 +8,10 @@ import { UserMiddleware } from "../../middleware/user.middleware";
 import { AccountRouteNames } from "./constants/account-route-names";
 import { PrismaModule } from "../prisma/prisma.module";
 
+/**
+ * @module AccountModule. See module.info.txt.txt.txt.txt for more information
+ * Wraps the module to be imported elsewhere.
+ */
 @Module({
   imports: [AuthModule, PrismaModule],
   controllers: [UserController],

@@ -12,11 +12,13 @@ import { RepositoryValidation } from "../validation/repository.validation";
 @Injectable()
 export class RepositoryService {
   /**
-   * @service An injectable service handling all operations relating to repositories. Depends on PrismaService and UserService
+   * @service An injectable service handling all operations relating to repositories and updating the database.
+   * Depends on PrismaService and UserService
    *
-   * @param prisma
-   * @param userService
-   * @param repositoryValidation
+   * @param prisma dependency
+   * @param userService dependency
+   * @param repositoryValidation dependency
+   * @author Alex Carney
    */
   constructor(
     private prisma: PrismaService,
@@ -59,6 +61,7 @@ export class RepositoryService {
       };
     });
 
+    // A user maintains a relation to their repositories, this must be updated accordingly
     await this.prisma.user.update({
       where: { id: userId },
       data: {
@@ -95,6 +98,10 @@ export class RepositoryService {
 
   //----------------------------------------------------------------------------------------
 
+  /**
+   * @method return a repository object given a unique title
+   * @param repositoryTitle String title of repository
+   */
   async getRepositoryByName(repositoryTitle: string) {
     return await this.prisma.repository.findUnique({
       where: {

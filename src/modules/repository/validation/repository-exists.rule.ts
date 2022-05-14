@@ -1,3 +1,17 @@
+/**
+ * NOTE:
+ * I really wanted to use ClassValidator in this project, as it would have been a much easier way to
+ * validate user input into the API, instead of having to do most of it manually.
+ *
+ * However, when I tried to do this, there was a recent error between the current versions of Nest and ClassValidator
+ * that made it impossible. I may return to ClassValidator in a future update, but for now I'm handling most
+ * validation manually.
+ *
+ * I'll keep this class here even though it's unused code, just in case I return later, and to see what a
+ * ClassValidator implementation looks like
+ * @author Alex Carney
+ */
+
 // import { HttpStatus, Injectable } from "@nestjs/common";
 // import {
 //   registerDecorator,

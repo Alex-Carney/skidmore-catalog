@@ -11,6 +11,7 @@ import { ChangePasswordDTO } from "../dto/change-password.dto";
 /**
  * Allows users to access account settings through the API, including logging in,
  * changing password, and deleting account
+ * @author Alex Carney
  */
 @ApiTags("Account Actions")
 @Controller("account")
@@ -34,7 +35,6 @@ export class UserController {
     return this.authService.login(loginInputDTO.email, loginInputDTO.password);
   }
 
-
   /**
    * Route for changing user's password. Note that the user has to be
    * logged in to access this route. The user data is attached from
@@ -47,9 +47,4 @@ export class UserController {
   async changePasswordRemote(@Req() req: Request, @Body() changePasswordDTO: ChangePasswordDTO) {
     return this.userService.changePassword(req.user["id"], changePasswordDTO);
   }
-
-
-
-
-
 }

@@ -15,12 +15,12 @@ import { ResourceModule } from './modules/resource/resource.module';
 import { Logger } from "@nestjs/common";
 import { AccountModule } from "./modules/account/account.module";
 
-
 declare const module: any
 
 /**
  * Entry point for the program
  * Creates the app, registers all config services, sets up swagger, establishes middleware
+ * @author Starter Project, edited by Alex Carney
  */
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication> (AppModule, {
@@ -28,11 +28,13 @@ async function bootstrap() {
     });
   // app.useLogger(app.get(Logger))
 
+  // Configuration setup
   const configService = app.get(ConfigService);
   const nestConfig = configService.get<NestConfig>('nest');
   const corsConfig = configService.get<CorsConfig>('cors');
   const v2SwaggerConfig = configService.get<SwaggerConfig>('v2_swagger');
 
+  // Swagger setup (GUI for API)
   if (v2SwaggerConfig.enabled) {
     const v2Options = new DocumentBuilder()
     .setTitle(v2SwaggerConfig.title || 'Nestjs')
@@ -47,7 +49,7 @@ async function bootstrap() {
   const v2CustomOptions: SwaggerCustomOptions = {
     swaggerOptions: {
       defaultModelsExpandDepth: -1, //schemas wont show up
-      // syntax highlight caused browser to crash on large queries
+      // syntax highlight caused browser to crash on large queries. This was the first of my major roadblocks
       syntaxHighlight: {
         activated: false,
         theme: "agate"
