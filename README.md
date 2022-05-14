@@ -38,7 +38,6 @@ Web Development:
 
 - TypeScript: An extension to JavaScript that is strongly typed, allowing me to use concepts from my Object Oriented Programming classes for web development
 - NestJS: By far my favorite JavaScript framework, used to create a scalable, enterprise grade backend
-- Docker: To containerize the entire application (and the database) so that it can be hosted anywhere, with ease
 - PostgreSQL: A database to store necessary datasets, along with execute SQL searches
 - Prisma: An ORM (object relational mapper) to handle database management and querying
 - SwaggerUI: To build the API to OpenAPI specifications, along with providing an interactive documentation page to consume the API
@@ -47,9 +46,20 @@ Web Development:
 - Webpack: To consolidate dozens of TypeScript files into a single JS file suitable for the web
 - GitHub: To host the source code of the project, allowing it to be moved to new server environments
 
+Hosting:
+
+- Reclaim cloud: A cloud hosting service powered by jelastic. Skidmore College is partnered with reclaim cloud, and using my project as a "pilot" for using cloud resources to host future student projects. 
+- Docker: To containerize the entire application (and the database) so that it can be hosted anywhere, with ease
+
+Architecture:
+
+- I used this starter project https://github.com/fivethree-team/nestjs-prisma-starter to begin my project. Therefore, I didn't have to worry about writing authorization or configuration management myself, and could focus on the actual functionality of the website. 
+
 Tendril Finder (Research component):
 - Python: The primary language for data science
 - Pandas/Numpy/NetworkX/Scikit-Learn/Astropy/and more: Python packages commonly used for data science
 - Jupyter Notebooks: For providing cohesive documentation to the various Python scripts used for the project
 - Asana: For managing my research team
+
+
 
