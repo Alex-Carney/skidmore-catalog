@@ -1,3 +1,8 @@
+/**
+ * API route names for the two controllers. Written here so that strings aren't hard coded in multiple places
+ *
+ * @author Alex Carney
+ */
 export const DataModelRouteNames = {
   BASE_NAME: 'data-model/',
   GENERATE_DATA_MODEL: 'generate-data-model',

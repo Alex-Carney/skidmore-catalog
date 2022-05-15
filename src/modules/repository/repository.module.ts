@@ -8,6 +8,7 @@ import { RepositoryService } from 'src/modules/repository/services/repository.se
 import { UserMiddleware } from "../../middleware/user.middleware";
 import { RepositoryValidation } from "./validation/repository.validation";
 import { RepositoryExistsMiddleware } from "./middleware/repository-exists.middleware";
+import { RepositoryRouteNames } from "./constants/repository-route-names";
 
 /**
  * Packages all subsystems of the repository module into an export/importable module
@@ -24,8 +25,9 @@ export class RepositoryModule implements NestModule {
   configure(consumer: MiddlewareConsumer): any {
     consumer
       .apply(UserMiddleware)
-      .forRoutes('repository')
+      .forRoutes(RepositoryRouteNames.BASE_NAME)
       .apply(RepositoryExistsMiddleware)
-      .forRoutes('repository/update-permissions', 'repository/delete-repositories')
+      .forRoutes(RepositoryRouteNames.BASE_NAME + RepositoryRouteNames.UPDATE_PERMISSIONS,
+        RepositoryRouteNames.BASE_NAME + RepositoryRouteNames.DELETE_REPOSITORIES)
   }
 }

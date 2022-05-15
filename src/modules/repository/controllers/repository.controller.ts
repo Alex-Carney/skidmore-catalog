@@ -19,6 +19,7 @@ import { UserService } from "src/modules/account/services/user.service";
 import { RepositoryPermissions } from "../constants/permission-level-constants";
 import { RepositoryPermissionGuard } from "../guards/repository-auth.guard";
 import { RepositoryPermissionLevel } from "../decorators/repository-permissions.decorator";
+import { RepositoryRouteNames } from "../constants/repository-route-names";
 
 
 /**
@@ -39,7 +40,7 @@ import { RepositoryPermissionLevel } from "../decorators/repository-permissions.
  */
 @ApiTags("Repository Actions")
 @ApiBearerAuth()
-@Controller("repository")
+@Controller(RepositoryRouteNames.BASE_NAME)
 export class RepositoryController {
 
   private readonly logger = new Logger(RepositoryController.name);
@@ -90,7 +91,7 @@ export class RepositoryController {
   @ApiForbiddenResponse({
     description: "Only users with accounts can create repositories."
   })
-  @Post("create-repositories")
+  @Post(RepositoryRouteNames.CREATE_REPOSITORIES)
   async createRepositories(@Req() req: Request, @Body() createRepositoryDTO: UserCreateRepositoryDTO) {
     this.logger.log(req.user + " called createRepositories method");
     return this.repositoryService.createRepositories(req.user["id"], createRepositoryDTO);
@@ -123,7 +124,7 @@ export class RepositoryController {
     description: "It is forbidden to change permissions of a repository with a higher permission level than yourself, or to " +
       "assign a permission level higher than the one you have. Additionally, only admins (level 2+) can change any permission"
   })
-  @Patch("update-permissions")
+  @Patch(RepositoryRouteNames.UPDATE_PERMISSIONS)
   async updateRepositoryPermissions(@Req() req: Request, @Body() updateAdminDto: UpdateRepositoryPermissionsDTO): Promise<any> {
     this.logger.log(req.user + " called updateRepositoryPermissions method, targeting " + req.target_user);
     return this.repositoryService.updateRepositoryPermissions(req.user["id"], updateAdminDto);
@@ -149,7 +150,7 @@ export class RepositoryController {
     description: "repository: Title of repository to delete",
     type: DeleteRepositoryDTO
   })
-  @Delete("delete-repositories")
+  @Delete(RepositoryRouteNames.DELETE_REPOSITORIES)
   @UseGuards(RepositoryPermissionGuard)
   @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_OWNER)
   async deleteRepository(@Req() req: Request, @Body() deleteRepositoryDTO: DeleteRepositoryDTO): Promise<any> {
