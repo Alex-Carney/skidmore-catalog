@@ -4,7 +4,7 @@ import { Observable } from "rxjs";
 import { ResourceValidation } from "../validation/resource.validation";
 /**
  * This guard can be used to decorate controller routes with
- * @UseGuards(ResourcePermissionGuard) and @Re
+ * @UseGuards(ResourcePermissionGuard)
  */
 @Injectable()
 export class ResourceAccessAuthGuard implements CanActivate {

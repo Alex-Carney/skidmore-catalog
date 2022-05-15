@@ -1,0 +1,27 @@
+ResourceModule
+
+This module wraps all functionality pertaining to uploading and querying resources.
+Since V2 of the API, resources are uploaded by users, rather than hardcoded
+into the API as they were in V1.
+
+First, the program must create a schema associated with a resource that will
+define the column names and data types of the incoming data. This is called
+the 'data model', and needs to be generated for each resource.
+
+Data model:
+@see data-model.controller.ts for routes
+@see data-model.service.ts for an injectable service describing what can be done
+
+Once a data model has been generated, the "seeding" process can occur. The actual
+data (cells) is uploaded using seed database, to be queried later using query database.
+
+Resource:
+
+@see resource.controller.ts for the routes related to uploading and downloading data
+@see resource.service.ts for an injectable service describing what can be done with resources
+
+Resource input validation
+@see resource.validation.ts for input validation
+@see resource-access-auth-guard.ts for a decorator that can be applied to routes to protect
+against unauthorized resource requests
+@see resource-exists.middleware.ts for a more efficient way to ensure an input is valid

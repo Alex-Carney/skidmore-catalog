@@ -38,6 +38,12 @@ import { RepositoryPermissions } from "../../repository/constants/permission-lev
 import { DataModelRouteNames } from "../constants/data-model-route-names";
 import { ResourceAccessAuthGuard } from "../guards/resource-access-auth-guard.service";
 
+/**
+ * In the API V2 architecture, resources are uploaded by users, instead of hardcoded
+ * by Alex.
+ *
+ *
+ */
 @ApiBearerAuth()
 @ApiTags("Resource Model")
 @Controller(DataModelRouteNames.BASE_NAME)

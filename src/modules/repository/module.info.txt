@@ -10,7 +10,8 @@ to other users by changing their permission level within the repository.
 
 This module was completely designed and implemented by Alex
 
-@see repository.controller.ts for all API routes pertaining to repository actions
+@see repository.controller.ts for all API routes pertaining to repository actions, along with additional
+information about the purpose and usage of repositories
 @see repository.validation.ts for an injectable service that can be used by other modules to ensure that
 input repositories are valid
 @see repository.service.ts for the internal provider that updates the database based on user repository actions

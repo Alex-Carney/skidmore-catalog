@@ -1,6 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 
-//This is the scaffold for the Swagger UI POST body for creating a new data model
+//This is the scaffold for the Swagger UI POST body for updating
+// an existing data model
 export class UpdateDataModelFieldsDTO {
     @ApiProperty()
     resourceName: string;

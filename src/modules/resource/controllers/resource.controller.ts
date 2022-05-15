@@ -1,4 +1,15 @@
-import { Body, Controller, Post, Put, Req, Res, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Logger,
+  Post,
+  Put,
+  Req,
+  Res,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors
+} from "@nestjs/common";
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ResourceService } from "src/modules/resource/services/resource.service";
@@ -10,10 +21,24 @@ import { RepositoryPermissions } from "../../repository/constants/permission-lev
 import { RepositoryPermissionGuard } from "../../repository/guards/repository-auth.guard";
 import { RepositoryPermissionLevel } from "../../repository/decorators/repository-permissions.decorator";
 import { ResourceAccessAuthGuard } from "../guards/resource-access-auth-guard.service";
+import { ResourceRouteNames } from "../constants/resource-route-names";
 
+/**
+ * Handles CRUD operations for data models. Has some extra routes as well,
+ * since creating and publishing a data model are two separate actions (that
+ * need to be done sequentially)
+ *
+ * This controller's only function is to perform initial input validation (through
+ * middleware, applied in @see resource.module.ts), then call the appropriate
+ * service to handle the call
+ *
+ * @author Alex Carney
+ */
 @ApiBearerAuth()
-@Controller("resources")
+@Controller(ResourceRouteNames.BASE_NAME)
 export class ResourceController {
+
+  private readonly logger = new Logger(ResourceController.name)
 
   constructor(private readonly resourceService: ResourceService, private readonly userService: UserService) {
   }
@@ -29,9 +54,10 @@ export class ResourceController {
   @ApiConsumes("multipart/form-data")
   @UseInterceptors(FileInterceptor("file")) //takes two arguments: fieldName which is the HTML field holding the file
   @ApiTags("Resource Data")
-  @Put("seed-database")
+  @Put(ResourceRouteNames.SEED_DATABASE)
   async seedDatabase(@UploadedFile() file: Express.Multer.File, @Req() req: Request, @Body()
     seedDatabaseInputDto: SeedDatabaseInputDTO, @Res() res: Response) {
+    this.logger.log(req.user + " is seeding the database")
     return this.resourceService.seedResourceFromFile(file, seedDatabaseInputDto, req.user["id"], res);
   }
 
@@ -45,26 +71,18 @@ export class ResourceController {
   })
   @ApiOperation({ summary: "query a resource using SQL" })
   @ApiTags("Resource Data")
-  @Post("query-database")
+  @Post(ResourceRouteNames.QUERY_DATABASE)
   @UseGuards(RepositoryPermissionGuard, ResourceAccessAuthGuard)
   @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_USER)
   async queryDatabase(@Req() req: Request, @Body() queryDatabaseInputDto: QueryDatabaseInputDTO) {
-    try {
-      const user = await this.userService.getUserFromRequest(req);
-
       return await this.resourceService.queryResource
       (
         queryDatabaseInputDto.resourceName,
-        user["id"],
+        req.user,
         queryDatabaseInputDto.repository,
         queryDatabaseInputDto.SQL_Select_Fields,
         queryDatabaseInputDto.SQL_Where_Fields,
         queryDatabaseInputDto.SQL_Where_Statement
       );
-    } catch (err) {
-      console.log(err);
-    }
   }
-
-
 }

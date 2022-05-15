@@ -1,5 +1,11 @@
+/**
+ * The base messages for errors from data model calls.
+ * Additional information is added at run time, as
+ * per custom exceptions
+ *
+ * @author Alex Carney
+ */
 export const DataModelBusinessErrors = {
-
   ErrorParsingInputFile: {
     apiErrorCode: 'E_DM_001',
     errorMessage: 'An error occurred while parsing the input file',

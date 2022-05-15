@@ -1,3 +1,11 @@
+
+/**
+ * The base messages for errors from RESOURCE management calls.
+ * Additional information is added at run time, as
+ * per custom exceptions
+ *
+ * @author Alex Carney
+ */
 export const ResourceBusinessErrors = {
   ResourceNotFound: {
     apiErrorCode: "E_RS_001",
