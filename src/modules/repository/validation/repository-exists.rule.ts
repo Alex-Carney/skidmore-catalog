@@ -38,7 +38,6 @@
 //   constructor(private repositoryService: RepositoryService) {}
 //
 //   async validate(repositoryTitle: string) {
-//     console.log("Repository Exists rule fired")
 //     let repo;
 //     try {
 //       repo = await this.repositoryService.getRepositoryByName(repositoryTitle)

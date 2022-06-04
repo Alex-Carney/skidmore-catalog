@@ -7,8 +7,8 @@
 export const RepositoryRouteNames = {
   BASE_NAME: 'repository/',
   UPDATE_PERMISSIONS: 'update-permissions',
-  DELETE_REPOSITORIES: 'delete-repositories',
-  CREATE_REPOSITORIES: 'create-repositories',
+  DELETE_REPOSITORY: 'delete-repository',
+  CREATE_REPOSITORY: 'create-repository',
 
 
 

@@ -1,0 +1,12 @@
+6/4/2022
+
+Patch Notes
+
+- Modified method to create repositories. Now only a single repository can be made at a time
+    - JSON body changed from "repositories: [names]" to "repository: name"
+    - Create repository route changed from "create-repositories" to "create-repository"
+- Fixed delete repository method name
+    - Delete repository route changed from "delete-repositories" to "delete-repository"
+- Backend code improvements
+    - Improved comments and internal documentation
+    - Removed all instances of console.log, replacing w

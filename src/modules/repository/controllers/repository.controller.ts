@@ -69,16 +69,16 @@ export class RepositoryController {
   //--------------------------------------------------------------------------------------------------------------
 
   @ApiCreatedResponse({
-    description: "Each repository listed was created"
+    description: "Repository created"
   })
   @ApiBody({
-    description: "Supply a list of repositories to create. It is recommended to follow the naming" +
+    description: "Supply a name of a new repository to create. It is recommended to follow the naming" +
       "convention of LASTNAME_REPOSITORY_NAME, in order to avoid name collisions and ensure proper usage" +
       "in subsequent calls",
     type: UserCreateRepositoryDTO
   })
   @ApiOperation({
-    summary: "Creates new repositories",
+    summary: "Creates a new repository",
     description: "Creates a set of repository objects that handle permissions, and organization of data. " +
       "Creating a repository automatically gives the caller the 'owner' permission"
   })
@@ -86,15 +86,15 @@ export class RepositoryController {
     description: "invalid repository name. It is recommended to follow the naming conventions, and avoid special characters"
   })
   @ApiInternalServerErrorResponse({
-    description: "An internal error occurred while handling input data. Try publishing one repository at a time"
+    description: "An internal error occurred while handling input data."
   })
   @ApiForbiddenResponse({
     description: "Only users with accounts can create repositories."
   })
-  @Post(RepositoryRouteNames.CREATE_REPOSITORIES)
+  @Post(RepositoryRouteNames.CREATE_REPOSITORY)
   async createRepositories(@Req() req: Request, @Body() createRepositoryDTO: UserCreateRepositoryDTO) {
     this.logger.log(req.user + " called createRepositories method");
-    return this.repositoryService.createRepositories(req.user["id"], createRepositoryDTO);
+    return this.repositoryService.createRepository(req.user["id"], createRepositoryDTO);
   }
 
   //--------------------------------------------------------------------------------------------------------------
@@ -150,7 +150,7 @@ export class RepositoryController {
     description: "repository: Title of repository to delete",
     type: DeleteRepositoryDTO
   })
-  @Delete(RepositoryRouteNames.DELETE_REPOSITORIES)
+  @Delete(RepositoryRouteNames.DELETE_REPOSITORY)
   @UseGuards(RepositoryPermissionGuard)
   @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_OWNER)
   async deleteRepository(@Req() req: Request, @Body() deleteRepositoryDTO: DeleteRepositoryDTO): Promise<any> {

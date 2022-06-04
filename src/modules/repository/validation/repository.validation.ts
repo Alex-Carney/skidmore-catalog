@@ -79,7 +79,7 @@ export class RepositoryValidation {
    */
   async authenticateUserRequest(userId: string, repositoryTitle: string, requiredLevel: number): Promise<boolean> {
     const access = await this.permissionLevelOfUserOnRepository(userId, repositoryTitle);
-    console.log(access);
+    this.logger.log(access);
     if (access >= requiredLevel) {
       this.logger.log("Validated user request on the basis that " + userId + " has an access level " + access + " greater than required level of " + requiredLevel);
       return true;

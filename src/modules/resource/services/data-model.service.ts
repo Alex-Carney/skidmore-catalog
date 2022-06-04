@@ -2,7 +2,7 @@ import {
   BadRequestException,
   HttpStatus,
   Injectable,
-  InternalServerErrorException
+  InternalServerErrorException, Logger
 } from "@nestjs/common";
 import { PrismaService } from "src/modules/prisma/services/prisma.service";
 import { Readable } from "stream";
@@ -36,6 +36,8 @@ export class DataModelService {
     private repositoryValidation: RepositoryValidation
   ) {
   }
+
+  private readonly logger: Logger = new Logger(DataModelService.name)
 
   //----------------------------------------------------------------------------------------
   // CRUD OPERATIONS
@@ -75,7 +77,7 @@ export class DataModelService {
            * Therefore, we must explicitly remove that first character, otherwise it gets saved in the DB
            */
           const cleanFirstLine = line.replace(`\ufeff`, "");
-          console.log(cleanFirstLine)
+          this.logger.log(cleanFirstLine)
           await this.generateFieldNamesFromFirstFileLine(cleanFirstLine, fieldNames, dataModelInputDTO.delimiter);
         } else {
           //this could very well be a nested while instead, but i'd rather do it this way
@@ -88,7 +90,7 @@ export class DataModelService {
         }
         lNum++;
       }
-      console.log({ fields: fieldToDataType });
+      this.logger.log({ fields: fieldToDataType });
       return this.convertMapToObj(fieldToDataType);
     } catch (err) {
       const errorToThrow = DataModelBusinessErrors.ErrorParsingInputFile;
@@ -358,14 +360,14 @@ export class DataModelService {
     // await this.repositoryService.authenticateUserRequest(userId, updateDataModelDTO.repository, RepositoryPermissions.REPOSITORY_ADMIN);
 
     // await this.resourceValidation.validateResourceAccessFromRepository(updateDataModelDTO.repository, updateDataModelDTO.resourceName);
-    console.log("Name" + updateDataModelDTO.resourceName);
+    this.logger.log("Name" + updateDataModelDTO.resourceName);
 
     //step 1: Grab the current data model to see what is different -- include the localized names
     const currentDataModel: Record<string, Array<string>> = await this.returnDataModelExact(updateDataModelDTO.resourceName, false, true);
 
-    console.log("--------CURRENT DATA MODEL---------");
-    console.log(currentDataModel);
-    console.log("-----------------");
+    this.logger.log("--------CURRENT DATA MODEL---------");
+    this.logger.log(currentDataModel);
+    this.logger.log("-----------------");
 
     //step 2: update the repository input data model to include the associated localized names
     this.addLocalizedNamesToFields(updateDataModelDTO.dataModel);
@@ -376,8 +378,8 @@ export class DataModelService {
     const currKeys = Object.keys(currentDataModel);
     const newKeys = Object.keys(updateDataModelDTO.dataModel);
 
-    console.log(currKeys);
-    console.log(newKeys);
+    this.logger.log(currKeys);
+    this.logger.log(newKeys);
 
     //step 3.1 instantiate holders for everything that can change
     const createNewInput = [];
@@ -395,14 +397,14 @@ export class DataModelService {
      */
     let alterInputOne = currKeys.map((key) => {
       //############################ DEBUGGING STUFF ######################
-      console.log(key);
-      console.log(newKeys);
-      console.log(newKeys.includes(key));
+      this.logger.log(key);
+      this.logger.log(newKeys);
+      this.logger.log(newKeys.includes(key));
 
-      console.log("one going to transform key" + key + " info " + currentDataModel[key][0]);
+      this.logger.log("one going to transform key" + key + " info " + currentDataModel[key][0]);
       const localizedFieldName = "c" + md5(currentDataModel[key][0]);
-      console.log("equal next?" + localizedFieldName);
-      console.log("equal above?" + currentDataModel[key][1]);
+      this.logger.log("equal next?" + localizedFieldName);
+      this.logger.log("equal above?" + currentDataModel[key][1]);
       //##################################################################
 
       if (newKeys.includes(key)) {
@@ -443,7 +445,7 @@ export class DataModelService {
      */
     let alterInputTwo = newKeys.map((key) => {
       //############# DEBUGGING
-      console.log("going to transform key " + key + " into " + updateDataModelDTO.dataModel[key]);
+      this.logger.log("going to transform key " + key + " into " + updateDataModelDTO.dataModel[key]);
       //#############
 
       if (!(currKeys.includes(key))) {
@@ -459,8 +461,8 @@ export class DataModelService {
     }).toString();
 
     //############# DEBUGGING
-    console.log(alterInputOne);
-    console.log(alterInputTwo);
+    this.logger.log(alterInputOne);
+    this.logger.log(alterInputTwo);
     //#############
 
     //Step 4: Clean SQL execution strings
@@ -478,11 +480,11 @@ export class DataModelService {
     }
 
     //############# DEBUGGING
-    console.log(alterInputOne);
-    console.log(alterInputTwo);
+    this.logger.log(alterInputOne);
+    this.logger.log(alterInputTwo);
 
-    console.log("create: " + createNewInput);
-    console.log("delete: " + deleteInput);
+    this.logger.log("create: " + createNewInput);
+    this.logger.log("delete: " + deleteInput);
     //#############
 
     /**
@@ -499,7 +501,7 @@ export class DataModelService {
     const transactionArray = [];
     //DELETE
     if (deleteInput.length >= 1) {
-      console.log(`DELETE FROM universe."ResourceField" WHERE "fieldName" in (${deleteInput})`);
+      this.logger.log(`DELETE FROM universe."ResourceField" WHERE "fieldName" in (${deleteInput})`);
       transactionArray.push(this.prisma.$executeRaw(`DELETE FROM universe."ResourceField" WHERE "fieldName" in (${deleteInput})`));
     }
     //CREATE
@@ -564,12 +566,12 @@ export class DataModelService {
 
     //MODIFICATION OF DATA TYPE + DROPPING COLUMNS (to raw datastore table)
     if (alterInputOne.length >= 1) {
-      console.log(`ALTER TABLE datastore."${updateDataModelDTO.resourceName}" ${alterInputOne}`);
+      this.logger.log(`ALTER TABLE datastore."${updateDataModelDTO.resourceName}" ${alterInputOne}`);
       transactionArray.push(this.prisma.$executeRaw(`ALTER TABLE datastore."${updateDataModelDTO.resourceName}" ${alterInputOne}`));
     }
     //ADDING NEW COLUMNS (to raw datastore table)
     if (alterInputTwo.length >= 1) {
-      console.log(`ALTER TABLE datastore."${updateDataModelDTO.resourceName}" ${alterInputTwo}`);
+      this.logger.log(`ALTER TABLE datastore."${updateDataModelDTO.resourceName}" ${alterInputTwo}`);
       transactionArray.push(this.prisma.$executeRaw(`ALTER TABLE datastore."${updateDataModelDTO.resourceName}" ${alterInputTwo}`));
     }
     //Execute every change all at once, or none at all
@@ -587,7 +589,6 @@ export class DataModelService {
    *
    * @param userId repository attempting operation
    * @param updateDataModelFieldNamesDTO Data transfer object for this operation. More information in its file
-   * @param resourceToUpdate
    */
   async alterDataModelColumnNames(userId: string, updateDataModelFieldNamesDTO: UpdateDataModelFieldNamesDTO) {
     //step 0: validate inputs
@@ -622,7 +623,7 @@ export class DataModelService {
        * each rename must be counted as a separate execution.
        */
       alterTableStatements.forEach((alterTableStatement) => {
-        console.log(alterTableStatement.toString());
+        this.logger.log(alterTableStatement.toString());
         transactionArray.push(this.prisma.$executeRaw(`${alterTableStatement.toString()}`));
       });
     }
@@ -630,7 +631,7 @@ export class DataModelService {
       transactionArray.push(...updateResourceStatements);
     }
 
-    console.log(transactionArray);
+    this.logger.log(transactionArray);
 
     return this.prisma.$transaction(transactionArray);
 
@@ -703,7 +704,7 @@ export class DataModelService {
    */
   addLocalizedNamesToFields(dataModel: Record<string, Array<string>>) {
     Object.keys(dataModel).forEach((fieldName) => {
-      console.log(dataModel[fieldName]);
+      this.logger.log(dataModel[fieldName]);
       (dataModel[fieldName]).push("c" + md5(fieldName));
     });
 

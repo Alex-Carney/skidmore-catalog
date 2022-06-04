@@ -123,9 +123,6 @@ export class DataModelController {
   @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_ADMIN)
   async publishDataModel(@Req() req: Request, @Body() dataModelPublishInputDTO: DataModelPublishInputDTO) {
 
-    console.log(dataModelPublishInputDTO);
-    console.log(dataModelPublishInputDTO.dataModel);
-
     // const user = await this.userService.getUserFromRequest(req);
     return this.dataModelService.publishDataModel(req.user["id"], dataModelPublishInputDTO);
 

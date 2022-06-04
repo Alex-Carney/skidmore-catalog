@@ -28,6 +28,6 @@ export class RepositoryModule implements NestModule {
       .forRoutes(RepositoryRouteNames.BASE_NAME)
       .apply(RepositoryExistsMiddleware)
       .forRoutes(RepositoryRouteNames.BASE_NAME + RepositoryRouteNames.UPDATE_PERMISSIONS,
-        RepositoryRouteNames.BASE_NAME + RepositoryRouteNames.DELETE_REPOSITORIES)
+        RepositoryRouteNames.BASE_NAME + RepositoryRouteNames.DELETE_REPOSITORY)
   }
 }

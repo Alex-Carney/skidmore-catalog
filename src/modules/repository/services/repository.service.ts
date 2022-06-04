@@ -40,38 +40,34 @@ export class RepositoryService {
    * @param createRepositoryDTO data transfer object associated with this action. Check its file for more
 
    */
-  public async createRepositories(userId: string, createRepositoryDTO: UserCreateRepositoryDTO) {
+  public async createRepository(userId: string, createRepositoryDTO: UserCreateRepositoryDTO) {
 
-    for (const repository of createRepositoryDTO.repositories) {
-      await this.repositoryValidation.validateRepositoryNameDoesNotAlreadyExist(repository);
-      this.logger.log("Successfully validated repository " + repository);
-    }
 
-    /**
-     * Access the repository supplied in the params, create a new repository with them with the input title. Relations will be generated automatically
-     */
-    const createArguments = createRepositoryDTO.repositories.map((title) => {
-      return {
-        repository: {
-          create: {
-            title: title
-          }
-        },
-        permissionLevel: RepositoryPermissions.REPOSITORY_OWNER
-      };
-    });
+    await this.repositoryValidation.validateRepositoryNameDoesNotAlreadyExist(createRepositoryDTO.repository);
+    this.logger.log("Successfully validated repository " + createRepositoryDTO.repository);
 
     // A user maintains a relation to their repositories, this must be updated accordingly
     await this.prisma.user.update({
       where: { id: userId },
       data: {
         repositories: {
-          create: createArguments
+          create: {
+            repository: {
+              create: {
+                title: createRepositoryDTO.repository
+              }
+            },
+            permissionLevel: RepositoryPermissions.REPOSITORY_OWNER
+          }
         }
       }
     });
-    this.logger.log("updated user " + userId + " with new repositories");
-    return createArguments;
+
+    return this.prisma.repository.findUnique({
+      where: {title: createRepositoryDTO.repository}
+    })
+    // this.logger.log("updated user " + userId + " with new repository");
+    // return createArguments;
   }
 
   //----------------------------------------------------------------------------------------
@@ -256,7 +252,7 @@ export class RepositoryService {
       }
     });
 
-    console.log(permissionResponse);
+    this.logger.log(permissionResponse);
 
     if (!permissionResponse) {
       //relation does not exist yet, create it, and return it

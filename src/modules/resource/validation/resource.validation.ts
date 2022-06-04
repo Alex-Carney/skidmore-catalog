@@ -1,4 +1,11 @@
-import { BadRequestException, ForbiddenException, HttpStatus, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  HttpStatus,
+  Injectable,
+  Logger,
+  NotFoundException
+} from "@nestjs/common";
 import { PrismaService } from "../../prisma/services/prisma.service";
 import { ResourceBusinessErrors } from "../errors/resource.error";
 import { Resource, ResourceField } from "@prisma/client";
@@ -21,6 +28,8 @@ export class ResourceValidation {
     private prisma: PrismaService,
     private configService: ConfigService) {
   }
+
+  private readonly logger = new Logger(ResourceValidation.name)
 
   /**
    * @method Returns the requested resource, or throws an exception either if the resource doesn't exist, or if it is not
@@ -108,8 +117,8 @@ export class ResourceValidation {
       }
     });
 
-    console.log(resourceFieldFromResource.fields);
-    console.log(resourceFieldFromResource.fields.length);
+    this.logger.log(resourceFieldFromResource.fields);
+    this.logger.log(resourceFieldFromResource.fields.length);
     if (resourceFieldFromResource.fields.length === 0) {
       throw new NotFoundException(ResourceBusinessErrors.ResourceFieldNotFound);
     } else {
