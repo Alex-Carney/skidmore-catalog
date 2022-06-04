@@ -1,5 +1,4 @@
 import { HttpStatus, Injectable, Logger } from "@nestjs/common";
-import { PrismaService } from "src/modules/prisma/services/prisma.service";
 import { Response } from 'express';
 import { Readable } from "stream";
 import * as readline from "readline";
@@ -12,6 +11,7 @@ import { Multer } from 'multer' // THIS IS NOT ACTUALLY UNUSED. DO NOT DELETE.
 import { RepositoryValidation } from "../../repository/validation/repository.validation";
 import { ResourceValidation } from "../validation/resource.validation";
 import { CustomException } from "../../../errors/custom.exception";
+import { PrismaService } from "../../prisma/services/prisma.service";
 
 
 @Injectable()

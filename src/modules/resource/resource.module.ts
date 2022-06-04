@@ -1,7 +1,4 @@
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
-import { ResourceController } from "src/modules/resource/controllers/resource.controller";
-import { PrismaModule } from "src/modules/prisma/prisma.module";
-import { ResourceService } from "src/modules/resource/services/resource.service";
 import { RepositoryModule } from "../repository/repository.module";
 import { DataModelController } from "./controllers/data-model.controller";
 import { DataModelService } from "./services/data-model.service";
@@ -12,6 +9,9 @@ import { ResourceExistsMiddleware } from "./middleware/resource-exists.middlewar
 import { ResourceValidation } from "./validation/resource.validation";
 import { ResourceRouteNames } from "./constants/resource-route-names";
 import { ConfigModule } from "@nestjs/config";
+import { PrismaModule } from "../prisma/prisma.module";
+import { ResourceController } from "./controllers/resource.controller";
+import { ResourceService } from "./services/resource.service";
 
 
 @Module({

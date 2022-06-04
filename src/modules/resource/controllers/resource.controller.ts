@@ -12,16 +12,16 @@ import {
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { ResourceService } from "src/modules/resource/services/resource.service";
 import { Request, Response } from "express";
-import { SeedDatabaseInputDTO } from "src/modules/resource/dto/seed-database.dto";
-import { QueryDatabaseInputDTO } from "src/modules/resource/dto/query-database.dto";
 import { UserService } from "../../account/services/user.service";
 import { RepositoryPermissions } from "../../repository/constants/permission-level-constants";
 import { RepositoryPermissionGuard } from "../../repository/guards/repository-auth.guard";
 import { RepositoryPermissionLevel } from "../../repository/decorators/repository-permissions.decorator";
 import { ResourceAccessAuthGuard } from "../guards/resource-access-auth-guard.service";
 import { ResourceRouteNames } from "../constants/resource-route-names";
+import { ResourceService } from "../services/resource.service";
+import { SeedDatabaseInputDTO } from "../dto/seed-database.dto";
+import { QueryDatabaseInputDTO } from "../dto/query-database.dto";
 
 /**
  * Handles CRUD operations for data models. Has some extra routes as well,

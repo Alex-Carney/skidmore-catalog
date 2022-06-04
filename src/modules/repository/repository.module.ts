@@ -2,13 +2,13 @@ import { PrismaModule } from "../prisma/prisma.module";
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { UserService } from '../account/services/user.service';
 import { PasswordService } from '../authentication/services/password.service';
-import { RepositoryController } from 'src/modules/repository/controllers/repository.controller';
 import { AuthModule } from '../authentication/auth.module';
-import { RepositoryService } from 'src/modules/repository/services/repository.service';
 import { UserMiddleware } from "../../middleware/user.middleware";
 import { RepositoryValidation } from "./validation/repository.validation";
 import { RepositoryExistsMiddleware } from "./middleware/repository-exists.middleware";
 import { RepositoryRouteNames } from "./constants/repository-route-names";
+import { RepositoryController } from "./controllers/repository.controller";
+import { RepositoryService } from "./services/repository.service";
 
 /**
  * Packages all subsystems of the repository module into an export/importable module

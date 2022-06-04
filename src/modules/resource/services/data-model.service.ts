@@ -4,7 +4,6 @@ import {
   Injectable,
   InternalServerErrorException, Logger
 } from "@nestjs/common";
-import { PrismaService } from "src/modules/prisma/services/prisma.service";
 import { Readable } from "stream";
 import * as readline from "readline";
 import * as md5 from "md5";
@@ -18,6 +17,7 @@ import { RepositoryValidation } from "../../repository/validation/repository.val
 import { CustomException } from "../../../errors/custom.exception";
 import { ResourceValidation } from "../validation/resource.validation";
 import { DataModelGenerateInputDTO } from "../dto/data-model-input.dto";
+import { PrismaService } from "../../prisma/services/prisma.service";
 
 
 @Injectable()

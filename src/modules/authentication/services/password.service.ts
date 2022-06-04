@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { hash, compare } from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
-import { SecurityConfig } from 'src/configs/config.interface';
+import { SecurityConfig } from "../../../configs/config.interface";
 
 /**
  * The service for handling hashing, salting, and validation of passwords.

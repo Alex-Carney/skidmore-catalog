@@ -11,8 +11,8 @@ import { PasswordService } from './password.service';
 import { Prisma, User } from '@prisma/client';
 import { Token } from '../../../models/token.model';
 import { ConfigService } from '@nestjs/config';
-import { SecurityConfig } from 'src/configs/config.interface';
 import { UserBusinessErrors } from "../../../errors/user.error";
+import { SecurityConfig } from "../../../configs/config.interface";
 
 @Injectable()
 /**

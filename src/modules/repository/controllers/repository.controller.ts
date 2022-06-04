@@ -11,15 +11,16 @@ import {
   ApiTags
 } from "@nestjs/swagger";
 import { Request } from "express";
-import { UserCreateRepositoryDTO } from "src/modules/repository/dto/add-repositories.dto";
-import { DeleteRepositoryDTO } from "src/modules/repository/dto/delete-repository.dto";
-import { UpdateRepositoryPermissionsDTO } from "src/modules/repository/dto/update-permissions.dto";
-import { RepositoryService } from "src/modules/repository/services/repository.service";
-import { UserService } from "src/modules/account/services/user.service";
+
 import { RepositoryPermissions } from "../constants/permission-level-constants";
 import { RepositoryPermissionGuard } from "../guards/repository-auth.guard";
 import { RepositoryPermissionLevel } from "../decorators/repository-permissions.decorator";
 import { RepositoryRouteNames } from "../constants/repository-route-names";
+import { UserService } from "../../account/services/user.service";
+import { UserCreateRepositoryDTO } from "../dto/add-repositories.dto";
+import { RepositoryService } from "../services/repository.service";
+import { UpdateRepositoryPermissionsDTO } from "../dto/update-permissions.dto";
+import { DeleteRepositoryDTO } from "../dto/delete-repository.dto";
 
 
 /**

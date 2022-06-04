@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Render, Request, Res } from "@nestjs/common";
 import { ApiExcludeEndpoint } from "@nestjs/swagger";
 import { SkipThrottle } from "@nestjs/throttler";
-import { Token } from "src/models/token.model";
-import { AuthService } from "src/modules/authentication/services/auth.service";
 import { Response } from "express";
+import { AuthService } from "../modules/authentication/services/auth.service";
+import { Token } from "../models/token.model";
 
 @SkipThrottle()
 @Controller()

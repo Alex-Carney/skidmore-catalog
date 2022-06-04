@@ -1,12 +1,12 @@
 import { HttpStatus, Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
-import { PrismaService } from "src/modules/prisma/services/prisma.service";
-import { UpdateRepositoryPermissionsDTO } from "src/modules/repository/dto/update-permissions.dto";
 import { UserService } from "../../account/services/user.service";
 import { RepositoryBusinessErrors } from "../errors/repository.error";
 import { RepositoryPermissions } from "../constants/permission-level-constants";
 import { UserCreateRepositoryDTO } from "../dto/add-repositories.dto";
 import { CustomException } from "../../../errors/custom.exception";
 import { RepositoryValidation } from "../validation/repository.validation";
+import { PrismaService } from "../../prisma/services/prisma.service";
+import { UpdateRepositoryPermissionsDTO } from "../dto/update-permissions.dto";
 
 
 @Injectable()
