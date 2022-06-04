@@ -6,6 +6,15 @@ import { CustomException } from "../../../errors/custom.exception";
 import { ConfigService } from "@nestjs/config";
 import { ApiConfig } from "../../../configs/config.interface";
 
+/**
+ * An injectable service that can be used internally or by other modules to determine
+ * if certain actions are valid or not, such as a non-authorized repository
+ * attempting to access a resource, or attempting to access a resource that
+ * doesn't exist
+ * @param prisma dependency
+ * @param configService dependency, in order to determine if certain inputs (for delimiters, etc.) are acceptable
+ * @author Alex Carney
+ */
 @Injectable()
 export class ResourceValidation {
   constructor(

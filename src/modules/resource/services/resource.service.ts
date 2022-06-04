@@ -1,4 +1,4 @@
-import { ForbiddenException, HttpStatus, Injectable } from "@nestjs/common";
+import { HttpStatus, Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "src/modules/prisma/services/prisma.service";
 import { Response } from 'express';
 import { Readable } from "stream";
@@ -17,6 +17,7 @@ import { CustomException } from "../../../errors/custom.exception";
 @Injectable()
 export class ResourceService {
   /**
+   * @service An injectable service handling all operations relating to resources
    *
    * @param prisma
    * @param repositoryValidation
@@ -29,8 +30,10 @@ export class ResourceService {
   ) {
   }
 
+  private readonly logger = new Logger(ResourceService.name);
+
   /**
-   *
+   * Reads a valid input file and inputs the data from the file into the database accordingly
    *
    * @param file
    * @param seedResourceDto
@@ -68,19 +71,14 @@ export class ResourceService {
     });
 
     const buf = file.buffer;
-    console.log(buf.toString());
 
     // fail early: if the file is of the wrong encoding, immediately throw exception
     await this.resourceValidation.validateFiletype(file.mimetype);
 
-
-
     //step 2: authenticate the request, does this repository have WRITE priviledges for this resource under this repository?
+    this.logger.log(dataModel);
 
-
-    console.log(dataModel);
-
-    console.log(dataModel.fields);
+    this.logger.log(dataModel.fields);
 
     //const insertValueBufferSize = 500; //number of rows to queue up before pushing to DB
     let lNum = 0;
@@ -110,11 +108,11 @@ export class ResourceService {
            */
 
           cleanedLine.split(seedResourceDto.delimiter).forEach((field) => {
-            console.log("LINE SPLIT" + field);
+            this.logger.log("LINE SPLIT" + field);
             fieldNames.push(field);
           });
 
-          //console.log("field names " + fieldNames);
+          //this.logger.log("field names " + fieldNames);
           let localizedFields = "";
           fieldNames.forEach((field) => {
             const fieldIdx = dataModel.fields.findIndex((obj) => {
@@ -126,17 +124,15 @@ export class ResourceService {
                 HttpStatus.BAD_REQUEST)
             }
             inputColumnOrderIndex.push(fieldIdx);
-            console.log(fieldIdx);
-            //console.log(dataModel.fields[fieldIdx].fieldName + " with ln " + dataModel.fields[fieldIdx].localizedName);
+            this.logger.log(fieldIdx);
+            //this.logger.log(dataModel.fields[fieldIdx].fieldName + " with ln " + dataModel.fields[fieldIdx].localizedName);
             localizedFields += (dataModel.fields[fieldIdx].localizedName + ",");
           });
           //TODO: Can this read by column please!?!??
           insertArgumentsOne = `datastore."${dataModel.title}" ( ${localizedFields.slice(0, -1)} )`; //remove trailing comma
 
-          console.log(insertArgumentsOne);
+          this.logger.log(insertArgumentsOne);
 
-
-          //TODO: Do we have to delete all existing data or can we implement PATCH
           await this.prisma.$executeRaw(`DELETE FROM datastore."${dataModel.title}"`);
 
 
@@ -149,36 +145,8 @@ export class ResourceService {
 
 
           if (lNum % seedResourceDto.maxBufferSize == 0) {
-            // console.log(line)
-            // const bruh = line.split(',')[0];
-            // console.log(typeof bruh)
-            // console.log(bruh)
-            // console.log(`INSERT INTO universe."CopyExample" (field1, field2, field2) VALUES (${line.split(',')[0]}, ${line.split(',')[1]}, ${line.split(',')[2]})`);
-            //const st = performance.now()
-            // delimiters other than ,???
-            // const lineData = line.split(',').map((fieldDataValue, idx) => {
-            //     //console.log("fdv " + fieldDataValue);
-            //     const dt = dataModel.fields[inputColumnOrderIndex[idx]].dataType;
-            //     //console.log("Line 585 data model " + dt);
-            //     return dt === "text" ? "'"+fieldDataValue+"'" : Number(fieldDataValue);
-            //     //
-            //     // const dtObj = dataModel.fields.find((obj) => { return obj.fieldName == fieldDataValue});
-            //     //
-            //     // console.log("dtObj " + dtObj);
-            //     // return dtObj.fieldName === "text" ? "'"+dtObj.fieldName+"'" : Number(dtObj.fieldName);
-            //
-            //     // const dt = dataModel.fields[idx].dataType;
-            //     // return dt === "text" ? "'"+fieldDataValue+"'" : Number(fieldDataValue);
-            // });
-
             const insertArgs = `${insertArgumentsOne} VALUES ${insertBuffer}`;
-            //console.log("INSERT INTO " + insertArgs);
             await this.prisma.$executeRaw("INSERT INTO " + insertArgs);
-            //await this.prisma.$executeRaw`INSERT INTO universe."CopyExample" (field1, field2, field3) VALUES (${Number(line.split(',')[0])}, ${Number(line.split(',')[1])}, ${Number(line.split(',')[2])})`
-            //await this.prisma.$executeRaw`INSERT INTO universe."CopyExample" (field1, field2, field3) VALUES (${line.split(',')[0]}, ${line.split(',')[1]}, ${line.split(',')[2]})`
-            //const et = performance.now()
-            //console.log("Milliseconds: " + (et-st));
-
             //don't forget to forget the buffer
             insertBuffer.length = 0;
           }
@@ -189,37 +157,38 @@ export class ResourceService {
       if (insertBuffer.length >= 1) {
 
         const insertArgs = `${insertArgumentsOne} VALUES ${insertBuffer}`;
-        console.log(insertArgs);
+        this.logger.log(insertArgs);
         await this.prisma.$executeRaw("INSERT INTO " + insertArgs);
       }
 
-      console.log(lNum);
-
-      console.log(`Field Names: ${fieldNames}`);
+      this.logger.log(lNum);
+      this.logger.log(`Field Names: ${fieldNames}`);
       const eet = performance.now();
+      const successMessage: string = "Total time: " + (eet - sst) / 1000 + " sec";
+      this.logger.log(successMessage);
 
-      console.log("Total time: " + (eet - sst) / 1000);
+      res.status(HttpStatus.OK).send("Successfully seeded data model. " + successMessage)
+      return "Successfully seeded data model. " + successMessage
 
     } catch (err) {
-
       if(err instanceof CustomException) {
         res.status(HttpStatus.BAD_REQUEST).send(err.getResponse());
       }
-
-      console.log(err);
-      console.log(lNum);
+      this.logger.log(err);
+      this.logger.log(lNum);
       const msg = err.message + ". This error occurred while reading lines between " + (lNum - seedResourceDto.maxBufferSize) + " and " + lNum + " of the seed file";
-      console.log(msg);
+      this.logger.log(msg);
       return msg;
     }
-    res.status(HttpStatus.OK).send("success")
-    return "success";
-
-
+    // const successMessage: String = "Successfully seeded data model. Total time: " +
+    // res.status(HttpStatus.OK).send("success")
+    // return "";
   }
 
   /**
-   * @method queryResource:
+   * @method queryResource: User inputs an SQL query and receives a data payload back.
+   * The user must have the 'user' role of the repository that this is a part of, which
+   * is validated by the controller already
    *
    * @param resourceName
    * @param userId
@@ -230,27 +199,22 @@ export class ResourceService {
    */
   async queryResource(resourceName: string, userId: string, repository: string, sqlSelect: string, sqlWhereFields: string, sqlWhere: string) {
     //step 0: potentially sanitize sql statement
-    // if(sqlWhere.includes("User") || sqlWhere.includes(";") || sqlWhere.includes("password")) {
-    //     return;
-    // }
+    if(sqlWhere.includes("User") || sqlWhere.includes(";") || sqlWhere.includes("password")) {
+        return;
+    }
 
-    console.log(resourceName);
-    console.log(userId);
-    console.log(repository);
-    console.log(sqlSelect);
-    console.log(sqlWhere);
-
-
-    //step 1: authenticate this request
-    // await this.repositoryService.authenticateUserRequest(userId, repository, RepositoryPermissions.REPOSITORY_USER);
-
+    this.logger.log(resourceName);
+    this.logger.log(userId);
+    this.logger.log(repository);
+    this.logger.log(sqlSelect);
+    this.logger.log(sqlWhere);
 
     /**
      * Account for multiple cases: User may want to select all of their fields (select *) without having to type them all out
      */
     let includeFieldArgs;
     if (sqlSelect === "*") {
-      console.log("select all");
+      this.logger.log("select all");
       includeFieldArgs = {
         select: {
           fieldName: true,
@@ -266,7 +230,7 @@ export class ResourceService {
        * WHERE statement?
        */
       fieldNameFindArgs = fieldNameFindArgs.concat(sqlWhereFields.replace(/\s+/g, "").split(","));
-      console.log(fieldNameFindArgs);
+      this.logger.log(fieldNameFindArgs);
       includeFieldArgs = {
         where: {
           fieldName: {
@@ -304,7 +268,7 @@ export class ResourceService {
       }
     });
 
-    console.log(resourceAndSelectedFields);
+    this.logger.log(resourceAndSelectedFields);
 
     const localizedSelect = resourceAndSelectedFields[0].fields.map((value) => {
       return value.localizedName;
@@ -313,12 +277,12 @@ export class ResourceService {
 
     resourceAndSelectedFields[0].fields.forEach((value) => {
       sqlWhere = sqlWhere.replace(value.fieldName, value.localizedName);
-      console.log(sqlWhere);
+      this.logger.log(sqlWhere);
     });
 
-    console.log(sqlWhere);
+    this.logger.log(sqlWhere);
 
-    console.log("SELECT " + localizedSelect + " FROM " + "datastore.\"" + resourceName + "\" " + sqlWhere + ";");
+    this.logger.log("SELECT " + localizedSelect + " FROM " + "datastore.\"" + resourceName + "\" " + sqlWhere + ";");
     const payload = await this.prisma.$queryRaw("SELECT " + localizedSelect + " FROM " + "datastore.\"" + resourceName + "\" " + sqlWhere + ";");
     const csvPayload = await parseAsync(payload);
     //pass in limit, only split first line
@@ -326,12 +290,8 @@ export class ResourceService {
     resourceAndSelectedFields[0].fields.forEach((value) => {
       headerLine = headerLine.replace(value.localizedName, value.fieldName);
     });
-    console.log("---");
-    console.log("headerLine " + headerLine);
-
-    // console.log(("\n" + csvPayload.substring(csvPayload.indexOf("\n") + 1)));
-    // console.log(csvPayload.substring(csvPayload.indexOf("\n") + 1));
-
+    this.logger.log("---");
+    this.logger.log("headerLine " + headerLine);
 
     return headerLine + ("\n" + csvPayload.substring(csvPayload.indexOf("\n") + 1));
   }
