@@ -9,4 +9,4 @@ Patch Notes
     - Delete repository route changed from "delete-repositories" to "delete-repository"
 - Backend code improvements
     - Improved comments and internal documentation
-    - Removed all instances of console.log, replacing w
+    - Removed all instances of console.log, replacing with proper logging instead
