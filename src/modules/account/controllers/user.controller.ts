@@ -1,11 +1,13 @@
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { Body, Controller, Logger, Post, Req } from "@nestjs/common";
+import { Body, Controller, Logger, Post, Req, UseGuards } from "@nestjs/common";
 import { UserService } from "../services/user.service";
 import { Token } from "../../../models/token.model";
 import { AuthService } from "../../authentication/services/auth.service";
 import { LoginInputDTO } from "../dto/login-input.dto";
 import { Request } from "express";
 import { ChangePasswordDTO } from "../dto/change-password.dto";
+import { ProperBodyGuard } from "../../../guards/proper-body.guard";
+import { BodyDto } from "../../../decorators/route-dto.decorator";
 
 
 /**
@@ -30,6 +32,8 @@ export class UserController {
    * @param loginInputDTO
    */
   @Post("/authorize")
+  @UseGuards(ProperBodyGuard)
+  @BodyDto(LoginInputDTO)
   async loginRemote(@Req() req: Request, @Body() loginInputDTO: LoginInputDTO): Promise<Token> {
     this.logger.log("Attempted login by " + loginInputDTO.email);
     return this.authService.login(loginInputDTO.email, loginInputDTO.password);
@@ -44,6 +48,8 @@ export class UserController {
    */
   @ApiBearerAuth()
   @Post("/change-password")
+  @UseGuards(ProperBodyGuard)
+  @BodyDto(ChangePasswordDTO)
   async changePasswordRemote(@Req() req: Request, @Body() changePasswordDTO: ChangePasswordDTO) {
     return this.userService.changePassword(req.user["id"], changePasswordDTO);
   }

@@ -37,6 +37,8 @@ import { RepositoryPermissionLevel } from "../../repository/decorators/repositor
 import { RepositoryPermissions } from "../../repository/constants/permission-level-constants";
 import { DataModelRouteNames } from "../constants/data-model-route-names";
 import { ResourceAccessAuthGuard } from "../guards/resource-access-auth-guard.service";
+import { ProperBodyGuard } from "../../../guards/proper-body.guard";
+import { BodyDto } from "../../../decorators/route-dto.decorator";
 
 /**
  * In the API V2 architecture, resources are uploaded by users, instead of hardcoded
@@ -119,8 +121,9 @@ export class DataModelController {
     description: "Only users with accounts can publish data models. You can do so here" //TODO: insert link
   })
   @Post(DataModelRouteNames.PUBLISH_DATA_MODEL)
-  @UseGuards(RepositoryPermissionGuard)
+  @UseGuards(RepositoryPermissionGuard, ProperBodyGuard)
   @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_ADMIN)
+  @BodyDto(DataModelPublishInputDTO)
   async publishDataModel(@Req() req: Request, @Body() dataModelPublishInputDTO: DataModelPublishInputDTO) {
 
     // const user = await this.userService.getUserFromRequest(req);
@@ -205,8 +208,9 @@ export class DataModelController {
     description: "Only users with accounts can publish data models. You can do so here" //TODO: insert link
   })
   @Put(DataModelRouteNames.UPDATE_DATA_MODEL_REPOSITORIES)
-  @UseGuards(RepositoryPermissionGuard)
+  @UseGuards(RepositoryPermissionGuard, ProperBodyGuard)
   @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_ADMIN)
+  @BodyDto(UpdateDataModelRepositoriesDTO)
   async updateDataModelRepositories(@Req() req: Request, @Body() updateDataModelRepositoriesDTO: UpdateDataModelRepositoriesDTO) {
     // const user = await this.userService.getUserFromRequest(req);
     return this.dataModelService.updateDataModelRepositories(req.user["id"], updateDataModelRepositoriesDTO);
@@ -245,8 +249,9 @@ export class DataModelController {
     description: "Only users with accounts can publish data models. You can do so here" //TODO: insert link
   })
   @Put(DataModelRouteNames.UPDATE_DATA_MODEL)
-  @UseGuards(RepositoryPermissionGuard, ResourceAccessAuthGuard)
+  @UseGuards(RepositoryPermissionGuard, ResourceAccessAuthGuard, ProperBodyGuard)
   @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_ADMIN)
+  @BodyDto(UpdateDataModelFieldsDTO)
   async updateDataModel(@Req() req: Request, @Body() updateDataModelFieldsDTO: UpdateDataModelFieldsDTO) {
     // const user = await this.userService.getUserFromRequest(req);
     return this.dataModelService.updateDataModelFields(req.user["id"], updateDataModelFieldsDTO);
@@ -257,8 +262,9 @@ export class DataModelController {
     type: UpdateDataModelFieldNamesDTO
   })
   @Put(DataModelRouteNames.UPDATE_DATA_MODEL_COLUMN_NAMES)
-  @UseGuards(RepositoryPermissionGuard, ResourceAccessAuthGuard)
+  @UseGuards(RepositoryPermissionGuard, ResourceAccessAuthGuard, ProperBodyGuard)
   @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_ADMIN)
+  @BodyDto(UpdateDataModelFieldNamesDTO)
   async renameDataModelFields(@Req() req: Request, @Body() updateDataModelFieldNamesDTO: UpdateDataModelFieldNamesDTO) {
     // const user = await this.userService.getUserFromRequest(req);
     return this.dataModelService.alterDataModelColumnNames(req.user["id"], updateDataModelFieldNamesDTO);
@@ -292,8 +298,9 @@ export class DataModelController {
     description: "Deleting a data model requires ownership of the repository" //TODO: insert link
   })
   @Delete(DataModelRouteNames.DELETE_DATA_MODEL)
-  @UseGuards(RepositoryPermissionGuard, ResourceAccessAuthGuard)
+  @UseGuards(RepositoryPermissionGuard, ResourceAccessAuthGuard, ProperBodyGuard)
   @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_OWNER)
+  @BodyDto(DeleteDataModelDTO)
   async deleteDataModel(@Req() req: Request, @Body() deleteDataModelDTO: DeleteDataModelDTO) {
     // const user = await this.userService.getUserFromRequest(req);
     return this.dataModelService.deleteDataModel(req.user["id"], deleteDataModelDTO);

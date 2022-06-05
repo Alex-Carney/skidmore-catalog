@@ -34,3 +34,5 @@ export class RepositoryPermissionGuard implements CanActivate {
     return this.repositoryValidation.authenticateUserRequest(request.user['id'], request.repository.title, requiredLevel);
   }
 }
+
+

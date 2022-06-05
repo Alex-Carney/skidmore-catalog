@@ -21,6 +21,8 @@ import { UserCreateRepositoryDTO } from "../dto/add-repositories.dto";
 import { RepositoryService } from "../services/repository.service";
 import { UpdateRepositoryPermissionsDTO } from "../dto/update-permissions.dto";
 import { DeleteRepositoryDTO } from "../dto/delete-repository.dto";
+import { ProperBodyGuard } from "../../../guards/proper-body.guard";
+import { BodyDto } from "../../../decorators/route-dto.decorator";
 
 
 /**
@@ -92,6 +94,8 @@ export class RepositoryController {
   @ApiForbiddenResponse({
     description: "Only users with accounts can create repositories."
   })
+  @UseGuards(ProperBodyGuard)
+  @BodyDto(UserCreateRepositoryDTO)
   @Post(RepositoryRouteNames.CREATE_REPOSITORY)
   async createRepositories(@Req() req: Request, @Body() createRepositoryDTO: UserCreateRepositoryDTO) {
     this.logger.log(req.user + " called createRepositories method");
@@ -126,6 +130,8 @@ export class RepositoryController {
       "assign a permission level higher than the one you have. Additionally, only admins (level 2+) can change any permission"
   })
   @Patch(RepositoryRouteNames.UPDATE_PERMISSIONS)
+  @UseGuards(ProperBodyGuard)
+  @BodyDto(UpdateRepositoryPermissionsDTO)
   async updateRepositoryPermissions(@Req() req: Request, @Body() updateAdminDto: UpdateRepositoryPermissionsDTO): Promise<any> {
     this.logger.log(req.user + " called updateRepositoryPermissions method, targeting " + req.target_user);
     return this.repositoryService.updateRepositoryPermissions(req.user["id"], updateAdminDto);
@@ -152,8 +158,9 @@ export class RepositoryController {
     type: DeleteRepositoryDTO
   })
   @Delete(RepositoryRouteNames.DELETE_REPOSITORY)
-  @UseGuards(RepositoryPermissionGuard)
+  @UseGuards(RepositoryPermissionGuard, ProperBodyGuard)
   @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_OWNER)
+  @BodyDto(DeleteRepositoryDTO)
   async deleteRepository(@Req() req: Request, @Body() deleteRepositoryDTO: DeleteRepositoryDTO): Promise<any> {
     this.logger.log(req.user + " called deleteRepository method, targeting " + deleteRepositoryDTO.repository);
     return this.repositoryService.deleteRepository(req.user["id"], deleteRepositoryDTO.repository);

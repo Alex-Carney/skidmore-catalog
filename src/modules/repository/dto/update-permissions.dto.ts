@@ -1,6 +1,8 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { FieldNames } from "../../../decorators/field-names.decorator";
 
 //This is the scaffold for the Swagger UI POST body for adding new roles to a repository
+@FieldNames('repository', 'receiverEmail', 'targetNewPermissionLevel')
 export class UpdateRepositoryPermissionsDTO {
     @ApiProperty({
         description: 'title of repository to change permissions for',

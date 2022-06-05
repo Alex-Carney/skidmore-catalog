@@ -13,7 +13,6 @@ import {
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { Request, Response } from "express";
-import { UserService } from "../../account/services/user.service";
 import { RepositoryPermissions } from "../../repository/constants/permission-level-constants";
 import { RepositoryPermissionGuard } from "../../repository/guards/repository-auth.guard";
 import { RepositoryPermissionLevel } from "../../repository/decorators/repository-permissions.decorator";
@@ -22,6 +21,8 @@ import { ResourceRouteNames } from "../constants/resource-route-names";
 import { ResourceService } from "../services/resource.service";
 import { SeedDatabaseInputDTO } from "../dto/seed-database.dto";
 import { QueryDatabaseInputDTO } from "../dto/query-database.dto";
+import { ProperBodyGuard } from "../../../guards/proper-body.guard";
+import { BodyDto } from "../../../decorators/route-dto.decorator";
 
 /**
  * Handles CRUD operations for data models. Has some extra routes as well,
@@ -40,7 +41,7 @@ export class ResourceController {
 
   private readonly logger = new Logger(ResourceController.name)
 
-  constructor(private readonly resourceService: ResourceService, private readonly userService: UserService) {
+  constructor(private readonly resourceService: ResourceService) {
   }
 
   @ApiOkResponse({
@@ -57,6 +58,12 @@ export class ResourceController {
   @Put(ResourceRouteNames.SEED_DATABASE)
   async seedDatabase(@UploadedFile() file: Express.Multer.File, @Req() req: Request, @Body()
     seedDatabaseInputDto: SeedDatabaseInputDTO, @Res() res: Response) {
+
+    //TODO : BIG TODO!!! WE NEED TO VALIDATE THAT THE PERSON SEEDING IS
+    // AN ADMIN, AND THAT THE REPOSITORY HAS ACCESS. WE CAN'T JUST ADD
+    // THE GUARDS AS-IS BECAUSE THIS IS MULTIPART/FORM-DATA NOT JSON
+
+
     this.logger.log(req.user + " is seeding the database")
     return this.resourceService.seedResourceFromFile(file, seedDatabaseInputDto, req.user["id"], res);
   }
@@ -72,8 +79,9 @@ export class ResourceController {
   @ApiOperation({ summary: "query a resource using SQL" })
   @ApiTags("Resource Data")
   @Post(ResourceRouteNames.QUERY_DATABASE)
-  @UseGuards(RepositoryPermissionGuard, ResourceAccessAuthGuard)
+  @UseGuards(RepositoryPermissionGuard, ResourceAccessAuthGuard, ProperBodyGuard)
   @RepositoryPermissionLevel(RepositoryPermissions.REPOSITORY_USER)
+  @BodyDto(QueryDatabaseInputDTO)
   async queryDatabase(@Req() req: Request, @Body() queryDatabaseInputDto: QueryDatabaseInputDTO) {
       return await this.resourceService.queryResource
       (

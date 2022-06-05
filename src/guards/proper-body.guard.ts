@@ -1,6 +1,9 @@
-import { CanActivate, ExecutionContext, Injectable, Logger } from "@nestjs/common";
+import { CanActivate, ExecutionContext, HttpStatus, Injectable, Logger } from "@nestjs/common";
 import { Observable } from "rxjs";
 import { Reflector } from "@nestjs/core";
+import { compareIgnoreOrder } from "../utils/array-equals.util";
+import { InvalidBodyErrors } from "../errors/invalid-body.error";
+import { CustomException } from "../errors/custom.exception";
 
 
 /**
@@ -31,11 +34,21 @@ export class ProperBodyGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest()
 
-    console.log(request.body)
+    //User's body
+    const incomingBodyKeys = Object.keys(request.body)
 
-    console.log(properDto)
-    console.log(Object.getOwnPropertyNames(properDto))
+    //Required body
+    const requiredBodyKeys = this.reflector.get<string[]>('fields', properDto)
 
+    if(!compareIgnoreOrder(incomingBodyKeys, requiredBodyKeys)) {
+
+      this.logger.warn("USER BODY KEYS DO NOT MATCH REQUIRED BODY KEYS")
+      this.logger.log("INCOMING " + incomingBodyKeys)
+      this.logger.log("REQUIRED " + requiredBodyKeys)
+      throw new CustomException(InvalidBodyErrors.InvalidBody,
+        "Required body keys are: " + requiredBodyKeys + ". Your incorrect keys were: " + incomingBodyKeys,
+        HttpStatus.BAD_REQUEST)
+    }
     return true
   }
 }
