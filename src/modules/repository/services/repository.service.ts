@@ -124,8 +124,8 @@ export class RepositoryService {
      * Validate input repository. We already know that userId is legitimate because that was called from the controller,
      * but we must ensure input repository is valid. NotFoundError is thrown from validateRepositoryExistence
      */
-    // await this.validateRepositoryExistence(updateRepositoryPermissionsDTO.repository);
     await this.repositoryValidation.validatePermissionLevelInput(updateRepositoryPermissionsDTO.targetNewPermissionLevel);
+    updateRepositoryPermissionsDTO.targetNewPermissionLevel = Number(updateRepositoryPermissionsDTO.targetNewPermissionLevel)
 
     //validate whether current permissions allow for this action to be executed - need information about requester and target
     const userToChangePerms = await this.userService.getUserFromEmail(updateRepositoryPermissionsDTO.receiverEmail);
@@ -173,7 +173,7 @@ export class RepositoryService {
 
     //handle owner changing owner edge case, must demote current owner
     if (ownerTransferringOwnershipEdgeCase) {
-      return await this.prisma.repositoriesOnUsers.update({
+      const ownershipChangeResponse =  await this.prisma.repositoriesOnUsers.update({
         where: {
           repositoryTitle_userId: {
             userId: userId,
@@ -184,8 +184,23 @@ export class RepositoryService {
           permissionLevel: RepositoryPermissions.REPOSITORY_ADMIN //old owner becomes admin
         }
       });
+
+      return {
+        status: "YOU ARE NO LONGER THE OWNER OF THIS REPOSITORY",
+        repositoryTitle: ownershipChangeResponse.repositoryTitle,
+        newOwner: updateRepositoryPermissionsDTO.receiverEmail,
+        updatedTargetPermissionLevel: RepositoryPermissions.REPOSITORY_OWNER,
+        yourUpdatedPermissionLevel: RepositoryPermissions.REPOSITORY_ADMIN
+      }
+
+
     } else {
-      return updateResponse;
+      return {
+        //Tailor the return payload to the user
+        repositoryTitle: updateResponse.repositoryTitle,
+        userChanged: updateRepositoryPermissionsDTO.receiverEmail,
+        updatedPermissionLevel: updateResponse.permissionLevel
+      };
     }
   }
 

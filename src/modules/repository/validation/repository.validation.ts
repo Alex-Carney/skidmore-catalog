@@ -159,7 +159,11 @@ export class RepositoryValidation {
    * @throws BadRequestException
    */
   async validatePermissionLevelInput(permissionLevel: number) {
-    if (permissionLevel < 0 || permissionLevel > 3 || !Number.isInteger(permissionLevel)) {
+
+    //In case the user input the permission level as a string accidentally
+    permissionLevel = Number(permissionLevel)
+
+    if (permissionLevel < 0 || permissionLevel > 3 || !Number.isInteger(permissionLevel) || Number.isNaN(permissionLevel)) {
       throw new CustomException(RepositoryBusinessErrors.InvalidPermissionLevel,
         "Can't have a permission level of " + permissionLevel,
         HttpStatus.BAD_REQUEST);

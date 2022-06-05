@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Logger, Patch, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Logger, Post, Put, Req, UseGuards } from "@nestjs/common";
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -129,7 +129,7 @@ export class RepositoryController {
     description: "It is forbidden to change permissions of a repository with a higher permission level than yourself, or to " +
       "assign a permission level higher than the one you have. Additionally, only admins (level 2+) can change any permission"
   })
-  @Patch(RepositoryRouteNames.UPDATE_PERMISSIONS)
+  @Put(RepositoryRouteNames.UPDATE_PERMISSIONS)
   @UseGuards(ProperBodyGuard)
   @BodyDto(UpdateRepositoryPermissionsDTO)
   async updateRepositoryPermissions(@Req() req: Request, @Body() updateAdminDto: UpdateRepositoryPermissionsDTO): Promise<any> {
