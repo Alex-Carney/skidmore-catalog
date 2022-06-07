@@ -168,8 +168,8 @@ export class ResourceValidation {
    */
   async validateFiletype(fileType: string) {
     const apiConfig = this.configService.get<ApiConfig>('api_config');
-    const improperType = apiConfig.bannedFileTypes.includes(fileType);
-    if (!improperType) {
+    const properType = apiConfig.allowedFileTypes.includes(fileType);
+    if (!properType) {
       throw new CustomException(ResourceBusinessErrors.InvalidFileType,
         `Input filetype of ${fileType} is invalid`,
         HttpStatus.BAD_REQUEST)

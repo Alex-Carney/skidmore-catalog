@@ -75,29 +75,28 @@ export class ResourceService {
     // fail early: if the file is of the wrong encoding, immediately throw exception
     await this.resourceValidation.validateFiletype(file.mimetype);
 
-    //step 2: authenticate the request, does this repository have WRITE priviledges for this resource under this repository?
     this.logger.log(dataModel);
-
     this.logger.log(dataModel.fields);
 
-    //const insertValueBufferSize = 500; //number of rows to queue up before pushing to DB
+
     let lNum = 0;
+    // Read the input file using the Readable interface
     try {
       const rl = readline.createInterface({
         input: Readable.from(buf),
         crlfDelay: Infinity
       });
 
-
       const fieldNames = [];
       const inputColumnOrderIndex = [];
       let insertArgumentsOne = "";
       const insertBuffer = [];
-      const sst = performance.now();
+      const sst = performance.now(); //start recording time for user diagnostics
+      // Read the input file line by line
       for await (const line of rl) {
+        // The first line are the headers. These must be handled differently
         if (lNum == 0) {
-
-          // Remove extra BOM character
+          // Remove extra BOM character at start of file
           const cleanedLine = line.replace(`\ufeff`, "");
 
           /**
@@ -106,18 +105,17 @@ export class ResourceService {
            * That is, if a repository rearranges the location of their columns before uploading data, it should not
            * break the process. Therefore, we must account for the potential differences in the order of data
            */
-
           cleanedLine.split(seedResourceDto.delimiter).forEach((field) => {
-            this.logger.log("LINE SPLIT" + field);
+            this.logger.log("LINE SPLIT " + field);
             fieldNames.push(field);
           });
 
-          //this.logger.log("field names " + fieldNames);
           let localizedFields = "";
           fieldNames.forEach((field) => {
             const fieldIdx = dataModel.fields.findIndex((obj) => {
               return obj.fieldName == field;
             });
+            // A column header the user provided doesn't match with the stored schema
             if(fieldIdx == -1) {
               throw new CustomException(ResourceBusinessErrors.InvalidInputFile,
                 `Invalid field: ${field != "" ? field : "EMPTY FILE"} did not match data model.`,
@@ -125,50 +123,66 @@ export class ResourceService {
             }
             inputColumnOrderIndex.push(fieldIdx);
             this.logger.log(fieldIdx);
-            //this.logger.log(dataModel.fields[fieldIdx].fieldName + " with ln " + dataModel.fields[fieldIdx].localizedName);
             localizedFields += (dataModel.fields[fieldIdx].localizedName + ",");
           });
           //TODO: Can this read by column please!?!??
           insertArgumentsOne = `datastore."${dataModel.title}" ( ${localizedFields.slice(0, -1)} )`; //remove trailing comma
 
-          this.logger.log(insertArgumentsOne);
 
+          // This is a PUT request. We delete all existing data then rewrite
           await this.prisma.$executeRaw(`DELETE FROM datastore."${dataModel.title}"`);
 
-
-        } else {
+        } else { // Handling all non-header lines
           const lineData = line.split(seedResourceDto.delimiter).map((fieldDataValue, idx) => {
+            /*
+            Clean line input. Text input is wrapped in '', numerical inputs must be
+            converted to the number data type.
+             */
             const dt = dataModel.fields[inputColumnOrderIndex[idx]].dataType;
             return dt === "text" ? "'" + fieldDataValue + "'" : Number(fieldDataValue);
           });
           insertBuffer.push(`(${lineData})`);
 
-
+          /*
+          Every (max buffer size) number of lines, insert the current built up
+          buffer into the database. One might wonder why I didn't use a transaction
+          to insert the data all at once (in multiple chunks), the problem is the program
+          kept running of memory, so inserting has to be staggered like this
+           */
           if (lNum % seedResourceDto.maxBufferSize == 0) {
             const insertArgs = `${insertArgumentsOne} VALUES ${insertBuffer}`;
             await this.prisma.$executeRaw("INSERT INTO " + insertArgs);
-            //don't forget to forget the buffer
+            //don't forget to flush the buffer
             insertBuffer.length = 0;
           }
         }
         lNum++;
       }
-      //empty the remaining buffer
+      /*
+      empty the remaining buffer. No file will have a
+      total length = multiple of buffer size
+       */
       if (insertBuffer.length >= 1) {
-
         const insertArgs = `${insertArgumentsOne} VALUES ${insertBuffer}`;
-        this.logger.log(insertArgs);
         await this.prisma.$executeRaw("INSERT INTO " + insertArgs);
       }
+
+      // Insertion complete
 
       this.logger.log(lNum);
       this.logger.log(`Field Names: ${fieldNames}`);
       const eet = performance.now();
-      const successMessage: string = "Total time: " + (eet - sst) / 1000 + " sec";
-      this.logger.log(successMessage);
+      const timeElapsed: string = (eet - sst) / 1000 + " sec";
+      this.logger.log(timeElapsed);
 
-      res.status(HttpStatus.OK).send("Successfully seeded data model. " + successMessage)
-      return "Successfully seeded data model. " + successMessage
+      const responseBody = {
+        "status": "Successfully seeded data model.",
+        "time elapsed": timeElapsed,
+        "num rows inserted": lNum,
+        "num cells inserted": lNum * fieldNames.length
+      }
+      res.status(HttpStatus.OK).send(responseBody)
+      return responseBody
 
     } catch (err) {
       if(err instanceof CustomException) {
@@ -178,7 +192,10 @@ export class ResourceService {
       this.logger.log(lNum);
       const msg = err.message + ". This error occurred while reading lines between " + (lNum - seedResourceDto.maxBufferSize) + " and " + lNum + " of the seed file";
       this.logger.log(msg);
-      return msg;
+      return {
+        "status": "An error occurred while uploading",
+        "additionalInformation": msg
+      };
     }
     // const successMessage: String = "Successfully seeded data model. Total time: " +
     // res.status(HttpStatus.OK).send("success")

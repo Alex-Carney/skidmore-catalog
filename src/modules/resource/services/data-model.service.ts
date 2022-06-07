@@ -130,6 +130,7 @@ export class DataModelService {
    */
   async publishDataModel(userId: string, dataModelPublishInputDto: DataModelPublishInputDTO) {
 
+    console.log(dataModelPublishInputDto.dataModel)
 
     //step 0: validate inputs
     // for (const repositoryToValidate of dataModelPublishInputDto.repository) {
