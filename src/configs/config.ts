@@ -36,7 +36,7 @@ const config: Config = {
   },
   api_config: {
     supportedDelimiters: [",", "  ", "%09", "%20", "\t"],
-    allowedFileTypes: ["text/csv", "text/plain"]
+    allowedFileTypes: ["text/csv", "text/plain", "application/vnd.ms-excel"]
   },
 };
 
