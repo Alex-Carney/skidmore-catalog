@@ -136,7 +136,7 @@ export class ResourceValidation {
     const validation = bufferSize <= 600 && bufferSize >= 10;
     if (!validation) {
       throw new CustomException(ResourceBusinessErrors.InvalidBufferSize,
-        `Input of ${bufferSize} is invalid`,
+        `Input of ${bufferSize} is invalid. Buffer size must be between 10 and 600`,
         HttpStatus.BAD_REQUEST);
     }
     return true;
